@@ -1,11 +1,25 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Server</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      /* === 全局样式 === */
+      :root {
+        --bg-color: #0a0a0c;
+        --panel-bg: #141417;
+        --accent: #00f2ff;
+        --accent-glow: rgba(0, 242, 255, 0.3);
+        --danger: #ff4d4d;
+        --text-main: #e0e0e6;
+        --text-dim: #88888f;
+        --border: #2d2d33;
+      }
+
       * {
         box-sizing: border-box;
       }
@@ -13,187 +27,255 @@
       body {
         margin: 0;
         padding: 2rem;
-        font-family: 'JetBrains Mono', monospace;
-        color: #e5e5e5;
-        background: #0a0a0a;
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        line-height: 1.5;
       }
 
-      /* === 面板样式 === */
+      .container {
+        max-width: 850px;
+        margin: 2rem auto;
+      }
+
       .panel {
-        max-width: 760px;
-        margin: auto;
-        background: #111;
-        border: 2px solid #444;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
-      }
-
-      h2 {
-        margin-top: 0;
-        font-size: 1.5rem;
-        color: #00d4ff;
-        border-bottom: 1px solid #333;
-        padding-bottom: 0.5rem;
-      }
-
-      /* === 拖拽上传区域 === */
-      .dropzone {
-        border: 2px dashed #555;
+        background: var(--panel-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
         padding: 2rem;
-        text-align: center;
-        border-radius: 8px;
-        background: #181818;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin-bottom: 1rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       }
 
-      .dropzone.dragover {
-        border-color: #00d4ff;
-        background: #0f2a33;
-      }
-
-      .btn {
-        padding: 0.5rem 1rem;
-        border: 2px solid #00d4ff;
-        background: transparent;
-        color: #00d4ff;
-        font-size: 0.875rem;
-        cursor: pointer;
-        margin-top: 0.5rem;
-        transition: 0.2s;
-        border-radius: 4px;
-      }
-
-      .btn:hover {
-        background: #00d4ff;
-        color: #000;
-      }
-
-      /* === 进度条 === */
-      .progress {
-        margin-top: 1rem;
-        display: none;
-      }
-
-      .progress-bar-bg {
-        width: 100%;
-        height: 0.5rem;
-        background: #333;
-        border-radius: 4px;
-        overflow: hidden;
-      }
-
-      .progress-bar-fill {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #00d4ff, #00ffa2);
-        transition: width 0.1s linear;
-      }
-
-      .progress-text {
-        margin-top: 0.25rem;
-        font-size: 0.75rem;
-        color: #aaa;
-      }
-
-      /* === 文件列表 === */
-      ul {
-        list-style: none;
-        padding: 0;
-        margin-top: 1.25rem;
-      }
-
-      .file-row {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #333;
+      header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        word-break: break-word;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1rem;
       }
 
-      .file-row span {
+      h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: -0.5px;
+        color: var(--accent);
+        text-transform: uppercase;
+      }
+
+      /* === Dropzone === */
+      .dropzone {
+        border: 2px dashed var(--border);
+        border-radius: 10px;
+        padding: 3rem 1rem;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+      }
+
+      .dropzone:hover,
+      .dropzone.dragover {
+        border-color: var(--accent);
+        background: var(--accent-glow);
+        transform: translateY(-2px);
+      }
+
+      .dropzone-text {
+        display: block;
+        color: var(--text-dim);
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+      }
+
+      .btn {
+        font-family: inherit;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 0.85rem;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #000;
+        border: none;
+      }
+
+      .btn-primary:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 0 15px var(--accent-glow);
+      }
+
+      /* === Progress === */
+      .progress-container {
+        margin: 1.5rem 0;
+        display: none;
+      }
+
+      .progress-track {
+        height: 6px;
+        background: #222;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), #00ffa2);
+        box-shadow: 0 0 10px var(--accent-glow);
+        transition: width 0.2s ease-out;
+      }
+
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
+        color: var(--text-dim);
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* === File List === */
+      .file-list {
+        margin-top: 2rem;
+      }
+
+      .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.2s;
+      }
+
+      .file-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .file-meta {
         display: flex;
         flex-direction: column;
+        gap: 0.25rem;
       }
 
-      .file-actions a,
-      .file-actions button {
-        color: #00ffa2;
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 0.875rem;
-        margin-left: 0.5rem;
-        transition: all 0.2s;
+      .file-name {
+        font-weight: 500;
+        color: var(--text-main);
+        word-break: break-all;
       }
 
-      .file-actions button {
-        color: #ff4d4d;
-        background-color: #eee;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
+      .file-details {
         font-size: 0.75rem;
+        color: var(--text-dim);
+        font-family: 'JetBrains Mono', monospace;
       }
 
-      .file-actions a:hover,
-      .file-actions button:hover {
-        opacity: 0.8;
+      .actions {
+        display: flex;
+        gap: 0.75rem;
       }
 
-      /* === 移动端响应式 === */
-      @media (max-width: 767px) {
+      .action-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .action-del {
+        background: none;
+        border: 1px solid rgba(255, 77, 77, 0.3);
+        color: var(--danger);
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .action-del:hover {
+        background: var(--danger);
+        color: white;
+      }
+
+      @media (max-width: 600px) {
         body {
           padding: 1rem;
         }
-
         .panel {
+          padding: 1.25rem;
+        }
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+        .file-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+        .actions {
           width: 100%;
-          padding: 1rem;
+          justify-content: flex-end;
+          gap: 1.5rem; /* More space between buttons */
         }
-
-        h2 {
-          font-size: 1.25rem;
+        /* Mobile Touch Optimization: Larger interactive areas */
+        .action-link {
+          font-size: 1.1rem;
+          padding: 0.5rem 0;
         }
-
-        .dropzone {
-          padding: 1.5rem;
-        }
-
-        .btn {
+        .action-del {
           font-size: 1rem;
-        }
-
-        /* 文件操作按钮更大，方便触摸 */
-        .file-actions a,
-        .file-actions button {
-          font-size: 1.5rem;
-          margin-left: 0.5rem;
+          padding: 0.4rem 0.8rem;
         }
       }
     </style>
   </head>
   <body>
-    <div class="panel">
-      <h2>Node File System</h2>
+    <div class="container">
+      <div class="panel">
+        <header>
+          <h1>File Explorer</h1>
+          <div
+            id="status-tag"
+            style="
+              font-size: 0.7rem;
+              color: #444;
+              font-family: 'JetBrains Mono';
+            "
+          >
+            v1.0.0 - STABLE
+          </div>
+        </header>
 
-      <div id="dropzone" class="dropzone">
-        Drag files here or click to select (supports multiple files)
-        <br />
-        <button class="btn" onclick="fileInput.click()">Select Files</button>
-        <input type="file" id="fileInput" multiple hidden />
-      </div>
-
-      <div class="progress" id="progress">
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progressFill"></div>
+        <div id="dropzone" class="dropzone">
+          <span class="dropzone-text">Drop objects here or browse locally</span>
+          <button class="btn btn-primary" onclick="fileInput.click()">
+            Open Files
+          </button>
+          <input type="file" id="fileInput" multiple hidden />
         </div>
-        <div class="progress-text" id="progressText"></div>
-      </div>
 
-      <ul id="fileList"></ul>
+        <div class="progress-container" id="progress">
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-info">
+            <span id="progressStatus">Transferring...</span>
+            <span id="progressPercent">0%</span>
+          </div>
+        </div>
+
+        <div class="file-list" id="fileList">
+          <!-- Files rendered here -->
+        </div>
+      </div>
     </div>
 
     <script>
@@ -201,42 +283,39 @@
       const dropzone = document.getElementById('dropzone')
       const progress = document.getElementById('progress')
       const progressFill = document.getElementById('progressFill')
-      const progressText = document.getElementById('progressText')
+      const progressStatus = document.getElementById('progressStatus')
+      const progressPercent = document.getElementById('progressPercent')
       let pendingFiles = []
 
       function formatSize(bytes) {
-        if (bytes < 1024) return bytes + ' B'
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-        if (bytes < 1024 * 1024 * 1024)
-          return (bytes / 1024 / 1024).toFixed(1) + ' MB'
-        return (bytes / 1024 / 1024 / 1024).toFixed(1) + ' GB'
+        if (bytes === 0) return '0 B'
+        const k = 1024
+        const sizes = ['B', 'KB', 'MB', 'GB']
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
       }
 
       fileInput.addEventListener('change', (e) => {
         pendingFiles = [...e.target.files]
         uploadFiles()
       })
-
-      dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault()
-        dropzone.classList.add('dragover')
-      })
-
-      dropzone.addEventListener('dragleave', () => {
-        dropzone.classList.remove('dragover')
-      })
-
-      dropzone.addEventListener('drop', (e) => {
-        e.preventDefault()
-        dropzone.classList.remove('dragover')
-        pendingFiles = [...e.dataTransfer.files]
-        uploadFiles()
+      ;['dragover', 'dragleave', 'drop'].forEach((evt) => {
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault()
+          if (evt === 'dragover') dropzone.classList.add('dragover')
+          else dropzone.classList.remove('dragover')
+          if (evt === 'drop') {
+            pendingFiles = [...e.dataTransfer.files]
+            uploadFiles()
+          }
+        })
       })
 
       function uploadFiles() {
         if (!pendingFiles.length) return
         const form = new FormData()
         pendingFiles.forEach((f) => form.append('files', f))
+
         const xhr = new XMLHttpRequest()
         xhr.open('POST', '/api/upload')
 
@@ -245,16 +324,17 @@
             const percent = Math.round((e.loaded / e.total) * 100)
             progress.style.display = 'block'
             progressFill.style.width = percent + '%'
-            progressText.textContent = `上传中... ${percent}%`
+            progressPercent.textContent = percent + '%'
+            progressStatus.textContent = 'UPLOADING'
           }
         }
 
         xhr.onload = () => {
-          progressText.textContent = '上传完成'
+          progressStatus.textContent = 'SYNC COMPLETE'
           setTimeout(() => {
             progress.style.display = 'none'
             progressFill.style.width = '0%'
-          }, 800)
+          }, 1500)
           loadFiles()
         }
 
@@ -262,33 +342,45 @@
       }
 
       async function loadFiles() {
-        const res = await fetch('/api/files')
-        const files = await res.json()
-        files.sort((a, b) => b.time - a.time)
-        const visibleFiles = files.filter((f) => !f.name.startsWith('.'))
-        const list = document.getElementById('fileList')
-        list.innerHTML = ''
-        visibleFiles.forEach((file) => {
-          const sizeStr = formatSize(file.size)
-          const timeStr = new Date(file.time).toLocaleString()
-          const li = document.createElement('li')
-          li.className = 'file-row'
-          li.innerHTML = `
-          <span>
-            ${file.name}
-            <span style="font-size:0.75rem;color:#888;">${sizeStr} · ${timeStr}</span>
-          </span>
-          <span class="file-actions">
-            <a href="/api/download/${file.name}" target="_blank">下载</a>
-            <button onclick="del('${file.name}')">删除</button>
-          </span>
-        `
-          list.appendChild(li)
-        })
+        try {
+          const res = await fetch('/api/files')
+          const files = await res.json()
+          files.sort((a, b) => b.time - a.time)
+
+          const list = document.getElementById('fileList')
+          list.innerHTML = ''
+
+          files
+            .filter((f) => !f.name.startsWith('.'))
+            .forEach((file) => {
+              // Formatted Date String Logic
+              const d = new Date(file.time)
+              const pad = (num) => String(num).padStart(2, '0')
+              const timeStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+
+              const div = document.createElement('div')
+              div.className = 'file-item'
+              div.innerHTML = `
+        <div class="file-meta">
+          <span class="file-name">${file.name}</span>
+          <span class="file-details">${formatSize(file.size)} ${timeStr}</span>
+        </div>
+        <div class="actions">
+          <a href="/api/download/${file.name}" class="action-link" target="_blank">DOWNLOAD</a>
+          <button class="action-del" onclick="del('${file.name}')">DELETE</button>
+        </div>
+      `
+              list.appendChild(div)
+            })
+        } catch (err) {
+          console.error('Fetch error:', err)
+        }
       }
 
       function del(name) {
-        alert('请联系管理员删除')
+        alert(
+          'ACCESS DENIED: Please contact the system administrator to remove objects.'
+        )
         loadFiles()
       }
 
