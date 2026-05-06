@@ -1,42 +1,52 @@
 <!doctype html>
-<html>
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <title>文件服务器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Server</title>
     <style>
-      body {
-        margin: 0;
-        padding: 40px;
-        font-family: 'JetBrains Mono', monospace;
-        color: #e5e5e5;
+      /* === 全局样式 === */
+      * {
+        box-sizing: border-box;
       }
 
+      body {
+        margin: 0;
+        padding: 2rem;
+        font-family: 'JetBrains Mono', monospace;
+        color: #e5e5e5;
+        background: #0a0a0a;
+      }
+
+      /* === 面板样式 === */
       .panel {
-        width: 760px;
+        max-width: 760px;
         margin: auto;
         background: #111;
         border: 2px solid #444;
         border-radius: 8px;
-        padding: 24px;
+        padding: 1.5rem;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
       }
 
       h2 {
         margin-top: 0;
-        font-size: 22px;
+        font-size: 1.5rem;
         color: #00d4ff;
         border-bottom: 1px solid #333;
-        padding-bottom: 10px;
+        padding-bottom: 0.5rem;
       }
 
+      /* === 拖拽上传区域 === */
       .dropzone {
         border: 2px dashed #555;
-        padding: 30px;
+        padding: 2rem;
         text-align: center;
         border-radius: 8px;
         background: #181818;
         cursor: pointer;
-        transition: 0.2s;
+        transition: all 0.2s;
+        margin-bottom: 1rem;
       }
 
       .dropzone.dragover {
@@ -45,14 +55,15 @@
       }
 
       .btn {
-        padding: 8px 18px;
+        padding: 0.5rem 1rem;
         border: 2px solid #00d4ff;
         background: transparent;
         color: #00d4ff;
-        font-size: 14px;
+        font-size: 0.875rem;
         cursor: pointer;
-        margin-top: 12px;
+        margin-top: 0.5rem;
         transition: 0.2s;
+        border-radius: 4px;
       }
 
       .btn:hover {
@@ -60,18 +71,15 @@
         color: #000;
       }
 
-      #fileInput {
-        display: none;
-      }
-
+      /* === 进度条 === */
       .progress {
-        margin-top: 16px;
+        margin-top: 1rem;
         display: none;
       }
 
       .progress-bar-bg {
         width: 100%;
-        height: 10px;
+        height: 0.5rem;
         background: #333;
         border-radius: 4px;
         overflow: hidden;
@@ -84,18 +92,31 @@
         transition: width 0.1s linear;
       }
 
+      .progress-text {
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+        color: #aaa;
+      }
+
+      /* === 文件列表 === */
       ul {
         list-style: none;
         padding: 0;
-        margin-top: 20px;
+        margin-top: 1.25rem;
       }
 
       .file-row {
-        padding: 10px;
+        padding: 0.5rem 0;
         border-bottom: 1px solid #333;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        word-break: break-word;
+      }
+
+      .file-row span {
+        display: flex;
+        flex-direction: column;
       }
 
       .file-actions a,
@@ -104,12 +125,53 @@
         background: none;
         border: none;
         cursor: pointer;
-        font-size: 13px;
-        margin-left: 10px;
+        font-size: 0.875rem;
+        margin-left: 0.5rem;
+        transition: all 0.2s;
       }
 
       .file-actions button {
         color: #ff4d4d;
+        background-color: #eee;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+      }
+
+      .file-actions a:hover,
+      .file-actions button:hover {
+        opacity: 0.8;
+      }
+
+      /* === 移动端响应式 === */
+      @media (max-width: 767px) {
+        body {
+          padding: 1rem;
+        }
+
+        .panel {
+          width: 100%;
+          padding: 1rem;
+        }
+
+        h2 {
+          font-size: 1.25rem;
+        }
+
+        .dropzone {
+          padding: 1.5rem;
+        }
+
+        .btn {
+          font-size: 1rem;
+        }
+
+        /* 文件操作按钮更大，方便触摸 */
+        .file-actions a,
+        .file-actions button {
+          font-size: 1.5rem;
+          margin-left: 0.5rem;
+        }
       }
     </style>
   </head>
@@ -118,26 +180,30 @@
       <h2>Node File System</h2>
 
       <div id="dropzone" class="dropzone">
-        拖拽文件到这里 或 点击选择(支持多文件)
+        Drag files here or click to select (supports multiple files)
         <br />
-        <button class="btn" onclick="fileInput.click()">选择文件</button>
-        <input type="file" id="fileInput" multiple />
+        <button class="btn" onclick="fileInput.click()">Select Files</button>
+        <input type="file" id="fileInput" multiple hidden />
       </div>
 
       <div class="progress" id="progress">
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" id="progressFill"></div>
         </div>
-        <div
-          id="progressText"
-          style="margin-top: 6px; font-size: 12px; color: #aaa"
-        ></div>
+        <div class="progress-text" id="progressText"></div>
       </div>
 
       <ul id="fileList"></ul>
     </div>
 
     <script>
+      const fileInput = document.getElementById('fileInput')
+      const dropzone = document.getElementById('dropzone')
+      const progress = document.getElementById('progress')
+      const progressFill = document.getElementById('progressFill')
+      const progressText = document.getElementById('progressText')
+      let pendingFiles = []
+
       function formatSize(bytes) {
         if (bytes < 1024) return bytes + ' B'
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
@@ -145,14 +211,6 @@
           return (bytes / 1024 / 1024).toFixed(1) + ' MB'
         return (bytes / 1024 / 1024 / 1024).toFixed(1) + ' GB'
       }
-
-      const fileInput = document.getElementById('fileInput')
-      const dropzone = document.getElementById('dropzone')
-      const progress = document.getElementById('progress')
-      const progressFill = document.getElementById('progressFill')
-      const progressText = document.getElementById('progressText')
-
-      let pendingFiles = []
 
       fileInput.addEventListener('change', (e) => {
         pendingFiles = [...e.target.files]
@@ -176,11 +234,9 @@
       })
 
       function uploadFiles() {
-        if (pendingFiles.length === 0) return
-
+        if (!pendingFiles.length) return
         const form = new FormData()
         pendingFiles.forEach((f) => form.append('files', f))
-
         const xhr = new XMLHttpRequest()
         xhr.open('POST', '/api/upload')
 
@@ -204,47 +260,34 @@
 
         xhr.send(form)
       }
+
       async function loadFiles() {
         const res = await fetch('/api/files')
         const files = await res.json()
-
-        // 按时间排序（最新在前）
         files.sort((a, b) => b.time - a.time)
-
-        // 过滤掉隐藏文件（以 . 开头）
         const visibleFiles = files.filter((f) => !f.name.startsWith('.'))
-
         const list = document.getElementById('fileList')
         list.innerHTML = ''
-
         visibleFiles.forEach((file) => {
           const sizeStr = formatSize(file.size)
           const timeStr = new Date(file.time).toLocaleString()
-
           const li = document.createElement('li')
           li.className = 'file-row'
-
           li.innerHTML = `
-      <span>
-        ${file.name}
-        <br>
-        <span style="font-size:12px;color:#888">
-          ${sizeStr} · ${timeStr}
-        </span>
-      </span>
-
-      <span class="file-actions">
-        <a href="/api/download/${file.name}" target="_blank">下载</a>
-        <button onclick="del('${file.name}')" style="background-color:#eee;color:tomato;padding:5px 10px;border-radius:5px;">删除</button>
-      </span>
-    `
-
+          <span>
+            ${file.name}
+            <span style="font-size:0.75rem;color:#888;">${sizeStr} · ${timeStr}</span>
+          </span>
+          <span class="file-actions">
+            <a href="/api/download/${file.name}" target="_blank">下载</a>
+            <button onclick="del('${file.name}')">删除</button>
+          </span>
+        `
           list.appendChild(li)
         })
       }
 
-      async function del(name) {
-        // await fetch('/api/delete/' + name, { method: 'DELETE' })
+      function del(name) {
         alert('请联系管理员删除')
         loadFiles()
       }
