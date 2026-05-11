@@ -235,6 +235,48 @@
           padding: 0.4rem 0.8rem;
         }
       }
+
+      /* === Breadcrumb === */
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-bottom: 1.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.85rem;
+      }
+
+      .breadcrumb-link {
+        color: var(--text-dim);
+        text-decoration: none;
+        font-family: 'JetBrains Mono', monospace;
+        transition: color 0.2s;
+        cursor: pointer;
+      }
+
+      .breadcrumb-link:hover {
+        color: var(--accent);
+      }
+
+      .breadcrumb-sep {
+        color: var(--border);
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      /* === Directory Items === */
+      .dir-item {
+        cursor: pointer;
+      }
+
+      .dir-item:hover {
+        background: var(--accent-glow);
+      }
+
+      .dir-item .file-name {
+        color: var(--accent);
+      }
     </style>
   </head>
   <body>
@@ -272,6 +314,8 @@
           </div>
         </div>
 
+        <div class="breadcrumb" id="breadcrumb"></div>
+
         <div class="file-list" id="fileList">
           <!-- Files rendered here -->
         </div>
@@ -285,7 +329,10 @@
       const progressFill = document.getElementById('progressFill')
       const progressStatus = document.getElementById('progressStatus')
       const progressPercent = document.getElementById('progressPercent')
+      const breadcrumb = document.getElementById('breadcrumb')
+      const fileList = document.getElementById('fileList')
       let pendingFiles = []
+      let currentDir = ''
 
       function formatSize(bytes) {
         if (bytes === 0) return '0 B'
@@ -295,10 +342,19 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
       }
 
+      function escapeHtml(str) {
+        const div = document.createElement('div')
+        div.textContent = str
+        return div.innerHTML
+      }
+
+      // --- Event: File input change ---
       fileInput.addEventListener('change', (e) => {
         pendingFiles = [...e.target.files]
         uploadFiles()
       })
+
+      // --- Event: Drag & drop ---
       ;['dragover', 'dragleave', 'drop'].forEach((evt) => {
         dropzone.addEventListener(evt, (e) => {
           e.preventDefault()
@@ -311,10 +367,35 @@
         })
       })
 
+      // --- Event: Breadcrumb click (delegation) ---
+      breadcrumb.addEventListener('click', (e) => {
+        const link = e.target.closest('.breadcrumb-link')
+        if (link && link.dataset.dir !== undefined) {
+          navigateTo(link.dataset.dir)
+        }
+      })
+
+      // --- Event: File list click (delegation) ---
+      fileList.addEventListener('click', (e) => {
+        // Directory navigation
+        const dirItem = e.target.closest('.dir-item')
+        if (dirItem && dirItem.dataset.dir !== undefined) {
+          navigateTo(dirItem.dataset.dir)
+          return
+        }
+        // Delete button
+        if (e.target.classList.contains('action-del')) {
+          e.stopPropagation()
+          del()
+        }
+      })
+
+      // --- Upload files ---
       function uploadFiles() {
         if (!pendingFiles.length) return
         const form = new FormData()
         pendingFiles.forEach((f) => form.append('files', f))
+        form.append('dir', currentDir)
 
         const xhr = new XMLHttpRequest()
         xhr.open('POST', '/api/upload')
@@ -341,49 +422,110 @@
         xhr.send(form)
       }
 
+      // --- Navigate to directory ---
+      function navigateTo(dir) {
+        currentDir = dir
+        loadFiles()
+      }
+
+      // --- Render breadcrumb ---
+      function renderBreadcrumb(dir) {
+        let html = `<a class="breadcrumb-link" data-dir="">📂 Root</a>`
+        if (dir) {
+          const parts = dir.split('/')
+          let accumulated = ''
+          parts.forEach((part) => {
+            accumulated += (accumulated ? '/' : '') + part
+            html += ` <span class="breadcrumb-sep">›</span> <a class="breadcrumb-link" data-dir="${escapeHtml(accumulated)}">${escapeHtml(part)}</a>`
+          })
+        }
+        breadcrumb.innerHTML = html
+      }
+
+      // --- Load file list ---
       async function loadFiles() {
         try {
-          const res = await fetch('/api/files')
-          const files = await res.json()
-          files.sort((a, b) => b.time - a.time)
+          const dirParam = currentDir ? `?dir=${encodeURIComponent(currentDir)}` : ''
+          const res = await fetch('/api/files' + dirParam)
+          if (!res.ok) {
+            fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--danger)">Failed to load (${res.status})</div>`
+            return
+          }
+          const data = await res.json()
+          renderBreadcrumb(data.currentDir)
 
-          const list = document.getElementById('fileList')
-          list.innerHTML = ''
+          fileList.innerHTML = ''
 
-          files
-            .filter((f) => !f.name.startsWith('.'))
-            .forEach((file) => {
-              // Formatted Date String Logic
-              const d = new Date(file.time)
+          // Parent directory (back) link
+          if (data.parentDir !== null) {
+            const div = document.createElement('div')
+            div.className = 'file-item dir-item'
+            div.dataset.dir = data.parentDir
+            div.innerHTML = `
+              <div class="file-meta">
+                <span class="file-name">📁 ..</span>
+                <span class="file-details">Parent Directory</span>
+              </div>
+            `
+            fileList.appendChild(div)
+          }
+
+          // Items (directories + files)
+          data.items.forEach((item) => {
+            const div = document.createElement('div')
+
+            if (item.type === 'directory') {
+              const newDir = currentDir ? `${currentDir}/${item.name}` : item.name
+              div.className = 'file-item dir-item'
+              div.dataset.dir = newDir
+              div.innerHTML = `
+                <div class="file-meta">
+                  <span class="file-name">📁 ${escapeHtml(item.name)}/</span>
+                  <span class="file-details">Directory</span>
+                </div>
+                <div class="actions">
+                  <span class="action-link">OPEN</span>
+                </div>
+              `
+            } else {
+              const d = new Date(item.time)
               const pad = (num) => String(num).padStart(2, '0')
               const timeStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+              const filePath = currentDir ? `${currentDir}/${item.name}` : item.name
 
-              const div = document.createElement('div')
               div.className = 'file-item'
               div.innerHTML = `
-        <div class="file-meta">
-          <span class="file-name">${file.name}</span>
-          <span class="file-details">${formatSize(file.size)} ${timeStr}</span>
-        </div>
-        <div class="actions">
-          <a href="/api/download/${file.name}" class="action-link" target="_blank">DOWNLOAD</a>
-          <button class="action-del" onclick="del('${file.name}')">DELETE</button>
-        </div>
-      `
-              list.appendChild(div)
-            })
+                <div class="file-meta">
+                  <span class="file-name">📄 ${escapeHtml(item.name)}</span>
+                  <span class="file-details">${formatSize(item.size)} ${timeStr}</span>
+                </div>
+                <div class="actions">
+                  <a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">DOWNLOAD</a>
+                  <button class="action-del">DELETE</button>
+                </div>
+              `
+            }
+
+            fileList.appendChild(div)
+          })
+
+          if (data.items.length === 0 && data.parentDir === null) {
+            fileList.innerHTML = '<div class="file-item" style="justify-content:center;color:var(--text-dim)">No files uploaded yet</div>'
+          }
         } catch (err) {
           console.error('Fetch error:', err)
+          fileList.innerHTML = '<div class="file-item" style="justify-content:center;color:var(--danger)">Connection error</div>'
         }
       }
 
-      function del(name) {
+      function del() {
         alert(
           'ACCESS DENIED: Please contact the system administrator to remove objects.'
         )
         loadFiles()
       }
 
+      // Bootstrap
       loadFiles()
     </script>
   </body>
