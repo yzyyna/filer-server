@@ -82,6 +82,18 @@
         transform: translateY(-2px);
       }
 
+      /* 主目录禁用上传状态 */
+      .dropzone.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+        border-style: dotted;
+      }
+
+      .dropzone.disabled .btn-primary {
+        filter: grayscale(0.6);
+      }
+
       .dropzone-text {
         display: block;
         color: var(--text-dim);
@@ -627,6 +639,7 @@
       ;['dragover', 'dragleave', 'drop'].forEach((evt) => {
         dropzone.addEventListener(evt, (e) => {
           e.preventDefault()
+          if (dropzone.classList.contains('disabled')) return
           if (evt === 'dragover') dropzone.classList.add('dragover')
           else dropzone.classList.remove('dragover')
           if (evt === 'drop') {
@@ -677,6 +690,13 @@
       // --- Upload files ---
       function uploadFiles() {
         if (!pendingFiles.length) return
+        // 权限控制：禁止在主目录上传
+        if (!currentDir) {
+          showToast('✗ 请先进入子文件夹再上传')
+          pendingFiles = []
+          if (fileInput.value) fileInput.value = ''
+          return
+        }
         const form = new FormData()
         pendingFiles.forEach((f) => form.append('files', f))
         form.append('dir', currentDir)
@@ -737,6 +757,18 @@
           }
           const data = await res.json()
           renderBreadcrumb(data.currentDir)
+
+          // 根据当前目录切换 dropzone 上传权限
+          const dropzoneText = document.querySelector('.dropzone-text')
+          if (data.currentDir) {
+            dropzone.classList.remove('disabled')
+            dropzoneText.textContent = `上传到: ${data.currentDir} （拖放或点击选择）`
+            dropzoneText.style.color = 'var(--text-dim)'
+          } else {
+            dropzone.classList.add('disabled')
+            dropzoneText.textContent = '请先进入子文件夹再上传文件（主目录禁止上传）'
+            dropzoneText.style.color = 'var(--danger)'
+          }
 
           fileList.innerHTML = ''
 

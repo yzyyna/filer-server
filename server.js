@@ -36,7 +36,11 @@ function safePath(relativePath) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     try {
-      const dir = (req.body && req.body.dir) ? req.body.dir : '';
+      const dir = (req.body && req.body.dir) ? req.body.dir.trim() : '';
+      // 权限控制：禁止在主目录上传，必须进入子文件夹
+      if (!dir) {
+        return cb(new Error('禁止在主目录上传文件，请先进入子文件夹'));
+      }
       const dest = safePath(dir);
       if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
       cb(null, dest);
@@ -174,6 +178,14 @@ app.delete('/api/delete', (req, res) => {
     }
     res.status(500).json({ message: e.message });
   }
+});
+
+// 全局错误处理（捕获 multer 与业务抛出的错误）
+app.use((err, req, res, next) => {
+  if (!err) return next();
+  const msg = err.message || '服务器内部错误';
+  const status = msg.includes('禁止') ? 403 : 500;
+  res.status(status).json({ message: msg });
 });
 
 app.listen(port, '0.0.0.0', () => {
