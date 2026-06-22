@@ -780,8 +780,11 @@
               const icon = previewType === 'image' ? '🖼️' : previewType === 'video' ? '🎬' : previewType === 'audio' ? '🎵' : previewType === 'pdf' ? '📕' : previewType === 'text' ? '📝' : '📄'
 
               div.className = 'file-item'
+              // 可预览文件复制预览链接（点击进入预览页面），不可预览文件复制下载链接
+              const copyType = previewType ? 'preview' : 'download'
+              const copyTitle = previewType ? 'Copy preview link' : 'Copy download link'
               let actionsHtml = `<a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">DOWNLOAD</a>`
-              actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="download" title="Copy download link">COPY LINK</button>`
+              actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="${copyType}" title="${copyTitle}">COPY LINK</button>`
               if (previewType) {
                 actionsHtml += `<a class="action-preview" data-path="${escapeHtml(filePath)}" data-name="${escapeHtml(item.name)}" data-type="${previewType}">PREVIEW</a>`
               }
