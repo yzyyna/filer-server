@@ -227,12 +227,24 @@
         }
         /* Mobile Touch Optimization: Larger interactive areas */
         .action-link {
-          font-size: 1.1rem;
+          font-size: 1rem;
+          padding: 0.5rem 0;
+        }
+        .action-preview {
+          font-size: 1rem;
           padding: 0.5rem 0;
         }
         .action-del {
-          font-size: 1rem;
-          padding: 0.4rem 0.8rem;
+          font-size: 0.95rem;
+          padding: 0.4rem 0.7rem;
+        }
+        .action-copy {
+          font-size: 0.9rem;
+          padding: 0.4rem 0.7rem;
+        }
+        .actions {
+          gap: 1rem;
+          flex-wrap: wrap;
         }
       }
 
@@ -276,6 +288,127 @@
 
       .dir-item .file-name {
         color: var(--accent);
+      }
+
+      /* === Action Buttons (Preview / Copy) === */
+      .action-preview {
+        color: #00ffa2;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .action-copy {
+        background: none;
+        border: 1px solid rgba(0, 242, 255, 0.3);
+        color: var(--accent);
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: 0.2s;
+      }
+
+      .action-copy:hover {
+        background: var(--accent);
+        color: #000;
+      }
+
+      /* === Preview Modal === */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(6px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      .modal-content {
+        position: relative;
+        max-width: 95vw;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .modal-content img,
+      .modal-content video {
+        max-width: 95vw;
+        max-height: 80vh;
+        border-radius: 8px;
+        box-shadow: 0 0 30px var(--accent-glow);
+        object-fit: contain;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: -2.5rem;
+        right: 0;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: 0.2s;
+      }
+
+      .modal-close:hover {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: white;
+      }
+
+      .modal-title {
+        color: var(--accent);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        word-break: break-all;
+        text-align: center;
+        max-width: 90vw;
+      }
+
+      /* === Toast === */
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--panel-bg);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        box-shadow: 0 0 20px var(--accent-glow);
+        z-index: 2000;
+        animation: toast-in 0.3s ease-out;
+      }
+
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
       }
     </style>
   </head>
@@ -322,6 +455,15 @@
       </div>
     </div>
 
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="previewModal">
+      <div class="modal-content">
+        <button class="modal-close" id="modalClose">✕</button>
+        <div class="modal-title" id="modalTitle"></div>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
     <script>
       const fileInput = document.getElementById('fileInput')
       const dropzone = document.getElementById('dropzone')
@@ -346,6 +488,127 @@
         const div = document.createElement('div')
         div.textContent = str
         return div.innerHTML
+      }
+
+      // --- 可预览文件类型识别 ---
+      const PREVIEW_TYPES = {
+        image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'],
+        video: ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'm4v'],
+        audio: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'],
+        pdf: ['pdf'],
+        text: ['txt', 'md', 'json', 'js', 'css', 'html', 'xml', 'csv', 'log', 'yaml', 'yml']
+      }
+
+      function getPreviewType(filename) {
+        const ext = filename.split('.').pop().toLowerCase()
+        for (const [type, exts] of Object.entries(PREVIEW_TYPES)) {
+          if (exts.includes(ext)) return type
+        }
+        return null
+      }
+
+      function buildPreviewUrl(filePath) {
+        return `${window.location.origin}/api/preview?path=${encodeURIComponent(filePath)}`
+      }
+
+      // --- Toast 提示 ---
+      function showToast(message) {
+        const existing = document.querySelector('.toast')
+        if (existing) existing.remove()
+        const toast = document.createElement('div')
+        toast.className = 'toast'
+        toast.textContent = message
+        document.body.appendChild(toast)
+        setTimeout(() => toast.remove(), 2000)
+      }
+
+      // --- 复制预览链接 ---
+      function copyPreviewLink(filePath) {
+        const url = buildPreviewUrl(filePath)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(() => {
+            showToast('✓ Preview link copied')
+          }).catch(() => {
+            fallbackCopy(url)
+          })
+        } else {
+          fallbackCopy(url)
+        }
+      }
+
+      function fallbackCopy(text) {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        try {
+          document.execCommand('copy')
+          showToast('✓ Preview link copied')
+        } catch (e) {
+          showToast('✗ Copy failed')
+        }
+        ta.remove()
+      }
+
+      // --- 预览模态框 ---
+      const previewModal = document.getElementById('previewModal')
+      const modalTitle = document.getElementById('modalTitle')
+      const modalBody = document.getElementById('modalBody')
+      const modalClose = document.getElementById('modalClose')
+
+      modalClose.addEventListener('click', closePreview)
+      previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) closePreview()
+      })
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && previewModal.classList.contains('active')) closePreview()
+      })
+
+      function closePreview() {
+        previewModal.classList.remove('active')
+        modalBody.innerHTML = ''
+        modalTitle.textContent = ''
+      }
+
+      function openPreview(filePath, fileName, previewType) {
+        const url = buildPreviewUrl(filePath)
+        modalTitle.textContent = fileName
+        modalBody.innerHTML = ''
+
+        if (previewType === 'image') {
+          const img = document.createElement('img')
+          img.src = url
+          img.alt = fileName
+          modalBody.appendChild(img)
+        } else if (previewType === 'video') {
+          const video = document.createElement('video')
+          video.src = url
+          video.controls = true
+          video.autoplay = true
+          modalBody.appendChild(video)
+        } else if (previewType === 'audio') {
+          const audio = document.createElement('audio')
+          audio.src = url
+          audio.controls = true
+          audio.autoplay = true
+          modalBody.appendChild(audio)
+        } else if (previewType === 'pdf') {
+          // PDF 在新标签页打开，避免模态框空间不足
+          window.open(url, '_blank')
+          return
+        } else if (previewType === 'text') {
+          // 文本类预览：拉取内容并显示
+          fetch(url).then(r => r.text()).then(text => {
+            const pre = document.createElement('pre')
+            pre.style.cssText = 'max-width:90vw;max-height:75vh;overflow:auto;background:#0a0a0c;padding:1rem;border-radius:8px;color:var(--text-main);font-family:JetBrains Mono,monospace;font-size:0.8rem;border:1px solid var(--border);'
+            pre.textContent = text
+            modalBody.appendChild(pre)
+          }).catch(() => showToast('✗ Preview failed'))
+        }
+
+        previewModal.classList.add('active')
       }
 
       // --- Event: File input change ---
@@ -381,6 +644,21 @@
         const dirItem = e.target.closest('.dir-item')
         if (dirItem && dirItem.dataset.dir !== undefined) {
           navigateTo(dirItem.dataset.dir)
+          return
+        }
+        // Preview button
+        if (e.target.classList.contains('action-preview')) {
+          e.stopPropagation()
+          const path = e.target.dataset.path
+          const name = e.target.dataset.name
+          const type = e.target.dataset.type
+          openPreview(path, name, type)
+          return
+        }
+        // Copy link button
+        if (e.target.classList.contains('action-copy')) {
+          e.stopPropagation()
+          copyPreviewLink(e.target.dataset.path)
           return
         }
         // Delete button
@@ -492,16 +770,24 @@
               const pad = (num) => String(num).padStart(2, '0')
               const timeStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
               const filePath = currentDir ? `${currentDir}/${item.name}` : item.name
+              const previewType = getPreviewType(item.name)
+              const icon = previewType === 'image' ? '🖼️' : previewType === 'video' ? '🎬' : previewType === 'audio' ? '🎵' : previewType === 'pdf' ? '📕' : previewType === 'text' ? '📝' : '📄'
 
               div.className = 'file-item'
+              let actionsHtml = `<a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">DOWNLOAD</a>`
+              if (previewType) {
+                actionsHtml += `<a class="action-preview" data-path="${escapeHtml(filePath)}" data-name="${escapeHtml(item.name)}" data-type="${previewType}">PREVIEW</a>`
+                actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}">COPY LINK</button>`
+              }
+              actionsHtml += `<button class="action-del">DELETE</button>`
+
               div.innerHTML = `
                 <div class="file-meta">
-                  <span class="file-name">📄 ${escapeHtml(item.name)}</span>
+                  <span class="file-name">${icon} ${escapeHtml(item.name)}</span>
                   <span class="file-details">${formatSize(item.size)} ${timeStr}</span>
                 </div>
                 <div class="actions">
-                  <a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">DOWNLOAD</a>
-                  <button class="action-del">DELETE</button>
+                  ${actionsHtml}
                 </div>
               `
             }

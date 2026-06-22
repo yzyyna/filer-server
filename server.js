@@ -136,6 +136,29 @@ app.get('/api/download', (req, res) => {
   }
 });
 
+// 预览（内联显示，支持图片/视频/PDF等，可供外部应用嵌入）
+app.get('/api/preview', (req, res) => {
+  try {
+    const filePath = safePath(req.query.path);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: '文件不存在' });
+    }
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) {
+      return res.status(400).json({ message: '不能预览目录' });
+    }
+    // 使用 inline 让浏览器内联显示而非下载，便于 WPS 等外部应用嵌入预览
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.sendFile(filePath);
+  } catch (e) {
+    if (e.message === 'Access denied') {
+      return res.status(403).json({ message: '访问被拒绝' });
+    }
+    res.status(500).json({ message: e.message });
+  }
+});
+
 // 删除（支持子目录路径）
 app.delete('/api/delete', (req, res) => {
   try {
