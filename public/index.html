@@ -698,8 +698,10 @@
           return
         }
         const form = new FormData()
-        pendingFiles.forEach((f) => form.append('files', f))
+        // 重要：dir 必须先于 files append，multer 按 FormData 字段顺序解析，
+        // 这样 destination 回调触发时 req.body.dir 才可用
         form.append('dir', currentDir)
+        pendingFiles.forEach((f) => form.append('files', f))
 
         const xhr = new XMLHttpRequest()
         xhr.open('POST', '/api/upload')
@@ -715,12 +717,33 @@
         }
 
         xhr.onload = () => {
-          progressStatus.textContent = 'SYNC COMPLETE'
-          setTimeout(() => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            progressStatus.textContent = 'SYNC COMPLETE'
+            setTimeout(() => {
+              progress.style.display = 'none'
+              progressFill.style.width = '0%'
+            }, 1500)
+            loadFiles()
+          } else {
+            // 上传失败：解析后端返回的错误信息并提示
             progress.style.display = 'none'
-            progressFill.style.width = '0%'
-          }, 1500)
-          loadFiles()
+            let errMsg = `上传失败 (${xhr.status})`
+            try {
+              const resp = JSON.parse(xhr.responseText)
+              if (resp.message) errMsg = `✗ ${resp.message}`
+            } catch (e) {}
+            showToast(errMsg)
+          }
+          // 清空待上传队列与 input，允许下次重新选择同一文件
+          pendingFiles = []
+          if (fileInput.value) fileInput.value = ''
+        }
+
+        xhr.onerror = () => {
+          progress.style.display = 'none'
+          showToast('✗ 网络错误，上传失败')
+          pendingFiles = []
+          if (fileInput.value) fileInput.value = ''
         }
 
         xhr.send(form)
