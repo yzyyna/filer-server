@@ -511,6 +511,10 @@
         return `${window.location.origin}/api/preview?path=${encodeURIComponent(filePath)}`
       }
 
+      function buildDownloadUrl(filePath) {
+        return `${window.location.origin}/api/download?path=${encodeURIComponent(filePath)}`
+      }
+
       // --- Toast 提示 ---
       function showToast(message) {
         const existing = document.querySelector('.toast')
@@ -522,21 +526,23 @@
         setTimeout(() => toast.remove(), 2000)
       }
 
-      // --- 复制预览链接 ---
-      function copyPreviewLink(filePath) {
-        const url = buildPreviewUrl(filePath)
+      // --- 复制链接（统一入口，支持 download / preview 两种类型）---
+      function copyLink(filePath, type) {
+        const isDownload = type === 'download'
+        const url = isDownload ? buildDownloadUrl(filePath) : buildPreviewUrl(filePath)
+        const successMsg = isDownload ? '✓ Download link copied' : '✓ Preview link copied'
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url).then(() => {
-            showToast('✓ Preview link copied')
+            showToast(successMsg)
           }).catch(() => {
-            fallbackCopy(url)
+            fallbackCopy(url, successMsg)
           })
         } else {
-          fallbackCopy(url)
+          fallbackCopy(url, successMsg)
         }
       }
 
-      function fallbackCopy(text) {
+      function fallbackCopy(text, successMsg) {
         const ta = document.createElement('textarea')
         ta.value = text
         ta.style.position = 'fixed'
@@ -545,7 +551,7 @@
         ta.select()
         try {
           document.execCommand('copy')
-          showToast('✓ Preview link copied')
+          showToast(successMsg || '✓ Link copied')
         } catch (e) {
           showToast('✗ Copy failed')
         }
@@ -655,10 +661,10 @@
           openPreview(path, name, type)
           return
         }
-        // Copy link button
+        // Copy link button (download or preview)
         if (e.target.classList.contains('action-copy')) {
           e.stopPropagation()
-          copyPreviewLink(e.target.dataset.path)
+          copyLink(e.target.dataset.path, e.target.dataset.type)
           return
         }
         // Delete button
@@ -775,9 +781,10 @@
 
               div.className = 'file-item'
               let actionsHtml = `<a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">DOWNLOAD</a>`
+              actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="download" title="Copy download link">COPY LINK</button>`
               if (previewType) {
                 actionsHtml += `<a class="action-preview" data-path="${escapeHtml(filePath)}" data-name="${escapeHtml(item.name)}" data-type="${previewType}">PREVIEW</a>`
-                actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}">COPY LINK</button>`
+                actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="preview" title="Copy preview link">COPY LINK</button>`
               }
               actionsHtml += `<button class="action-del">DELETE</button>`
 
