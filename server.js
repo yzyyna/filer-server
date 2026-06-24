@@ -27,7 +27,7 @@ function getLocalIP() {
 // 安全路径解析，防止目录穿越
 function safePath(relativePath) {
   const resolved = path.resolve(uploadDir, relativePath || '');
-  if (resolved !== uploadDir && !resolved.startsWith(uploadDir + '/')) {
+  if (resolved !== uploadDir && !resolved.startsWith(uploadDir + path.sep)) {
     throw new Error('Access denied');
   }
   return resolved;
@@ -43,6 +43,7 @@ const storage = multer.diskStorage({
       }
       const dest = safePath(dir);
       if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+      req._uploadDest = dest;
       cb(null, dest);
     } catch (e) {
       cb(e);
@@ -51,8 +52,23 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     // 修复中文乱码
     const original = Buffer.from(file.originalname, 'latin1').toString('utf8');
-    const unique = Date.now() + '-' + original;
-    cb(null, unique);
+    const destDir = req._uploadDest || uploadDir;
+
+    // 同批次已分配的文件名（防止同一次上传多个同名文件冲突）
+    if (!req._assignedNames) req._assignedNames = new Set();
+
+    const ext = path.extname(original);
+    const base = path.basename(original, ext);
+    let filename = original;
+    let counter = 1;
+
+    while (fs.existsSync(path.join(destDir, filename)) || req._assignedNames.has(filename)) {
+      filename = `${base}-${counter}${ext}`;
+      counter++;
+    }
+
+    req._assignedNames.add(filename);
+    cb(null, filename);
   }
 });
 const upload = multer({ storage });
@@ -190,7 +206,7 @@ app.use((err, req, res, next) => {
 
 app.listen(port, '0.0.0.0', () => {
   const ip = getLocalIP();
-  console.log(`文件服务器已启动：`);
-  console.log(`- 本机访问:   http://localhost:${port}`);
-  console.log(`- 局域网访问: http://${ip}:${port}`);
+  console.info(`文件服务器已启动：`);
+  console.info(`- 本机访问:   http://localhost:${port}`);
+  console.info(`- 局域网访问: http://${ip}:${port}`);
 });

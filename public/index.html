@@ -462,6 +462,8 @@
             <select class="lang-select" id="langSelect" title="Language">
               <option value="en">English</option>
               <option value="zh">中文</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
             </select>
             <div
               id="status-tag"
@@ -804,8 +806,26 @@
 
       // --- Navigate to directory ---
       function navigateTo(dir) {
+        if (dir === currentDir) return
         currentDir = dir
+        const url = dir ? '#' + encodeURIComponent(dir) : window.location.pathname
+        history.pushState({ dir }, '', url)
         loadFiles()
+      }
+
+      // --- Browser back/forward support ---
+      window.addEventListener('popstate', (e) => {
+        const dir = e.state && e.state.dir !== undefined ? e.state.dir : getDirFromUrl()
+        if (dir !== currentDir) {
+          currentDir = dir
+          loadFiles()
+        }
+      })
+
+      function getDirFromUrl() {
+        const hash = location.hash
+        if (!hash || hash === '#') return ''
+        return decodeURIComponent(hash.slice(1))
       }
 
       // --- Render breadcrumb ---
@@ -926,7 +946,8 @@
         loadFiles()
       }
 
-      // Bootstrap
+      // Bootstrap: restore directory from URL hash
+      currentDir = getDirFromUrl()
       loadFiles()
     </script>
   </body>

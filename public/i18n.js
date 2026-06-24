@@ -9,7 +9,7 @@
   'use strict';
 
   const STORAGE_KEY = 'filer-server-lang';
-  const SUPPORTED_LANGS = ['en', 'zh'];
+  const SUPPORTED_LANGS = ['en', 'zh', 'ja', 'ko'];
   const DEFAULT_LANG = 'en';
 
   const I18N_DICT = {
@@ -58,7 +58,9 @@
 
       'lang.label': 'Language',
       'lang.en': 'English',
-      'lang.zh': '中文'
+      'lang.zh': '中文',
+      'lang.ja': '日本語',
+      'lang.ko': '한국어'
     },
 
     zh: {
@@ -106,7 +108,109 @@
 
       'lang.label': '语言',
       'lang.en': 'English',
-      'lang.zh': '中文'
+      'lang.zh': '中文',
+      'lang.ja': '日本語',
+      'lang.ko': '한국어'
+    },
+
+    ja: {
+      'app.title': 'ファイルサーバー',
+      'app.explorer': 'ファイルエクスプローラー',
+      'app.version': 'v1.0.0 - 安定版',
+
+      'dropzone.hint': 'ここにファイルをドロップまたはローカルから選択',
+      'dropzone.button': 'ファイルを開く',
+      'dropzone.disabledHint': 'アップロード前にサブフォルダに入ってください（ルートディレクトリのアップロードは無効）',
+      'dropzone.enabledHint': 'アップロード先: {dir}（ドロップまたはクリックして選択）',
+
+      'progress.transferring': '転送中...',
+      'progress.uploading': 'アップロード中',
+      'progress.complete': '同期完了',
+
+      'breadcrumb.root': 'ルート',
+      'breadcrumb.sep': '›',
+
+      'file.parent': '上位ディレクトリ',
+      'file.directory': 'フォルダ',
+      'file.empty': 'アップロードされたファイルはありません',
+
+      'action.open': '開く',
+      'action.download': 'ダウンロード',
+      'action.copyLink': 'リンクコピー',
+      'action.preview': 'プレビュー',
+      'action.delete': '削除',
+
+      'state.loadFailed': '読み込み失敗 ({status})',
+      'state.connectionError': '接続エラー',
+
+      'toast.previewCopied': '✓ プレビューリンクをコピーしました',
+      'toast.downloadCopied': '✓ ダウンロードリンクをコピーしました',
+      'toast.linkCopied': '✓ リンクをコピーしました',
+      'toast.copyFailed': '✗ コピー失敗',
+      'toast.previewFailed': '✗ プレビュー失敗',
+      'toast.uploadFailed': 'アップロード失敗 ({status})',
+      'toast.networkError': '✗ ネットワークエラー、アップロード失敗',
+      'toast.requireSubdir': '✗ アップロード前にサブフォルダに入ってください',
+      'toast.deleteDenied': 'アクセス拒否: ファイルを削除するにはシステム管理者に連絡してください。',
+
+      'title.copyDownload': 'ダウンロードリンクをコピー',
+      'title.copyPreview': 'プレビューリンクをコピー',
+
+      'lang.label': '言語',
+      'lang.en': 'English',
+      'lang.zh': '中文',
+      'lang.ja': '日本語',
+      'lang.ko': '한국어'
+    },
+
+    ko: {
+      'app.title': '파일 서버',
+      'app.explorer': '파일 탐색기',
+      'app.version': 'v1.0.0 - 안정판',
+
+      'dropzone.hint': '여기에 파일을 드롭하거나 로컬에서 선택',
+      'dropzone.button': '파일 열기',
+      'dropzone.disabledHint': '업로드 전에 하위 폴더로 들어가세요 (루트 디렉토리 업로드 비활성화)',
+      'dropzone.enabledHint': '업로드 위치: {dir} (드롭 또는 클릭하여 선택)',
+
+      'progress.transferring': '전송 중...',
+      'progress.uploading': '업로드 중',
+      'progress.complete': '동기화 완료',
+
+      'breadcrumb.root': '루트',
+      'breadcrumb.sep': '›',
+
+      'file.parent': '상위 디렉토리',
+      'file.directory': '폴더',
+      'file.empty': '업로드된 파일이 없습니다',
+
+      'action.open': '열기',
+      'action.download': '다운로드',
+      'action.copyLink': '링크 복사',
+      'action.preview': '미리보기',
+      'action.delete': '삭제',
+
+      'state.loadFailed': '로드 실패 ({status})',
+      'state.connectionError': '연결 오류',
+
+      'toast.previewCopied': '✓ 미리보기 링크 복사됨',
+      'toast.downloadCopied': '✓ 다운로드 링크 복사됨',
+      'toast.linkCopied': '✓ 링크 복사됨',
+      'toast.copyFailed': '✗ 복사 실패',
+      'toast.previewFailed': '✗ 미리보기 실패',
+      'toast.uploadFailed': '업로드 실패 ({status})',
+      'toast.networkError': '✗ 네트워크 오류, 업로드 실패',
+      'toast.requireSubdir': '✗ 업로드 전에 하위 폴더로 들어가세요',
+      'toast.deleteDenied': '접근 거부: 파일을 삭제하려면 시스템 관리자에게 문의하세요.',
+
+      'title.copyDownload': '다운로드 링크 복사',
+      'title.copyPreview': '미리보기 링크 복사',
+
+      'lang.label': '언어',
+      'lang.en': 'English',
+      'lang.zh': '中文',
+      'lang.ja': '日本語',
+      'lang.ko': '한국어'
     }
   };
 
@@ -115,6 +219,8 @@
     const sysLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
     if (sysLang.startsWith('zh')) return 'zh';
     if (sysLang.startsWith('en')) return 'en';
+    if (sysLang.startsWith('ja')) return 'ja';
+    if (sysLang.startsWith('ko')) return 'ko';
     // 兜底匹配其他支持语言
     for (const lang of SUPPORTED_LANGS) {
       if (sysLang.startsWith(lang)) return lang;
