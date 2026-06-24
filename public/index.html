@@ -422,28 +422,64 @@
           transform: translateX(-50%) translateY(0);
         }
       }
+
+      /* === Language Switcher === */
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .lang-select {
+        background: var(--bg-color);
+        color: var(--text-main);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.3rem 0.5rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .lang-select:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .lang-select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="panel">
         <header>
-          <h1>File Explorer</h1>
-          <div
-            id="status-tag"
-            style="
-              font-size: 0.7rem;
-              color: #444;
-              font-family: 'JetBrains Mono';
-            "
-          >
-            v1.0.0 - STABLE
+          <h1 data-i18n="app.explorer">File Explorer</h1>
+          <div class="header-right">
+            <select class="lang-select" id="langSelect" title="Language">
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+            </select>
+            <div
+              id="status-tag"
+              data-i18n="app.version"
+              style="
+                font-size: 0.7rem;
+                color: #444;
+                font-family: 'JetBrains Mono';
+              "
+            >
+              v1.0.0 - STABLE
+            </div>
           </div>
         </header>
 
         <div id="dropzone" class="dropzone">
-          <span class="dropzone-text">Drop objects here or browse locally</span>
-          <button class="btn btn-primary" onclick="fileInput.click()">
+          <span class="dropzone-text" data-i18n="dropzone.hint">Drop objects here or browse locally</span>
+          <button class="btn btn-primary" onclick="fileInput.click()" data-i18n="dropzone.button">
             Open Files
           </button>
           <input type="file" id="fileInput" multiple hidden />
@@ -454,7 +490,7 @@
             <div class="progress-fill" id="progressFill"></div>
           </div>
           <div class="progress-info">
-            <span id="progressStatus">Transferring...</span>
+            <span id="progressStatus" data-i18n="progress.transferring">Transferring...</span>
             <span id="progressPercent">0%</span>
           </div>
         </div>
@@ -466,6 +502,9 @@
         </div>
       </div>
     </div>
+
+    <!-- i18n config -->
+    <script src="/i18n.js"></script>
 
     <!-- Preview Modal -->
     <div class="modal-overlay" id="previewModal">
@@ -487,6 +526,20 @@
       const fileList = document.getElementById('fileList')
       let pendingFiles = []
       let currentDir = ''
+
+      // --- i18n 初始化 ---
+      const t = I18n.t
+      const langSelect = document.getElementById('langSelect')
+      langSelect.value = I18n.getLang()
+      langSelect.addEventListener('change', (e) => {
+        I18n.setLanguage(e.target.value)
+      })
+      // 应用初始翻译（覆盖 HTML 中的默认英文文案）
+      I18n.applyStaticI18n()
+      // 语言切换后刷新动态内容（文件列表、dropzone 状态）
+      document.addEventListener('languagechange', () => {
+        loadFiles()
+      })
 
       function formatSize(bytes) {
         if (bytes === 0) return '0 B'
@@ -542,7 +595,7 @@
       function copyLink(filePath, type) {
         const isDownload = type === 'download'
         const url = isDownload ? buildDownloadUrl(filePath) : buildPreviewUrl(filePath)
-        const successMsg = isDownload ? '✓ Download link copied' : '✓ Preview link copied'
+        const successMsg = isDownload ? t('toast.downloadCopied') : t('toast.previewCopied')
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url).then(() => {
             showToast(successMsg)
@@ -563,9 +616,9 @@
         ta.select()
         try {
           document.execCommand('copy')
-          showToast(successMsg || '✓ Link copied')
+          showToast(successMsg || t('toast.linkCopied'))
         } catch (e) {
-          showToast('✗ Copy failed')
+          showToast(t('toast.copyFailed'))
         }
         ta.remove()
       }
@@ -623,7 +676,7 @@
             pre.style.cssText = 'max-width:90vw;max-height:75vh;overflow:auto;background:#0a0a0c;padding:1rem;border-radius:8px;color:var(--text-main);font-family:JetBrains Mono,monospace;font-size:0.8rem;border:1px solid var(--border);'
             pre.textContent = text
             modalBody.appendChild(pre)
-          }).catch(() => showToast('✗ Preview failed'))
+          }).catch(() => showToast(t('toast.previewFailed')))
         }
 
         previewModal.classList.add('active')
@@ -692,7 +745,7 @@
         if (!pendingFiles.length) return
         // 权限控制：禁止在主目录上传
         if (!currentDir) {
-          showToast('✗ 请先进入子文件夹再上传')
+          showToast(t('toast.requireSubdir'))
           pendingFiles = []
           if (fileInput.value) fileInput.value = ''
           return
@@ -712,22 +765,22 @@
             progress.style.display = 'block'
             progressFill.style.width = percent + '%'
             progressPercent.textContent = percent + '%'
-            progressStatus.textContent = 'UPLOADING'
+            progressStatus.textContent = t('progress.uploading')
           }
         }
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            progressStatus.textContent = 'SYNC COMPLETE'
+            progressStatus.textContent = t('progress.complete')
             setTimeout(() => {
               progress.style.display = 'none'
               progressFill.style.width = '0%'
             }, 1500)
             loadFiles()
           } else {
-            // 上传失败：解析后端返回的错误信息并提示
+            // 上传失败：优先展示后端返回的语义化错误信息
             progress.style.display = 'none'
-            let errMsg = `上传失败 (${xhr.status})`
+            let errMsg = t('toast.uploadFailed', { status: xhr.status })
             try {
               const resp = JSON.parse(xhr.responseText)
               if (resp.message) errMsg = `✗ ${resp.message}`
@@ -741,7 +794,7 @@
 
         xhr.onerror = () => {
           progress.style.display = 'none'
-          showToast('✗ 网络错误，上传失败')
+          showToast(t('toast.networkError'))
           pendingFiles = []
           if (fileInput.value) fileInput.value = ''
         }
@@ -757,13 +810,13 @@
 
       // --- Render breadcrumb ---
       function renderBreadcrumb(dir) {
-        let html = `<a class="breadcrumb-link" data-dir="">📂 Root</a>`
+        let html = `<a class="breadcrumb-link" data-dir="">📂 ${t('breadcrumb.root')}</a>`
         if (dir) {
           const parts = dir.split('/')
           let accumulated = ''
           parts.forEach((part) => {
             accumulated += (accumulated ? '/' : '') + part
-            html += ` <span class="breadcrumb-sep">›</span> <a class="breadcrumb-link" data-dir="${escapeHtml(accumulated)}">${escapeHtml(part)}</a>`
+            html += ` <span class="breadcrumb-sep">${t('breadcrumb.sep')}</span> <a class="breadcrumb-link" data-dir="${escapeHtml(accumulated)}">${escapeHtml(part)}</a>`
           })
         }
         breadcrumb.innerHTML = html
@@ -775,7 +828,7 @@
           const dirParam = currentDir ? `?dir=${encodeURIComponent(currentDir)}` : ''
           const res = await fetch('/api/files' + dirParam)
           if (!res.ok) {
-            fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--danger)">Failed to load (${res.status})</div>`
+            fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--danger)">${t('state.loadFailed', { status: res.status })}</div>`
             return
           }
           const data = await res.json()
@@ -785,11 +838,11 @@
           const dropzoneText = document.querySelector('.dropzone-text')
           if (data.currentDir) {
             dropzone.classList.remove('disabled')
-            dropzoneText.textContent = `上传到: ${data.currentDir} （拖放或点击选择）`
+            dropzoneText.textContent = t('dropzone.enabledHint', { dir: data.currentDir })
             dropzoneText.style.color = 'var(--text-dim)'
           } else {
             dropzone.classList.add('disabled')
-            dropzoneText.textContent = '请先进入子文件夹再上传文件（主目录禁止上传）'
+            dropzoneText.textContent = t('dropzone.disabledHint')
             dropzoneText.style.color = 'var(--danger)'
           }
 
@@ -803,7 +856,7 @@
             div.innerHTML = `
               <div class="file-meta">
                 <span class="file-name">📁 ..</span>
-                <span class="file-details">Parent Directory</span>
+                <span class="file-details">${t('file.parent')}</span>
               </div>
             `
             fileList.appendChild(div)
@@ -820,10 +873,10 @@
               div.innerHTML = `
                 <div class="file-meta">
                   <span class="file-name">📁 ${escapeHtml(item.name)}/</span>
-                  <span class="file-details">Directory</span>
+                  <span class="file-details">${t('file.directory')}</span>
                 </div>
                 <div class="actions">
-                  <span class="action-link">OPEN</span>
+                  <span class="action-link">${t('action.open')}</span>
                 </div>
               `
             } else {
@@ -837,13 +890,13 @@
               div.className = 'file-item'
               // 可预览文件复制预览链接（点击进入预览页面），不可预览文件复制下载链接
               const copyType = previewType ? 'preview' : 'download'
-              const copyTitle = previewType ? 'Copy preview link' : 'Copy download link'
-              let actionsHtml = `<a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">DOWNLOAD</a>`
-              actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="${copyType}" title="${copyTitle}">COPY LINK</button>`
+              const copyTitle = previewType ? t('title.copyPreview') : t('title.copyDownload')
+              let actionsHtml = `<a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">${t('action.download')}</a>`
+              actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="${copyType}" title="${copyTitle}">${t('action.copyLink')}</button>`
               if (previewType) {
-                actionsHtml += `<a class="action-preview" data-path="${escapeHtml(filePath)}" data-name="${escapeHtml(item.name)}" data-type="${previewType}">PREVIEW</a>`
+                actionsHtml += `<a class="action-preview" data-path="${escapeHtml(filePath)}" data-name="${escapeHtml(item.name)}" data-type="${previewType}">${t('action.preview')}</a>`
               }
-              actionsHtml += `<button class="action-del">DELETE</button>`
+              actionsHtml += `<button class="action-del">${t('action.delete')}</button>`
 
               div.innerHTML = `
                 <div class="file-meta">
@@ -860,18 +913,16 @@
           })
 
           if (data.items.length === 0 && data.parentDir === null) {
-            fileList.innerHTML = '<div class="file-item" style="justify-content:center;color:var(--text-dim)">No files uploaded yet</div>'
+            fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--text-dim)">${t('file.empty')}</div>`
           }
         } catch (err) {
           console.error('Fetch error:', err)
-          fileList.innerHTML = '<div class="file-item" style="justify-content:center;color:var(--danger)">Connection error</div>'
+          fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--danger)">${t('state.connectionError')}</div>`
         }
       }
 
       function del() {
-        alert(
-          'ACCESS DENIED: Please contact the system administrator to remove objects.'
-        )
+        alert(t('toast.deleteDenied'))
         loadFiles()
       }
 
