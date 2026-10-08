@@ -423,11 +423,106 @@
         }
       }
 
-      /* === Language Switcher === */
+      /* === Language Switcher & Auth === */
       .header-right {
         display: flex;
         align-items: center;
+        gap: 0.75rem;
+      }
+
+      .btn-auth {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid rgba(0, 242, 255, 0.4);
+        border-radius: 6px;
+        padding: 0.3rem 0.65rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .btn-auth:hover {
+        background: var(--accent-glow);
+        border-color: var(--accent);
+      }
+
+      .btn-auth.logged-in {
+        color: var(--text-dim);
+        border-color: var(--border);
+      }
+
+      .btn-auth.logged-in:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+        background: rgba(255, 77, 77, 0.1);
+      }
+
+      /* === Auth Modal Box === */
+      .auth-modal-box {
+        background: var(--panel-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 255, 0.1);
+      }
+
+      .auth-title {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.1rem;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--accent);
+        text-align: center;
+      }
+
+      .auth-subtitle {
+        margin: 0 0 1.5rem 0;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        text-align: center;
+      }
+
+      .auth-form {
+        display: flex;
+        flex-direction: column;
         gap: 1rem;
+      }
+
+      .auth-input {
+        width: 100%;
+        background: #0a0a0c;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.65rem 0.85rem;
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .auth-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow);
+      }
+
+      .auth-error-msg {
+        color: var(--danger);
+        font-size: 0.75rem;
+        font-family: 'JetBrains Mono', monospace;
+        min-height: 1.2rem;
+        text-align: center;
+        margin-top: -0.5rem;
+      }
+
+      .btn-block {
+        width: 100%;
       }
 
       .lang-select {
@@ -459,6 +554,7 @@
         <header>
           <h1 data-i18n="app.explorer">File Explorer</h1>
           <div class="header-right">
+            <button id="authBtn" class="btn-auth" style="display: none;"></button>
             <select class="lang-select" id="langSelect" title="Language">
               <option value="en">English</option>
               <option value="zh">中文</option>
@@ -517,6 +613,28 @@
       </div>
     </div>
 
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+      <div class="modal-content auth-modal-box">
+        <button class="modal-close" id="loginModalClose">✕</button>
+        <div class="auth-title" data-i18n="auth.title">Authentication</div>
+        <div class="auth-subtitle" data-i18n="auth.subtitle">Enter the access password to continue</div>
+        <form class="auth-form" id="loginForm" onsubmit="return false;">
+          <input
+            type="password"
+            id="authPasswordInput"
+            class="auth-input"
+            autocomplete="current-password"
+            required
+          />
+          <div class="auth-error-msg" id="loginErrorMsg"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn" data-i18n="auth.loginBtn">
+            Sign In
+          </button>
+        </form>
+      </div>
+    </div>
+
     <script>
       const fileInput = document.getElementById('fileInput')
       const dropzone = document.getElementById('dropzone')
@@ -526,8 +644,18 @@
       const progressPercent = document.getElementById('progressPercent')
       const breadcrumb = document.getElementById('breadcrumb')
       const fileList = document.getElementById('fileList')
+      const authBtn = document.getElementById('authBtn')
+      const loginModal = document.getElementById('loginModal')
+      const loginModalClose = document.getElementById('loginModalClose')
+      const loginForm = document.getElementById('loginForm')
+      const authPasswordInput = document.getElementById('authPasswordInput')
+      const loginErrorMsg = document.getElementById('loginErrorMsg')
+      const loginSubmitBtn = document.getElementById('loginSubmitBtn')
+
       let pendingFiles = []
       let currentDir = ''
+      let authEnabled = false
+      let isAuthenticated = false
 
       // --- i18n 初始化 ---
       const t = I18n.t
@@ -538,10 +666,131 @@
       })
       // 应用初始翻译（覆盖 HTML 中的默认英文文案）
       I18n.applyStaticI18n()
-      // 语言切换后刷新动态内容（文件列表、dropzone 状态）
+      // 语言切换后刷新动态内容（文件列表、dropzone 状态、鉴权 UI）
       document.addEventListener('languagechange', () => {
+        updateAuthUI()
         loadFiles()
       })
+
+      // --- 鉴权状态与 UI ---
+      function updateAuthUI() {
+        authPasswordInput.placeholder = t('auth.passwordPlaceholder')
+        if (!authEnabled) {
+          authBtn.style.display = 'none'
+          return
+        }
+        authBtn.style.display = 'inline-flex'
+        if (isAuthenticated) {
+          authBtn.className = 'btn-auth logged-in'
+          authBtn.textContent = `🔓 ${t('auth.logout')}`
+          authBtn.title = t('auth.logout')
+        } else {
+          authBtn.className = 'btn-auth'
+          authBtn.textContent = `🔑 ${t('auth.login')}`
+          authBtn.title = t('auth.login')
+        }
+      }
+
+      function openLoginModal(autoFocus = true) {
+        loginErrorMsg.textContent = ''
+        authPasswordInput.value = ''
+        loginModal.classList.add('active')
+        if (autoFocus) {
+          setTimeout(() => authPasswordInput.focus(), 50)
+        }
+      }
+
+      function closeLoginModal() {
+        loginModal.classList.remove('active')
+        loginErrorMsg.textContent = ''
+      }
+
+      authPasswordInput.addEventListener('input', () => {
+        loginErrorMsg.textContent = ''
+      })
+
+      loginModalClose.addEventListener('click', closeLoginModal)
+      loginModal.addEventListener('click', (e) => {
+        if (e.target === loginModal) closeLoginModal()
+      })
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && loginModal.classList.contains('active')) closeLoginModal()
+      })
+
+      authBtn.addEventListener('click', () => {
+        if (isAuthenticated) {
+          handleLogout()
+        } else {
+          openLoginModal()
+        }
+      })
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const password = authPasswordInput.value.trim()
+        if (!password) return
+
+        loginSubmitBtn.disabled = true
+        loginSubmitBtn.textContent = t('auth.loggingIn')
+        loginErrorMsg.textContent = ''
+
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          })
+
+          if (res.ok) {
+            isAuthenticated = true
+            updateAuthUI()
+            closeLoginModal()
+            showToast(t('auth.loginSuccess'))
+            loadFiles()
+          } else {
+            let errMsg = t('auth.loginFailed')
+            if (res.status === 429) {
+              errMsg = t('auth.rateLimited')
+            }
+            try {
+              const data = await res.json()
+              if (data.message) errMsg = `✗ ${data.message}`
+            } catch (e) {}
+            loginErrorMsg.textContent = errMsg
+            showToast(errMsg)
+          }
+        } catch (err) {
+          loginErrorMsg.textContent = t('state.connectionError')
+          showToast(t('state.connectionError'))
+        } finally {
+          loginSubmitBtn.disabled = false
+          loginSubmitBtn.textContent = t('auth.loginBtn')
+        }
+      })
+
+      async function handleLogout() {
+        try {
+          await fetch('/api/logout', { method: 'POST' })
+        } catch (e) {}
+        isAuthenticated = false
+        updateAuthUI()
+        showToast(t('auth.logoutSuccess'))
+        loadFiles()
+      }
+
+      async function checkAuthStatus() {
+        try {
+          const res = await fetch('/api/auth/status')
+          if (res.ok) {
+            const data = await res.json()
+            authEnabled = Boolean(data.enabled)
+            isAuthenticated = Boolean(data.authenticated)
+            updateAuthUI()
+          }
+        } catch (e) {
+          console.error('Auth check error:', e)
+        }
+      }
 
       function formatSize(bytes) {
         if (bytes === 0) return '0 B'
@@ -673,12 +922,22 @@
           return
         } else if (previewType === 'text') {
           // 文本类预览：拉取内容并显示
-          fetch(url).then(r => r.text()).then(text => {
+          fetch(url).then(r => {
+            if (r.status === 401) {
+              isAuthenticated = false
+              updateAuthUI()
+              openLoginModal()
+              throw new Error('401')
+            }
+            return r.text()
+          }).then(text => {
             const pre = document.createElement('pre')
             pre.style.cssText = 'max-width:90vw;max-height:75vh;overflow:auto;background:#0a0a0c;padding:1rem;border-radius:8px;color:var(--text-main);font-family:JetBrains Mono,monospace;font-size:0.8rem;border:1px solid var(--border);'
             pre.textContent = text
             modalBody.appendChild(pre)
-          }).catch(() => showToast(t('toast.previewFailed')))
+          }).catch((e) => {
+            if (e.message !== '401') showToast(t('toast.previewFailed'))
+          })
         }
 
         previewModal.classList.add('active')
@@ -745,6 +1004,14 @@
       // --- Upload files ---
       function uploadFiles() {
         if (!pendingFiles.length) return
+        // 鉴权检查：未登录时阻止上传并弹出登录框
+        if (authEnabled && !isAuthenticated) {
+          showToast(t('auth.loginRequired'))
+          openLoginModal()
+          pendingFiles = []
+          if (fileInput.value) fileInput.value = ''
+          return
+        }
         // 权限控制：禁止在主目录上传
         if (!currentDir) {
           showToast(t('toast.requireSubdir'))
@@ -772,7 +1039,14 @@
         }
 
         xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
+          if (xhr.status === 401) {
+            progress.style.display = 'none'
+            isAuthenticated = false
+            updateAuthUI()
+            openLoginModal()
+            showToast(t('auth.sessionExpired'))
+            loadFiles()
+          } else if (xhr.status >= 200 && xhr.status < 300) {
             progressStatus.textContent = t('progress.complete')
             setTimeout(() => {
               progress.style.display = 'none'
@@ -847,6 +1121,18 @@
         try {
           const dirParam = currentDir ? `?dir=${encodeURIComponent(currentDir)}` : ''
           const res = await fetch('/api/files' + dirParam)
+          if (res.status === 401) {
+            isAuthenticated = false
+            updateAuthUI()
+            openLoginModal()
+            dropzone.classList.add('disabled')
+            const dropzoneText = document.querySelector('.dropzone-text')
+            dropzoneText.textContent = t('auth.loginRequired')
+            dropzoneText.style.color = 'var(--danger)'
+            fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--danger)">🔒 ${t('auth.loginRequired')}</div>`
+            renderBreadcrumb('')
+            return
+          }
           if (!res.ok) {
             fileList.innerHTML = `<div class="file-item" style="justify-content:center;color:var(--danger)">${t('state.loadFailed', { status: res.status })}</div>`
             return
@@ -946,9 +1232,11 @@
         loadFiles()
       }
 
-      // Bootstrap: restore directory from URL hash
+      // Bootstrap: restore directory from URL hash & initialize auth check
       currentDir = getDirFromUrl()
-      loadFiles()
+      checkAuthStatus().then(() => {
+        loadFiles()
+      })
     </script>
   </body>
 </html>
