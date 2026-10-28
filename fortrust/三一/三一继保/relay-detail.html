@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>单台继保详情 | Easergy P3</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  :root{
+    --bg-0:#070b18;
+    --bg-1:#0c1326;
+    --bg-2:#111a36;
+    --bg-3:#16234a;
+    --line:rgba(120,170,255,.10);
+    --line-2:rgba(120,170,255,.22);
+    --txt:#dbe5ff;
+    --txt-2:#a8b8e0;
+    --txt-3:#7a8bb0;
+    --cyan:#22d3ee;
+    --blue:#3b82f6;
+    --blue-2:#60a5fa;
+    --green:#22c55e;
+    --green-2:#4ade80;
+    --amber:#f59e0b;
+    --amber-2:#fbbf24;
+    --red:#ef4444;
+    --gray:#64748b;
+    --violet:#a78bfa;
+    --shadow:0 4px 24px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","HarmonyOS Sans SC",system-ui,sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(59,130,246,.12), transparent 60%),
+      radial-gradient(ellipse 1000px 500px at 100% 0%, rgba(34,211,238,.06), transparent 60%),
+      linear-gradient(180deg, #050913 0%, #0a1024 50%, #050913 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    font-size:14px;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;
+    background-image:
+      linear-gradient(rgba(120,170,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,170,255,.04) 1px, transparent 1px);
+    background-size:48px 48px;pointer-events:none;z-index:0;
+  }
+  .app{position:relative;z-index:1;width:100%;padding:6px 12px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px}
+
+  /* ===== 路径条 ===== */
+  .path-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:linear-gradient(180deg, rgba(17,26,54,.7), rgba(11,16,36,.7));border:1px solid var(--line);border-radius:8px;flex-shrink:0;min-height:42px}
+  .path-bar .crumb{font-size:13px;color:var(--txt-2);display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+  .path-bar .crumb .sep{color:var(--txt-3)}
+  .path-bar .crumb .lnk{cursor:pointer;transition:color .2s}
+  .path-bar .crumb .lnk:hover{color:var(--cyan)}
+  .path-bar .crumb .now{color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+  .path-bar .crumb .now .id{color:var(--cyan);font-family:"DIN Alternate",monospace;margin-right:4px;font-size:14px}
+  .path-bar .crumb .tag{font-family:monospace;font-size:10px;background:rgba(34,211,238,.1);color:var(--cyan);padding:1px 5px;border-radius:3px;border:1px solid rgba(34,211,238,.2);margin-left:6px;font-weight:500}
+  .path-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .path-btn{background:rgba(20,32,68,.5);border:1px solid var(--line);border-radius:6px;color:var(--txt-2);font-size:12px;padding:5px 12px;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:4px}
+  .path-btn:hover{color:var(--cyan);border-color:var(--line-2);background:rgba(20,32,68,.7)}
+  .path-btn svg{width:13px;height:13px}
+  .path-btn.close:hover{color:var(--red);border-color:rgba(239,68,68,.4)}
+
+  /* ===== 主体信息 4 列（"当前状态"）===== */
+  .dev-info{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:0;background:linear-gradient(180deg, rgba(20,32,68,.5), rgba(12,19,38,.5));border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-shrink:0;min-height:60px}
+  .dev-info .col{padding:10px 16px;border-right:1px solid var(--line);min-width:0}
+  .dev-info .col:last-child{border-right:0}
+  .dev-info .col .k{font-size:11px;color:var(--txt-2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;font-weight:600}
+  .dev-info .col .v{font-size:15px;color:#fff;font-weight:600;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;line-height:1.2}
+  .dev-info .col .v .id{color:var(--cyan);font-family:"DIN Alternate","JetBrains Mono",monospace;font-weight:700;font-size:16px}
+  .dev-info .col .v .nm{color:#fff;font-weight:600;font-size:15px}
+  .dev-info .col .v .tag{font-family:monospace;font-size:11px;background:rgba(34,211,238,.1);color:var(--cyan);padding:2px 6px;border-radius:3px;border:1px solid rgba(34,211,238,.2);font-weight:600}
+  .dev-info .col .v.status{font-size:13px;padding:4px 12px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+  .dev-info .col .v.status.ok{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+  .dev-info .col .v.status.warn{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+  .dev-info .col .v.status.alarm{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.4)}
+  .dev-info .col .v.status.offline{background:rgba(100,116,139,.18);color:var(--gray);border:1px solid rgba(100,116,139,.4)}
+  .dev-info .col .v.status .pdot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 4px currentColor}
+
+  /* ===== Panel ===== */
+  .panel{background:linear-gradient(180deg, rgba(17,26,54,.7), rgba(11,16,36,.7));border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .panel-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line);background:linear-gradient(90deg, rgba(34,211,238,.05), transparent);gap:8px;min-height:38px}
+  .panel-hd h3{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px;letter-spacing:.5px;flex:1;min-width:0}
+  .panel-hd h3 .bar{width:3px;height:14px;background:linear-gradient(180deg,var(--cyan),var(--blue));border-radius:2px}
+  .panel-hd h3 .pt{font-size:10px;color:var(--cyan);font-family:monospace;background:rgba(34,211,238,.08);padding:2px 6px;border-radius:7px;font-weight:500;letter-spacing:0}
+  .panel-hd .tools{display:flex;gap:6px;align-items:center;flex-shrink:0}
+  .panel-bd{padding:10px 14px}
+
+  /* ===== 遥测 - 9 参数 ===== */
+  .metric-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:10px}
+  .mp{background:rgba(15,23,48,.6);border:1px solid var(--line);border-radius:7px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;position:relative;overflow:hidden}
+  .mp.priority{background:linear-gradient(135deg, rgba(34,211,238,.12), rgba(34,211,238,.02));border-color:rgba(34,211,238,.3)}
+  .mp .v{font-size:22px;color:#fff;font-weight:700;font-family:"DIN Alternate","JetBrains Mono",monospace;line-height:1.1;display:flex;align-items:baseline;gap:2px;white-space:nowrap;max-width:100%;overflow:hidden}
+  .mp.priority .v{font-size:26px;color:var(--cyan)}
+  .mp .v .u{font-size:22px;color:var(--amber-2);font-weight:700;letter-spacing:.3px}
+  .mp.priority .v .u{color:var(--amber-2);font-size:26px}
+  .mp .v.alarm{color:var(--red)}
+  .mp .v.warn{color:var(--amber)}
+  .mp .k{font-size:13px;color:var(--txt);font-weight:700;letter-spacing:.3px;line-height:1.1}
+
+  /* 三相行：6 个同一行（U U U I I I），标题分别在 Ua 和 Ia 正上方 */
+  .phase-labels{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+    margin:8px 0 5px;
+  }
+  .phase-labels .lab{
+    font-size:12px;color:var(--cyan);font-weight:700;letter-spacing:1px;
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    grid-column:span 1;
+  }
+  .phase-labels .lab.v{grid-column:1;justify-content:center;color:var(--green-2)}
+  .phase-labels .lab.i{grid-column:4;justify-content:center;color:var(--blue-2)}
+  .phase-labels .lab::before{content:"";display:inline-block;width:3px;height:11px;background:currentColor;border-radius:1px}
+  .phase-labels .lab::after{content:""}
+  .phase-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .phase{background:rgba(15,23,48,.6);border:1px solid var(--line);border-radius:7px;padding:8px 8px 6px;display:flex;align-items:flex-end;gap:6px;min-height:84px;overflow:hidden}
+  .phase.phase-a{border-left:3px solid var(--cyan)}
+  .phase.phase-b{border-left:3px solid var(--violet)}
+  .phase.phase-c{border-left:3px solid var(--amber)}
+  .phase .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;justify-content:flex-start}
+  .phase .col .v{font-size:18px;color:#fff;font-weight:700;font-family:"DIN Alternate","JetBrains Mono",monospace;line-height:1.1;display:flex;align-items:baseline;gap:2px;white-space:nowrap;max-width:100%;overflow:hidden}
+  .phase .col .v .u{font-size:18px;color:var(--green-2);font-weight:700;letter-spacing:.3px}
+  .phase.i .col .v .u{color:var(--blue-2)}
+  .phase .col .v.alarm{color:var(--red)}
+  .phase .col .k{font-size:13px;color:var(--txt);font-weight:700;line-height:1.1;letter-spacing:.2px}
+  .phase .bar{width:6px;height:0;align-self:flex-end;flex-shrink:0;background:linear-gradient(180deg, var(--green-2), var(--green));border-radius:3px;box-shadow:0 0 4px rgba(74,222,128,.4);transition:height .4s;margin-bottom:2px}
+  .phase.i .bar{background:linear-gradient(180deg, var(--blue-2), var(--blue));box-shadow:0 0 4px rgba(96,165,250,.4)}
+  .phase .bar.off{background:rgba(100,116,139,.4);box-shadow:none}
+
+  .row-label{font-size:10px;color:var(--txt-3);margin:8px 0 4px;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+  .row-label::before{content:"";display:inline-block;width:3px;height:8px;background:var(--cyan);border-radius:1px}
+  .row-label .addr{font-family:monospace;color:var(--cyan);font-size:9px;background:rgba(34,211,238,.08);padding:1px 5px;border-radius:3px;margin-left:auto}
+
+  /* ===== 遥信 32+16 紧凑（文字明显，整体加大） ===== */
+  .di-section{font-size:11px;color:var(--txt-2);margin:8px 0 5px;letter-spacing:.5px;display:flex;align-items:center;gap:6px;font-weight:600}
+  .di-section::before{content:"";display:inline-block;width:3px;height:9px;background:var(--cyan);border-radius:1px}
+  .di-section .addr{font-family:monospace;color:var(--cyan);font-size:10px;background:rgba(34,211,238,.08);padding:1px 6px;border-radius:3px;margin-left:auto;font-weight:500}
+  .di-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+  @media (max-width:1280px){.di-grid{grid-template-columns:repeat(6,1fr)}}
+  .di{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(15,23,48,.6);border:1px solid var(--line);border-radius:4px;min-height:34px;font-size:13px}
+  .di .l{color:var(--txt);font-family:monospace;display:flex;align-items:center;gap:6px;font-weight:600}
+  .di .l .d{width:7px;height:7px;border-radius:50%;background:var(--gray)}
+  .di.on .l .d{background:var(--green);box-shadow:0 0 4px var(--green)}
+  .di .r{font-family:monospace;font-size:13px;color:var(--cyan);font-weight:700;padding:2px 6px;border-radius:3px;background:rgba(34,211,238,.08)}
+  .di.on .r{color:var(--green);background:rgba(34,197,94,.15)}
+
+  /* ===== 遥控 + 实时告警 同行 ===== */
+  .ctrl-alarm-row{display:grid;grid-template-columns:1.1fr 1fr;gap:8px;flex:1;min-height:0}
+  @media (max-width:1100px){.ctrl-alarm-row{grid-template-columns:1fr}}
+
+  .ctrl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .ctrl-obj{background:rgba(15,23,48,.6);border:1px solid var(--line);border-radius:7px;padding:8px 12px}
+  .ctrl-obj.off{opacity:.45}
+  .ctrl-obj .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .ctrl-obj .head .nm{font-size:13px;color:#fff;font-weight:600;display:flex;align-items:center;gap:5px}
+  .ctrl-obj .head .nm .tag{font-family:monospace;font-size:10px;color:var(--cyan);background:rgba(34,211,238,.08);padding:1px 5px;border-radius:3px}
+  .ctrl-obj .head .addr{font-size:10px;color:var(--txt-3);font-family:monospace}
+  .ctrl-obj .btns{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .cbtn{display:flex;align-items:center;justify-content:center;gap:3px;padding:7px 6px;background:rgba(20,32,68,.5);border:1px solid var(--line);border-radius:5px;color:#fff;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;font-weight:600}
+  .cbtn:hover:not(:disabled){border-color:var(--line-2);background:rgba(20,32,68,.7)}
+  .cbtn.close{color:var(--green);border-color:rgba(34,197,94,.3)}
+  .cbtn.close:hover:not(:disabled){background:rgba(34,197,94,.12)}
+  .cbtn.trip{color:var(--red);border-color:rgba(239,68,68,.3)}
+  .cbtn.trip:hover:not(:disabled){background:rgba(239,68,68,.12)}
+  .cbtn:disabled{opacity:.4;cursor:not-allowed}
+
+  .alarm-list{padding:0;max-height:100%;overflow-y:auto}
+  .alarm-list .empty{padding:20px 14px;text-align:center;color:var(--txt-2);font-size:12px}
+  /* 实时告警：单行紧凑（ind + 设备信息+事件代码+含义 + 时间），设备信息优先 */
+  .alarm-row{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 14px;border-bottom:1px dashed var(--line);
+    font-size:13px;cursor:pointer;transition:background .15s;
+  }
+  .alarm-row:last-child{border-bottom:0}
+  .alarm-row:hover{background:rgba(34,211,238,.05)}
+  .alarm-row .ind{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor}
+  .alarm-row .ind.crit{background:var(--red);color:var(--red);animation:pulse 1.2s infinite}
+  .alarm-row .ind.warn{background:var(--amber);color:var(--amber)}
+  .alarm-row .ind.ok{background:var(--green);color:var(--green)}
+  .alarm-row .body{flex:1;min-width:0;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  /* 设备信息（最突出，在前面） */
+  .alarm-row .body .dev{font-size:13px;font-weight:700;display:flex;align-items:center;gap:4px;background:rgba(34,211,238,.10);padding:2px 6px;border-radius:4px;border-left:2px solid var(--cyan);flex-shrink:0}
+  .alarm-row .body .dev .id{color:var(--cyan-2);font-family:"DIN Alternate",monospace}
+  .alarm-row .body .dev .nm{color:#fff}
+  .alarm-row .body .ec{color:var(--cyan);font-family:monospace;font-size:11px;background:rgba(34,211,238,.08);padding:1px 5px;border-radius:3px;flex-shrink:0;font-weight:600}
+  .alarm-row .body .act{color:#fff;font-weight:600;font-size:13px;flex-shrink:0}
+  .alarm-row .body .lvl{font-size:10px;padding:2px 6px;border-radius:7px;font-weight:600;flex-shrink:0}
+  .alarm-row .body .lvl.crit{background:rgba(239,68,68,.18);color:var(--red)}
+  .alarm-row .body .lvl.warn{background:rgba(245,158,11,.18);color:var(--amber)}
+  .alarm-row .body .lvl.ok{background:rgba(34,197,94,.18);color:var(--green)}
+  .alarm-row .ts{color:var(--txt-2);font-family:monospace;font-size:11px;white-space:nowrap;flex-shrink:0}
+
+  .btn-mini{background:rgba(20,32,68,.5);border:1px solid var(--line);border-radius:5px;color:var(--txt-2);font-size:11px;padding:3px 9px;cursor:pointer;transition:all .2s;font-family:inherit}
+  .btn-mini:hover{color:var(--cyan);border-color:var(--line-2)}
+  .btn-mini.primary{color:var(--cyan);border-color:rgba(34,211,238,.3);background:rgba(34,211,238,.08)}
+  .btn-mini.primary:hover{background:rgba(34,211,238,.15)}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.85)}}
+
+  /* ===== 弹窗：浏览器居中、无模糊 ===== */
+  .modal-mask{position:fixed;inset:0;background:rgba(2,6,18,.5);z-index:99;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:20px}
+  .modal-mask.open{display:flex}
+  .modal{background:linear-gradient(180deg, rgba(11,16,36,.97), rgba(7,11,24,.97));border:1px solid var(--line-2);border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;max-height:88vh;display:flex;flex-direction:column;width:1100px;max-width:96vw}
+  .modal.small{width:480px}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line);background:linear-gradient(90deg, rgba(34,211,238,.06), transparent);gap:8px}
+  .modal-head h2{font-size:15px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .modal-head h2 .bar{width:3px;height:14px;background:linear-gradient(180deg,var(--cyan),var(--blue));border-radius:2px;flex-shrink:0}
+  .modal-head h2 .num{color:var(--cyan);font-family:"DIN Alternate",monospace;flex-shrink:0}
+  .modal-head h2 .nm{color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modal-head h2 .tag{font-family:monospace;font-size:10px;background:rgba(34,211,238,.1);color:var(--cyan);padding:1px 5px;border-radius:3px;flex-shrink:0}
+  .modal-head h2 .sub{font-size:12px;color:var(--txt-2);font-weight:400}
+  .modal-head .close{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;color:var(--txt-2);font-size:18px;flex-shrink:0}
+  .modal-head .close:hover{color:var(--red);border-color:rgba(239,68,68,.4)}
+  .modal-body{padding:14px 18px;overflow-y:auto;flex:1}
+  .modal-foot{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line);justify-content:flex-end;flex-shrink:0}
+
+  /* 历史事件/控制记录弹窗 - 基础信息条 */
+  .dev-base{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:rgba(15,23,48,.5);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:10px}
+  .dev-base .b-col{padding:8px 12px;border-right:1px solid var(--line)}
+  .dev-base .b-col:last-child{border-right:0}
+  .dev-base .b-col .k{font-size:10px;color:var(--txt-2);letter-spacing:1px;margin-bottom:3px}
+  .dev-base .b-col .v{font-size:12px;color:#fff;font-weight:600}
+  .dev-base .b-col .v .id{color:var(--cyan);font-family:"DIN Alternate",monospace;margin-right:4px}
+
+  .filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;background:rgba(15,23,48,.4);border:1px solid var(--line);border-radius:6px;margin-bottom:10px}
+  .filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .filter-label{font-size:11px;color:var(--txt-2);letter-spacing:.5px;font-weight:500}
+  .param-chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chip{font-size:11px;color:var(--txt);padding:3px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(20,32,68,.5);cursor:pointer;transition:all .2s;font-weight:500}
+  .chip:hover{color:var(--cyan);border-color:var(--line-2)}
+  .chip.on{background:rgba(34,211,238,.15);border-color:rgba(34,211,238,.4);color:var(--cyan)}
+  .seg{display:flex;background:rgba(20,32,68,.5);border:1px solid var(--line);border-radius:5px;padding:1px}
+  .seg button{background:transparent;border:0;color:var(--txt-2);font-size:11px;padding:2px 7px;border-radius:4px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--cyan);color:#001020;font-weight:600}
+  .btn-export{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--green);font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;margin-left:auto;font-weight:500}
+  .btn-export:hover{background:rgba(34,197,94,.2)}
+  /* 起止时间（datetime-local × 2） */
+  .time-range{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .time-range .lab{font-size:11px;color:var(--txt-2);font-weight:500}
+  .time-range input[type="datetime-local"]{
+    background:rgba(20,32,68,.5);border:1px solid var(--line);border-radius:5px;
+    padding:3px 6px;color:#fff;font-size:11px;font-family:inherit;outline:none;
+    color-scheme:dark;min-width:170px;flex-shrink:0;font-weight:500;
+  }
+  .time-range input[type="datetime-local"]:focus{border-color:rgba(34,211,238,.4)}
+  .time-range input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(.7);cursor:pointer}
+  .time-range .arrow{color:var(--cyan);font-size:11px;font-weight:700;padding:0 2px}
+  .time-range .btn-apply{background:rgba(34,211,238,.15);border:1px solid rgba(34,211,238,.4);color:var(--cyan);font-size:11px;padding:3px 10px;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:600;flex-shrink:0}
+  .time-range .btn-apply:hover{background:rgba(34,211,238,.25)}
+  .time-presets{display:flex;gap:3px;flex-wrap:wrap}
+  .time-preset{font-size:10px;color:var(--txt-2);padding:2px 6px;border-radius:4px;border:1px solid var(--line);background:rgba(20,32,68,.5);cursor:pointer;transition:all .15s;font-family:inherit}
+  .time-preset:hover{color:var(--cyan);border-color:rgba(34,211,238,.3)}
+  .time-preset.on{background:rgba(34,211,238,.18);border-color:rgba(34,211,238,.5);color:var(--cyan);font-weight:600}
+  #historyChart{height:440px;width:100%}
+
+  .hist-table{width:100%;border-collapse:collapse;font-size:12px}
+  .hist-table th{text-align:left;padding:8px 10px;background:rgba(15,23,48,.6);color:var(--txt-2);font-weight:500;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.5px}
+  .hist-table td{padding:8px 10px;border-bottom:1px dashed var(--line);color:var(--txt)}
+  .hist-table tr:hover td{background:rgba(34,211,238,.04)}
+  .hist-table .ec{font-size:10px;color:var(--cyan);font-family:monospace;background:rgba(34,211,238,.08);padding:1px 5px;border-radius:3px}
+  .hist-table .ts{font-family:monospace;font-size:11px;color:var(--txt-2)}
+  .hist-table .lvl{font-size:10px;padding:2px 6px;border-radius:7px;display:inline-block;font-weight:600;margin-right:4px}
+  .hist-table .lvl.crit{background:rgba(239,68,68,.18);color:var(--red)}
+  .hist-table .lvl.ok{background:rgba(34,197,94,.18);color:var(--green)}
+
+  /* 控制记录表 - 加操作人列 */
+  .log-table{width:100%;border-collapse:collapse;font-size:11px}
+  .log-table th{text-align:left;padding:8px 10px;background:rgba(15,23,48,.6);color:var(--txt-2);font-weight:600;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.5px}
+  .log-table td{padding:7px 10px;border-bottom:1px dashed var(--line);font-family:monospace;color:#fff;font-size:11px}
+  .log-table .action{font-family:inherit}
+  .log-table .op{color:var(--cyan);font-weight:600}
+  .lvl-ok{color:var(--green)}
+  .lvl-warn{color:var(--amber)}
+  .lvl-fail{color:var(--red)}
+
+  .btn-cancel,.btn-confirm{padding:7px 18px;border-radius:5px;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;font-weight:500;min-width:80px;border:1px solid var(--line)}
+  .btn-cancel{background:rgba(20,32,68,.6);color:var(--txt-2)}
+  .btn-cancel:hover{border-color:var(--line-2);color:#fff}
+  .btn-confirm{background:var(--cyan);border-color:var(--cyan);color:#001020}
+  .btn-confirm:hover{background:#06b6d4}
+
+  /* 防误操作弹窗 */
+  .confirm-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:linear-gradient(90deg, rgba(245,158,11,.10), transparent)}
+  .confirm-head .warn-icon{font-size:20px}
+  .confirm-head .title{font-size:15px;font-weight:600;color:var(--amber)}
+  .confirm-body{padding:14px}
+  .confirm-info{background:rgba(15,23,48,.6);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:12px}
+  .info-row{display:flex;align-items:flex-start;padding:3px 0;font-size:11px}
+  .info-row .info-k{width:84px;color:var(--txt-2);font-size:11px;flex-shrink:0;padding-top:1px}
+  .info-row .info-v{color:#fff;font-weight:500;line-height:1.5;font-size:11px}
+  .checkbox-label{display:flex;align-items:flex-start;gap:6px;cursor:pointer;color:var(--txt);font-size:11px;padding:8px;background:rgba(15,23,48,.4);border:1px solid var(--line);border-radius:5px;line-height:1.5}
+  .checkbox-label input{accent-color:var(--cyan);margin-top:2px;width:14px;height:14px;flex-shrink:0}
+  .confirm-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--line);justify-content:flex-end}
+  .btn-cancel,.btn-confirm{padding:7px 18px;border-radius:5px;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;font-weight:500;min-width:70px;border:1px solid var(--line)}
+  .btn-cancel{background:rgba(20,32,68,.6);color:var(--txt-2)}
+  .btn-cancel:hover{border-color:var(--line-2);color:#fff}
+  .btn-confirm{background:var(--red);border-color:var(--red);color:#fff}
+  .btn-confirm:hover{background:#dc2626}
+  .btn-confirm:disabled{background:rgba(100,116,139,.4);border-color:rgba(100,116,139,.4);cursor:not-allowed;color:rgba(255,255,255,.5)}
+  .btn-confirm.normal{background:var(--cyan);border-color:var(--cyan);color:#001020}
+  .btn-confirm.normal:hover{background:#06b6d4}
+
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:rgba(120,170,255,.2);border-radius:3px}
+  ::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 路径条 -->
+  <div class="path-bar">
+    <div class="crumb">
+      <span class="lnk" id="goBack">集中监控</span>
+      <span class="sep">/</span>
+      <span class="lnk" id="goStation">1#主电站</span>
+      <span class="sep">/</span>
+      <span class="now"><span class="id" id="pId">#01</span><span id="pName">1#发电机保护</span><span class="tag" id="pModel">P3G30</span></span>
+    </div>
+    <div class="path-actions">
+      <button class="path-btn" id="btnBack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        返回
+      </button>
+      <button class="path-btn close" id="btnClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        关闭
+      </button>
+    </div>
+  </div>
+
+  <!-- 主体信息 4 列（"当前状态"）-->
+  <div class="dev-info">
+    <div class="col">
+      <div class="k">设备名称</div>
+      <div class="v">
+        <span class="id" id="heroId">#01</span>
+        <span class="nm" id="heroName">1#发电机保护</span>
+        <span class="tag" id="heroModel">P3G30</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="k">安装位置</div>
+      <div class="v" id="heroLoc">主厂房 A 段</div>
+    </div>
+    <div class="col">
+      <div class="k">所属电站</div>
+      <div class="v" id="heroStation">1#主电站</div>
+    </div>
+    <div class="col">
+      <div class="k">当前状态</div>
+      <div class="v">
+        <span class="status ok" id="heroStatus"><span class="pdot"></span>在线</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ① 遥测 9 参数：第 1 行 P-block 6 个 + 第 2 行 三相 6 个 -->
+  <div class="panel">
+    <div class="panel-hd">
+      <h3><span class="bar"></span>遥测数据<span class="pt">点表 9 项</span></h3>
+      <div class="tools">
+        <span style="font-size:10px;color:var(--txt-2)">第 1 行：功率 · 第 2 行：三相（电压+电流）</span>
+        <button class="btn-mini primary" id="btnHistory">📊 历史曲线</button>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <!-- 第 1 行：P Q S PF f U0（6 个 P-block，v 上 k 下，单位明显） -->
+      <div class="metric-row" id="row1"></div>
+      <!-- 第 2 行：三相（电压 3 + 电流 3 = 6 列同一行） -->
+      <div class="phase-labels">
+        <span class="lab v">三相电压</span>
+        <span class="lab i">三相电流</span>
+      </div>
+      <div class="phase-row" id="row2"></div>
+    </div>
+  </div>
+
+  <!-- ② 遥信 32+16（文字明显） -->
+  <div class="panel">
+    <div class="panel-hd">
+      <h3><span class="bar"></span>遥信状态</h3>
+      <div class="tools">
+        <span class="pt" style="font-size:9px">开入 402007-402008 · 开出 402049</span>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <div class="di-section">开入 1-16（寄存器 402007）<span class="addr">bit 0-15</span></div>
+      <div class="di-grid" id="diBlock1"></div>
+      <div class="di-section">开入 17-32（寄存器 402008）<span class="addr">bit 0-15</span></div>
+      <div class="di-grid" id="diBlock2"></div>
+      <div class="di-section">开出 1-16（寄存器 402049）<span class="addr">bit 0-15</span></div>
+      <div class="di-grid" id="doBlock"></div>
+    </div>
+  </div>
+
+  <!-- ③ 遥控 + 实时告警 同行 -->
+  <div class="ctrl-alarm-row">
+    <!-- 遥控：控制记录按钮移到本标题栏右侧 -->
+    <div class="panel">
+      <div class="panel-hd">
+        <h3><span class="bar"></span>遥控操作<span class="pt">6 个对象</span></h3>
+        <div class="tools">
+          <button class="btn-mini" id="btnCtrlLog">📋 控制记录</button>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="ctrl-grid" id="ctrlGrid"></div>
+      </div>
+    </div>
+    <!-- 实时告警 -->
+    <div class="panel">
+      <div class="panel-hd">
+        <h3><span class="bar"></span>实时告警事件</h3>
+        <div class="tools">
+          <span class="pt" style="font-size:9px">事件 402101</span>
+          <button class="btn-mini" id="btnHistAlarms">📜 历史事件</button>
+        </div>
+      </div>
+      <div class="panel-bd" style="padding:0">
+        <div class="alarm-list" id="curAlarmList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 历史事件弹窗（带基础信息） ===== -->
+<div class="modal-mask" id="historyAlarmModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><span class="bar"></span><span class="num" id="haNum">#01</span><span class="nm" id="haName">1#发电机保护</span><span class="tag" id="haModel">P3G30</span><span class="sub">历史事件</span></h2>
+      <div class="close" data-close="historyAlarmModal">×</div>
+    </div>
+    <div class="modal-body">
+      <!-- 基础信息（用户要求弹窗显示基础信息） -->
+      <div class="dev-base">
+        <div class="b-col"><div class="k">设备名称</div><div class="v"><span class="id" id="haId">#01</span><span id="haName2">1#发电机保护</span></div></div>
+        <div class="b-col"><div class="k">型号</div><div class="v" id="haModel2">P3G30</div></div>
+        <div class="b-col"><div class="k">安装位置</div><div class="v" id="haLoc">主厂房 A 段</div></div>
+        <div class="b-col"><div class="k">所属电站</div><div class="v" id="haStation">1#主电站</div></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <span class="filter-label">查询时间：</span>
+          <div class="time-range">
+            <span class="lab">起</span>
+            <input type="datetime-local" id="haStart" />
+            <span class="arrow">→</span>
+            <span class="lab">止</span>
+            <input type="datetime-local" id="haEnd" />
+            <button class="btn-apply" id="haApply">查询</button>
+            <div class="time-presets" id="haPresets">
+              <span class="time-preset" data-h="1">近 1H</span>
+              <span class="time-preset on" data-h="24">近 24H</span>
+              <span class="time-preset" data-h="168">近 7D</span>
+              <span class="time-preset" data-h="720">近 30D</span>
+              <span class="time-preset" data-h="0">全部</span>
+            </div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">类型：</span>
+          <div class="param-chips" id="haLvlFilter">
+            <span class="chip on" data-l="all">全部</span>
+            <span class="chip" data-l="prot">动作</span>
+            <span class="chip" data-l="ok">返回</span>
+          </div>
+        </div>
+        <button class="btn-export" id="btnExportHistAlarm">📥 导出</button>
+      </div>
+      <div style="max-height:460px;overflow-y:auto">
+        <table class="hist-table">
+          <thead><tr><th style="width:170px">时间</th><th style="width:90px">事件代码</th><th>含义（按点表）</th></tr></thead>
+          <tbody id="histAlarmBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 历史曲线弹窗 ===== -->
+<div class="modal-mask" id="historyModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><span class="bar"></span><span class="num" id="hsNum">#01</span><span class="nm" id="hsName">1#发电机保护</span><span class="tag" id="hsModel">P3G30</span><span class="sub">历史曲线</span></h2>
+      <div class="close" data-close="historyModal">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="filter-row">
+        <div class="filter-group">
+          <span class="filter-label">参数：</span>
+          <div class="param-chips" id="paramChips">
+            <span class="chip on" data-p="P">有功 P</span>
+            <span class="chip on" data-p="Q">无功 Q</span>
+            <span class="chip" data-p="S">视在 S</span>
+            <span class="chip" data-p="PF">功率因数</span>
+            <span class="chip" data-p="Ua">A 相电压</span>
+            <span class="chip" data-p="Ub">B 相电压</span>
+            <span class="chip" data-p="Uc">C 相电压</span>
+            <span class="chip" data-p="Ia">A 相电流</span>
+            <span class="chip" data-p="Ib">B 相电流</span>
+            <span class="chip" data-p="Ic">C 相电流</span>
+            <span class="chip" data-p="U0">零序电压</span>
+            <span class="chip" data-p="f">频率</span>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">查询时间：</span>
+          <div class="time-range">
+            <span class="lab">起</span>
+            <input type="datetime-local" id="hsStart" />
+            <span class="arrow">→</span>
+            <span class="lab">止</span>
+            <input type="datetime-local" id="hsEnd" />
+            <button class="btn-apply" id="hsApply">查询</button>
+            <div class="time-presets" id="hsPresets">
+              <span class="time-preset on" data-h="1">近 1H</span>
+              <span class="time-preset" data-h="6">近 6H</span>
+              <span class="time-preset" data-h="24">近 24H</span>
+              <span class="time-preset" data-h="168">近 7D</span>
+              <span class="time-preset" data-h="0">全部</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-export" id="btnExport">📥 导出 CSV</button>
+      </div>
+      <div id="historyChart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 控制记录弹窗（加操作人 + 寄存器/结果） ===== -->
+<div class="modal-mask" id="ctrlLogModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><span class="bar"></span><span class="num" id="clNum">#01</span><span class="nm" id="clName">1#发电机保护</span><span class="tag" id="clModel">P3G30</span><span class="sub">控制记录</span></h2>
+      <div class="close" data-close="ctrlLogModal">×</div>
+    </div>
+    <div class="modal-body">
+      <!-- 基础信息 -->
+      <div class="dev-base">
+        <div class="b-col"><div class="k">设备名称</div><div class="v"><span class="id" id="clId">#01</span><span id="clName2">1#发电机保护</span></div></div>
+        <div class="b-col"><div class="k">型号</div><div class="v" id="clModel2">P3G30</div></div>
+        <div class="b-col"><div class="k">安装位置</div><div class="v" id="clLoc">主厂房 A 段</div></div>
+        <div class="b-col"><div class="k">所属电站</div><div class="v" id="clStation">1#主电站</div></div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <span class="filter-label">查询时间：</span>
+          <div class="time-range">
+            <span class="lab">起</span>
+            <input type="datetime-local" id="clStart" />
+            <span class="arrow">→</span>
+            <span class="lab">止</span>
+            <input type="datetime-local" id="clEnd" />
+            <button class="btn-apply" id="clApply">查询</button>
+            <div class="time-presets" id="clPresets">
+              <span class="time-preset" data-h="1">近 1H</span>
+              <span class="time-preset on" data-h="24">近 24H</span>
+              <span class="time-preset" data-h="168">近 7D</span>
+              <span class="time-preset" data-h="720">近 30D</span>
+              <span class="time-preset" data-h="0">全部</span>
+            </div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">对象：</span>
+          <div class="param-chips" id="ctrlObjFilter">
+            <span class="chip on" data-t="all">全部</span>
+            <span class="chip" data-t="obj1">Obj1 断路器</span>
+            <span class="chip" data-t="obj2">Obj2</span>
+            <span class="chip" data-t="obj3">Obj3</span>
+            <span class="chip" data-t="obj4">Obj4</span>
+            <span class="chip" data-t="obj5">Obj5</span>
+            <span class="chip" data-t="obj6">Obj6</span>
+          </div>
+        </div>
+        <button class="btn-export" id="btnExportCtrl">📥 导出</button>
+      </div>
+      <div style="max-height:440px;overflow-y:auto">
+        <table class="log-table">
+          <thead><tr><th style="width:180px">时间</th><th style="width:110px">操作人</th><th>对象</th><th style="width:80px">操作</th></tr></thead>
+          <tbody id="ctrlLogBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 防误操作二次确认弹窗 ===== -->
+<div class="modal-mask" id="confirmModal">
+  <div class="modal small">
+    <div class="confirm-head">
+      <span class="warn-icon">⚠️</span>
+      <span class="title" id="cfTitle">防误操作二次确认</span>
+    </div>
+    <div class="confirm-body">
+      <div class="confirm-info">
+        <div class="info-row"><span class="info-k">设备</span><span class="info-v" id="cfDev">--</span></div>
+        <div class="info-row"><span class="info-k">操作</span><span class="info-v" id="cfAction">--</span></div>
+        <div class="info-row"><span class="info-k">寄存器</span><span class="info-v" id="cfReg" style="font-family:monospace">--</span></div>
+        <div class="info-row"><span class="info-k">当前状态</span><span class="info-v" id="cfState">--</span></div>
+        <div class="info-row"><span class="info-k">操作时间</span><span class="info-v" id="cfTime">--</span></div>
+      </div>
+      <div class="confirm-form">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opConfirm">
+          <span>我已核对设备状态、远动条件和现场安全，确认执行此操作</span>
+        </label>
+      </div>
+    </div>
+    <div class="confirm-foot">
+      <button class="btn-cancel" id="btnConfirmCancel">取消</button>
+      <button class="btn-confirm" id="btnDoCtrl" disabled>确认执行</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================
+   数据 - 严格按 point_table.xls
+   ============================================ */
+const EVENT_CODES = {
+  66:{act:'I>跳闸',type:'prot'},68:{act:'I>返回',type:'ok'},
+  130:{act:'I>>跳闸',type:'prot'},132:{act:'I>>返回',type:'ok'},
+  194:{act:'I>>>跳闸',type:'prot'},196:{act:'I>>>返回',type:'ok'},
+  1282:{act:'IO>跳闸',type:'prot'},1284:{act:'IO>返回',type:'ok'},
+  1346:{act:'IO>>跳闸',type:'prot'},1348:{act:'IO>>返回',type:'ok'},
+  1922:{act:'U>跳闸',type:'prot'},1924:{act:'U>返回',type:'ok'},
+  2050:{act:'U<跳闸',type:'prot'},2052:{act:'U<返回',type:'ok'},
+  2306:{act:'Uo>跳闸',type:'prot'},2308:{act:'Uo>返回',type:'ok'},
+};
+
+const REMOTE_OBJS = [
+  {id:'Obj1',name:'断路器',selAddr:402508,closeAddr:402509,execAddr:402510},
+  {id:'Obj2',name:'遥控对象 2',selAddr:402512,closeAddr:402513,execAddr:402514},
+  {id:'Obj3',name:'遥控对象 3',selAddr:402517,closeAddr:402518,execAddr:402519},
+  {id:'Obj4',name:'遥控对象 4',selAddr:402521,closeAddr:402522,execAddr:402523},
+  {id:'Obj5',name:'遥控对象 5',selAddr:402527,closeAddr:402528,execAddr:402529},
+  {id:'Obj6',name:'遥控对象 6',selAddr:402531,closeAddr:402532,execAddr:402533},
+];
+
+const STATUS = {NORMAL:'normal', WARN:'warn', ALARM:'alarm', OFFLINE:'offline'};
+
+const devs = [
+  {id:'#01',name:'1#发电机保护',type:'generator',  loc:'主厂房 A 段',station:'1#主电站',zone:'主厂房',model:'P3G30',s:STATUS.NORMAL, P:4.82, Q:1.23, S:5.00, PF:0.97, f:50.02, Ua:10.42,Ub:10.38,Uc:10.45, Ia:286,Ib:278,Ic:291, U0:0.18},
+  {id:'#02',name:'2#发电机保护',type:'generator',  loc:'主厂房 A 段',station:'1#主电站',zone:'主厂房',model:'P3G30',s:STATUS.NORMAL, P:3.95, Q:1.05, S:4.10, PF:0.96, f:50.01, Ua:10.38,Ub:10.40,Uc:10.36, Ia:241,Ib:235,Ic:248, U0:0.22},
+  {id:'#03',name:'3#发电机保护',type:'generator',  loc:'主厂房 B 段',station:'1#主电站',zone:'主厂房',model:'P3G30',s:STATUS.NORMAL, P:4.10, Q:1.10, S:4.25, PF:0.97, f:50.00, Ua:10.40,Ub:10.42,Uc:10.39, Ia:255,Ib:250,Ic:262, U0:0.15},
+  {id:'#04',name:'4#发电机保护',type:'generator',  loc:'主厂房 B 段',station:'1#主电站',zone:'主厂房',model:'P3G30',s:STATUS.WARN,   P:4.50, Q:1.20, S:4.65, PF:0.95, f:49.98, Ua:10.36,Ub:10.38,Uc:10.34, Ia:280,Ib:275,Ic:285, U0:0.35},
+  {id:'#05',name:'5#发电机保护',type:'generator',  loc:'主厂房 C 段',station:'1#主电站',zone:'主厂房',model:'P3G30',s:STATUS.NORMAL, P:3.80, Q:1.00, S:3.95, PF:0.96, f:50.02, Ua:10.41,Ub:10.39,Uc:10.43, Ia:232,Ib:228,Ic:238, U0:0.20},
+  {id:'#06',name:'6#发电机保护',type:'generator',  loc:'主厂房 C 段',station:'1#主电站',zone:'主厂房',model:'P3G30',s:STATUS.NORMAL, P:4.20, Q:1.15, S:4.35, PF:0.97, f:50.01, Ua:10.39,Ub:10.41,Uc:10.37, Ia:265,Ib:260,Ic:270, U0:0.19},
+  {id:'#07',name:'7#发电机保护',type:'generator',  loc:'辅机房 A',   station:'1#主电站',zone:'辅机房',model:'P3G30',s:STATUS.NORMAL, P:3.60, Q:0.95, S:3.72, PF:0.97, f:50.00, Ua:10.42,Ub:10.40,Uc:10.44, Ia:220,Ib:215,Ic:225, U0:0.16},
+  {id:'#08',name:'8#发电机保护',type:'generator',  loc:'辅机房 A',   station:'1#主电站',zone:'辅机房',model:'P3G30',s:STATUS.OFFLINE,P:0,    Q:0,    S:0,    PF:0,    f:0,     Ua:0,   Ub:0,   Uc:0,    Ia:0,  Ib:0,  Ic:0,   U0:0},
+  {id:'#09',name:'1#主变保护',  type:'transformer',loc:'主变区 1',   station:'1#主电站',zone:'主变区',model:'P3T32',s:STATUS.NORMAL, P:8.62, Q:2.30, S:8.95, PF:0.96, f:50.00, Ua:38.5, Ub:38.4, Uc:38.6,  Ia:520,Ib:512,Ic:528, U0:0.42},
+  {id:'#10',name:'2#主变保护',  type:'transformer',loc:'主变区 1',   station:'1#主电站',zone:'主变区',model:'P3T32',s:STATUS.NORMAL, P:8.45, Q:2.25, S:8.78, PF:0.96, f:50.01, Ua:38.4, Ub:38.5, Uc:38.3,  Ia:510,Ib:505,Ic:518, U0:0.38},
+  {id:'#11',name:'1#母联保护',  type:'buscouple',  loc:'35kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:0,    Q:0,    S:0,    PF:0,    f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0,   U0:0.10},
+  {id:'#12',name:'2#母联保护',  type:'buscouple',  loc:'35kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:0,    Q:0,    S:0,    PF:0,    f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0,   U0:0.08},
+  {id:'#13',name:'1#进线保护',  type:'line',       loc:'35kV 配电室',station:'1#主电站',zone:'配电室',model:'P3L30',s:STATUS.NORMAL, P:5.20, Q:1.40, S:5.39, PF:0.97, f:50.00, Ua:10.40,Ub:10.42,Uc:10.38, Ia:310,Ib:305,Ic:315, U0:0.25},
+  {id:'#14',name:'2#进线保护',  type:'line',       loc:'35kV 配电室',station:'1#主电站',zone:'配电室',model:'P3L30',s:STATUS.NORMAL, P:4.95, Q:1.35, S:5.13, PF:0.96, f:50.00, Ua:10.40,Ub:10.39,Uc:10.41, Ia:295,Ib:290,Ic:300, U0:0.21},
+  {id:'#15',name:'3#进线保护',  type:'line',       loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3L30',s:STATUS.NORMAL, P:3.20, Q:0.85, S:3.31, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:190,Ib:186,Ic:194, U0:0.18},
+  {id:'#16',name:'4#进线保护',  type:'line',       loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3L30',s:STATUS.NORMAL, P:2.85, Q:0.75, S:2.95, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:170,Ib:168,Ic:173, U0:0.16},
+  {id:'#17',name:'1#馈线保护',  type:'feeder',     loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:1.20, Q:0.30, S:1.24, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:72, Ib:70, Ic:74,  U0:0.12},
+  {id:'#18',name:'2#馈线保护',  type:'feeder',     loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:0.95, Q:0.25, S:0.98, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:58, Ib:56, Ic:60,  U0:0.10},
+  {id:'#19',name:'3#馈线保护',  type:'feeder',     loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:1.45, Q:0.40, S:1.50, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:88, Ib:86, Ic:90,  U0:0.14},
+  {id:'#20',name:'4#馈线保护',  type:'feeder',     loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.ALARM,  P:1.80, Q:0.50, S:1.87, PF:0.96, f:50.05, Ua:10.40,Ub:10.40,Uc:10.40, Ia:380,Ib:120,Ic:108, U0:1.85},
+  {id:'#21',name:'5#馈线保护',  type:'feeder',     loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:1.10, Q:0.30, S:1.14, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:66, Ib:64, Ic:68,  U0:0.11},
+  {id:'#22',name:'6#馈线保护',  type:'feeder',     loc:'10kV 配电室',station:'1#主电站',zone:'配电室',model:'P3U30',s:STATUS.NORMAL, P:0.80, Q:0.20, S:0.82, PF:0.97, f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:48, Ib:46, Ic:50,  U0:0.09},
+  {id:'#23',name:'1#联络保护',  type:'feeder',     loc:'联络开关室',station:'1#主电站',zone:'联络室',model:'P3U30',s:STATUS.NORMAL, P:0,    Q:0,    S:0,    PF:0,    f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0,   U0:0.07},
+  {id:'#24',name:'2#联络保护',  type:'feeder',     loc:'联络开关室',station:'1#主电站',zone:'联络室',model:'P3U30',s:STATUS.NORMAL, P:0,    Q:0,    S:0,    PF:0,    f:50.00, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0,   U0:0.06},
+  {id:'#25',name:'1#所用变保护',type:'transformer',loc:'所用电室',   station:'1#主电站',zone:'所用电',model:'P3T32',s:STATUS.NORMAL, P:0.18, Q:0.05, S:0.19, PF:0.95, f:50.00, Ua:0.40, Ub:0.40, Uc:0.40,  Ia:11, Ib:10, Ic:12,  U0:0.05},
+  {id:'#26',name:'2#所用变保护',type:'transformer',loc:'所用电室',   station:'1#主电站',zone:'所用电',model:'P3T32',s:STATUS.OFFLINE,P:0,    Q:0,    S:0,    PF:0,    f:0,     Ua:0,   Ub:0,   Uc:0,    Ia:0,  Ib:0,  Ic:0,   U0:0},
+];
+
+/* 告警 - 严格按点表"事件代码含义"（无 msg 描述） */
+const alarms = [
+  {ec:130, dev:'#20', ts:'2026-08-28 12:08:21', level:'crit'},
+  {ec:66,  dev:'#04', ts:'2026-08-28 11:52:04', level:'crit'},
+  {ec:2306,dev:'#08', ts:'2026-08-28 11:30:18', level:'warn'},
+  {ec:68,  dev:'#11', ts:'2026-08-28 10:42:55', level:'ok'},
+  {ec:68,  dev:'#02', ts:'2026-08-28 10:15:30', level:'ok'},
+  {ec:68,  dev:'#01', ts:'2026-08-28 09:48:12', level:'ok'},
+];
+
+function buildHistoryForDev(devId){
+  return [
+    {ec:130, ts:'2026-08-28 12:08:21'},
+    {ec:68,  ts:'2026-08-28 11:52:04'},
+    {ec:66,  ts:'2026-08-28 09:48:12'},
+    {ec:2306,ts:'2026-08-27 18:22:10'},
+    {ec:1922,ts:'2026-08-27 14:15:33'},
+    {ec:196, ts:'2026-08-27 11:00:21'},
+    {ec:1346,ts:'2026-08-26 22:15:33'},
+    {ec:2370,ts:'2026-08-26 16:42:08'},
+    {ec:1924,ts:'2026-08-26 14:30:00'},
+    {ec:2946,ts:'2026-08-25 09:30:00'},
+    {ec:2948,ts:'2026-08-24 16:18:42'},
+    {ec:68,  ts:'2026-08-24 08:00:00'},
+  ].map(x => ({...x, dev:devId}));
+}
+
+/* 控制记录 - 仅保留时间/操作人/对象/操作（点表无"结果/寄存器"字段，删除） */
+let ctrlLogs = [
+  {ts:'2026-08-28 11:42:15', operator:'admin',      obj:'obj1', act:'close'},
+  {ts:'2026-08-28 10:15:30', operator:'admin',      obj:'obj1', act:'close'},
+  {ts:'2026-08-27 18:30:00', operator:'admin',      obj:'obj1', act:'trip'},
+  {ts:'2026-08-27 11:08:45', operator:'admin',      obj:'obj1', act:'close'},
+  {ts:'2026-08-26 22:15:33', operator:'admin',      obj:'obj1', act:'close'},
+  {ts:'2026-08-26 16:42:08', operator:'admin',      obj:'obj1', act:'trip'},
+  {ts:'2026-08-26 14:30:00', operator:'operator01', obj:'obj2', act:'close'},
+  {ts:'2026-08-26 09:18:22', operator:'admin',      obj:'obj1', act:'trip'},
+  {ts:'2026-08-25 18:50:12', operator:'admin',      obj:'obj3', act:'close'},
+  {ts:'2026-08-25 09:30:00', operator:'operator02', obj:'obj1', act:'close'},
+];
+
+/* URL 参数 */
+const qs = new URLSearchParams(location.search);
+const paramId = qs.get('dev') || '#01';
+const paramStation = qs.get('station') || '1#主电站';
+let curDev = devs.find(d => d.id === paramId) || devs[0];
+
+const $ = (s,p=document)=>p.querySelector(s);
+
+/* 柱条高度 - 从下往上，按值归一化，最大 44px */
+function barHeight(v, max, maxH=44){
+  if(!max || max < 1) return 4;
+  return Math.max(4, Math.round((v / max) * maxH));
+}
+
+function fillPath(){
+  $('#pId').textContent = curDev.id;
+  $('#pName').textContent = curDev.name;
+  $('#pModel').textContent = curDev.model;
+  $('#goStation').textContent = paramStation;
+}
+
+function fillHero(){
+  $('#heroId').textContent = curDev.id;
+  $('#heroName').textContent = curDev.name;
+  $('#heroModel').textContent = curDev.model;
+  $('#heroLoc').textContent = curDev.loc;
+  $('#heroStation').textContent = curDev.station || paramStation;
+  const off = curDev.s === STATUS.OFFLINE;
+  const cls = off ? 'offline' : (curDev.s === STATUS.ALARM ? 'alarm' : (curDev.s === STATUS.WARN ? 'warn' : 'ok'));
+  const txt = off ? '离线' : (curDev.s === STATUS.ALARM ? '严重告警' : (curDev.s === STATUS.WARN ? '一般告警' : '在线'));
+  const c = $('#heroStatus');
+  c.className = 'status ' + cls;
+  c.innerHTML = `<span class="pdot"></span>${txt}`;
+}
+
+/* ① 遥测第 1 行：P Q S PF f U0（6 个 P-block） */
+function renderRow1(){
+  const off = curDev.s === STATUS.OFFLINE;
+  const pCls = curDev.s === STATUS.ALARM ? 'alarm' : '';
+  $('#row1').innerHTML = `
+    <div class="mp priority">
+      <div class="v ${pCls}">${off?'--':(curDev.P*1000).toFixed(0)}<span class="u">kW</span></div>
+      <div class="k">有功 P</div>
+    </div>
+    <div class="mp">
+      <div class="v">${off?'--':(curDev.Q*1000).toFixed(0)}<span class="u">kvar</span></div>
+      <div class="k">无功 Q</div>
+    </div>
+    <div class="mp">
+      <div class="v">${off?'--':(curDev.S*1000).toFixed(0)}<span class="u">kVA</span></div>
+      <div class="k">视在 S</div>
+    </div>
+    <div class="mp">
+      <div class="v">${off?'--':curDev.PF.toFixed(2)}</div>
+      <div class="k">功率因数</div>
+    </div>
+    <div class="mp">
+      <div class="v">${off?'--':curDev.f.toFixed(2)}<span class="u">Hz</span></div>
+      <div class="k">频率 f</div>
+    </div>
+    <div class="mp">
+      <div class="v ${off?'':curDev.U0*1000>1000?'alarm':''}">${off?'--':(curDev.U0*1000).toFixed(0)}<span class="u">V</span></div>
+      <div class="k">零序电压 U0</div>
+    </div>
+  `;
+}
+
+/* ② 遥测第 2 行：三相电压（3）+ 三相电流（3）= 6 列同一行，电压单位 V */
+function renderRow2(){
+  const off = curDev.s === STATUS.OFFLINE;
+  const phs = ['A','B','C'];
+  const vArr = [curDev.Ua, curDev.Ub, curDev.Uc];
+  const iArr = [curDev.Ia, curDev.Ib, curDev.Ic];
+  const vMax = Math.max(...vArr);
+  const iMax = Math.max(...iArr);
+  const iCls = curDev.s === STATUS.ALARM;
+  const html = [];
+  vArr.forEach((v,i)=>{
+    html.push(`
+      <div class="phase phase-${phs[i].toLowerCase()}">
+        <div class="col">
+          <div class="v">${off?'--':(v*1000).toFixed(0)}<span class="u">V</span></div>
+          <div class="k">U${phs[i]}</div>
+        </div>
+        <div class="bar ${off?'off':''}" style="height:${barHeight(v, vMax)}px"></div>
+      </div>
+    `);
+  });
+  iArr.forEach((v,i)=>{
+    html.push(`
+      <div class="phase i phase-${phs[i].toLowerCase()}">
+        <div class="col">
+          <div class="v ${iCls && i===0 ? 'alarm' : ''}">${off?'--':v}<span class="u">A</span></div>
+          <div class="k">I${phs[i]}</div>
+        </div>
+        <div class="bar ${off?'off':''}" style="height:${barHeight(v, iMax)}px"></div>
+      </div>
+    `);
+  });
+  $('#row2').innerHTML = html.join('');
+}
+
+/* ③ 遥信 32+16（文字明显） */
+function renderDI(){
+  const off = curDev.s === STATUS.OFFLINE;
+  const di = new Array(32).fill(0);
+  if(!off){
+    di[0]=1; di[1]=1; di[2]=1; di[4]=1;
+    di[6] = curDev.s === STATUS.ALARM ? 1 : 0;
+    di[7] = curDev.s === STATUS.WARN ? 1 : 0;
+    if(curDev.type === 'generator' || curDev.type === 'transformer'){ di[8]=1; di[9]=1; di[10]=1; di[11]=0; }
+  }
+  renderDIBits('diBlock1', 1, 16, di, 'DI');
+  renderDIBits('diBlock2', 17, 32, di, 'DI');
+  const doArr = off ? new Array(16).fill(0) : [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  renderDIBits('doBlock', 1, 16, doArr, 'DO');
+}
+function renderDIBits(id, start, end, bits, prefix){
+  const el = document.getElementById(id);
+  let html = '';
+  for(let i = start; i <= end; i++){
+    const bit = i - start;
+    const v = bits[bit] || 0;
+    html += `<div class="di ${v?'on':''}"><div class="l"><span class="d"></span>${prefix} ${i}</div><div class="r">${v}</div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ④ 遥控 6 Obj（控制记录按钮已移到本标题栏） */
+function renderCtrl(){
+  const off = curDev.s === STATUS.OFFLINE;
+  $('#ctrlGrid').innerHTML = REMOTE_OBJS.map((o,i)=>`
+    <div class="ctrl-obj ${off?'off':''}">
+      <div class="head">
+        <div class="nm">${o.id} <span class="tag">${o.name}</span></div>
+        <div class="addr">${o.selAddr}-${o.execAddr}</div>
+      </div>
+      <div class="btns">
+        <button class="cbtn trip"  data-obj="${i}" data-act="trip"  ${off?'disabled':''}>分闸</button>
+        <button class="cbtn close" data-obj="${i}" data-act="close" ${off?'disabled':''}>合闸</button>
+      </div>
+    </div>
+  `).join('');
+  document.querySelectorAll('.cbtn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      if(b.disabled) return;
+      openConfirm(+b.dataset.obj, b.dataset.act);
+    });
+  });
+}
+
+/* ⑤ 实时告警 - 单行紧凑：ind + 设备信息（优先）+ 事件代码 + 含义 + 时间（不跳行） */
+function renderCurAlarmList(){
+  const list = alarms.filter(a => a.dev === curDev.id);
+  const body = $('#curAlarmList');
+  if(!list.length){
+    body.innerHTML = `<div class="empty">📭 当前设备无活跃告警</div>`;
+    return;
+  }
+  body.innerHTML = list.map(a => {
+    const e = EVENT_CODES[a.ec] || {act:'未知'};
+    const lvlText = a.level==='ok' ? '返回' : (a.level==='crit' ? '严重' : '一般');
+    return `
+    <div class="alarm-row">
+      <div class="ind ${a.level}"></div>
+      <div class="body">
+        <span class="dev"><span class="id">${curDev.id}</span><span class="nm">${curDev.name}</span></span>
+        <span class="lvl ${a.level}">${lvlText}</span>
+        <span class="ec">事件 ${a.ec}</span>
+        <span class="act">${e.act}</span>
+      </div>
+      <div class="ts">${a.ts.split(' ')[1] || a.ts}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== 历史事件弹窗（起止时间） ===== */
+let curHistStart = null;   // ms
+let curHistEnd = null;     // ms
+let curHistLvl = 'all';
+function setHistRange(hours){
+  const now = Date.now();
+  if(hours === 0){
+    curHistStart = 0;
+    curHistEnd = now;
+  } else {
+    curHistStart = now - hours*3600*1000;
+    curHistEnd = now;
+  }
+  // 同步到 input
+  if($('#haStart')){
+    $('#haStart').value = curHistStart ? toLocalDT(curHistStart) : '';
+    $('#haEnd').value = curHistEnd ? toLocalDT(curHistEnd) : '';
+  }
+  renderHistAlarms();
+}
+function toLocalDT(ms){
+  const d = new Date(ms);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function openHistAlarms(){
+  $('#haNum').textContent = curDev.id;
+  $('#haName').textContent = curDev.name;
+  $('#haModel').textContent = curDev.model;
+  $('#haId').textContent = curDev.id;
+  $('#haName2').textContent = curDev.name;
+  $('#haModel2').textContent = curDev.model;
+  $('#haLoc').textContent = curDev.loc;
+  $('#haStation').textContent = curDev.station || paramStation;
+  if(curHistStart == null) setHistRange(24);
+  else renderHistAlarms();
+  $('#historyAlarmModal').classList.add('open');
+}
+function closeHistAlarms(){ $('#historyAlarmModal').classList.remove('open'); }
+function renderHistAlarms(){
+  const start = curHistStart || 0;
+  const end = curHistEnd || Date.now();
+  let logs = buildHistoryForDev(curDev.id).filter(l => {
+    const t = new Date(l.ts.replace(/-/g,'/')).getTime();
+    return t >= start && t <= end;
+  });
+  if(curHistLvl === 'prot') logs = logs.filter(l => EVENT_CODES[l.ec] && EVENT_CODES[l.ec].type === 'prot');
+  else if(curHistLvl === 'ok') logs = logs.filter(l => EVENT_CODES[l.ec] && EVENT_CODES[l.ec].type === 'ok');
+  if(!logs.length){
+    $('#histAlarmBody').innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--txt-2);padding:24px">📭 暂无历史事件</td></tr>`;
+    return;
+  }
+  $('#histAlarmBody').innerHTML = logs.map(l=>{
+    const e = EVENT_CODES[l.ec] || {act:'未知'};
+    const lvl = e.type === 'prot' ? 'crit' : 'ok';
+    return `
+    <tr>
+      <td class="ts">${l.ts}</td>
+      <td><span class="ec">${l.ec}</span></td>
+      <td><span class="lvl ${lvl}">${e.type==='prot'?'动作':'返回'}</span> <b style="color:#fff">${e.act}</b></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===== 历史曲线（起止时间） ===== */
+let historyChart;
+let curParams = new Set(['P','Q']);
+let curHsStart = null;
+let curHsEnd = null;
+function setHsRange(hours){
+  const now = Date.now();
+  if(hours === 0){
+    curHsStart = 0;
+    curHsEnd = now;
+  } else {
+    curHsStart = now - hours*3600*1000;
+    curHsEnd = now;
+  }
+  if($('#hsStart')){
+    $('#hsStart').value = curHsStart ? toLocalDT(curHsStart) : '';
+    $('#hsEnd').value = curHsEnd ? toLocalDT(curHsEnd) : '';
+  }
+  refreshHistoryChart();
+}
+function openHistory(){
+  $('#hsNum').textContent = curDev.id;
+  $('#hsName').textContent = curDev.name;
+  $('#hsModel').textContent = curDev.model;
+  $('#historyModal').classList.add('open');
+  if(curHsStart == null) setHsRange(1);
+  setTimeout(()=>initHistoryChart(), 200);
+}
+function closeHistory(){ $('#historyModal').classList.remove('open'); }
+function waitForEcharts(cb, tries){
+  tries = tries || 0;
+  if(typeof echarts !== 'undefined'){ cb(); return; }
+  if(tries > 50){ cb(); return; }
+  setTimeout(()=>waitForEcharts(cb, tries+1), 200);
+}
+function initHistoryChart(){
+  const el = $('#historyChart');
+  if(!el){ setTimeout(initHistoryChart, 200); return; }
+  if(typeof echarts === 'undefined'){ setTimeout(initHistoryChart, 200); return; }
+  if(!el.clientHeight || !el.clientWidth){
+    el.style.height = '440px';
+    el.style.width = '100%';
+  }
+  if(historyChart){ historyChart.dispose(); historyChart = null; }
+  historyChart = echarts.init(el);
+  refreshHistoryChart();
+}
+function paramUnit(p){
+  const u = {Ua:'kV',Ub:'kV',Uc:'kV',Ia:'A',Ib:'A',Ic:'A',P:'MW',Q:'MVar',S:'MVA',f:'Hz',PF:'',U0:'kV'};
+  return u[p] || '';
+}
+function paramName(p){
+  const n = {P:'有功 P',Q:'无功 Q',S:'视在 S',PF:'功率因数',f:'频率 f',U0:'零序电压 U0',Ua:'A 相电压 Ua',Ub:'B 相电压 Ub',Uc:'C 相电压 Uc',Ia:'A 相电流 Ia',Ib:'B 相电流 Ib',Ic:'C 相电流 Ic'};
+  return n[p] || p;
+}
+function refreshHistoryChart(){
+  if(!historyChart || !curDev) return;
+  const startTs = curHsStart || (Date.now() - 3600*1000);
+  const endTs = curHsEnd || Date.now();
+  const span = Math.max(endTs - startTs, 60*1000);
+  // 时间点：自适应间隔，1H 内 1min，6H 5min，24H 10min，>1D 30min，>7D 1h，>30D 1d
+  let interval; // 分钟
+  if(span <= 6*3600*1000) interval = 1;
+  else if(span <= 24*3600*1000) interval = 5;
+  else if(span <= 3*24*3600*1000) interval = 10;
+  else if(span <= 7*24*3600*1000) interval = 30;
+  else if(span <= 30*24*3600*1000) interval = 60;
+  else interval = 24*60;
+  const n = Math.max(12, Math.floor(span / (interval*60*1000)));
+  const labels = [];
+  for(let i=n-1;i>=0;i--){
+    const t = new Date(startTs + i*interval*60*1000);
+    if(span > 3*24*3600*1000){
+      labels.push(`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`);
+    } else {
+      labels.push(`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`);
+    }
+  }
+  const colors = {Ua:'#22d3ee',Ub:'#a78bfa',Uc:'#f59e0b',Ia:'#22d3ee',Ib:'#a78bfa',Ic:'#f59e0b',P:'#22c55e',Q:'#3b82f6',S:'#a78bfa',f:'#22d3ee',U0:'#ef4444',PF:'#a78bfa'};
+  const series = [];
+  const offline = curDev.s === STATUS.OFFLINE;
+  Array.from(curParams).forEach(p=>{
+    let base = curDev[p];
+    if(base == null || (typeof base === 'number' && base === 0 && p !== 'U0' && p !== 'P' && p !== 'Q')) base = 1;
+    const data = [];
+    for(let i=0;i<n;i++){
+      if(offline){
+        data.push(null);
+      } else {
+        const noise = (Math.random()-0.5) * (p === 'PF' ? 0.04 : (Math.abs(base) * 0.12));
+        const v = +(base + noise).toFixed(3);
+        data.push(v);
+      }
+    }
+    series.push({
+      name: paramName(p) + (paramUnit(p) ? ' (' + paramUnit(p) + ')' : ''),
+      type:'line',
+      data,
+      smooth:true,
+      symbol:'none',
+      connectNulls:true,
+      lineStyle:{color:colors[p]||'#22d3ee',width:1.5}
+    });
+  });
+  historyChart.setOption({
+    backgroundColor:'transparent',
+    grid:{left:60,right:30,top:50,bottom:60,containLabel:true},
+    tooltip:{
+      trigger:'axis',
+      backgroundColor:'rgba(11,16,36,.95)',
+      borderColor:'rgba(34,211,238,.4)',
+      textStyle:{color:'#dbe5ff',fontSize:12}
+    },
+    legend:{
+      top:8,
+      textStyle:{color:'#dbe5ff',fontSize:12},
+      icon:'roundRect',
+      itemWidth:12,itemHeight:8
+    },
+    xAxis:{
+      type:'category',
+      data:labels,
+      boundaryGap:false,
+      axisLine:{lineStyle:{color:'rgba(120,170,255,.25)'}},
+      axisLabel:{
+        color:'#8ea0c8',
+        fontSize:11,
+        interval:Math.max(0, Math.floor(labels.length/10) - 1)
+      }
+    },
+    yAxis:{
+      type:'value',
+      scale:true,
+      axisLine:{show:false},
+      axisTick:{show:false},
+      axisLabel:{color:'#8ea0c8',fontSize:11},
+      splitLine:{lineStyle:{color:'rgba(120,170,255,.08)'}}
+    },
+    dataZoom:[
+      {type:'inside',throttle:50,zoomOnMouseWheel:true,moveOnMouseMove:true,moveOnMouseWheel:false},
+      {type:'slider',start:0,end:100,height:18,bottom:14,borderColor:'rgba(120,170,255,.25)',fillerColor:'rgba(34,211,238,.15)',handleStyle:{color:'#22d3ee',borderColor:'#22d3ee'},moveHandleStyle:{color:'rgba(34,211,238,.3)'},textStyle:{color:'#8ea0c8',fontSize:10},dataBackground:{lineStyle:{color:'rgba(120,170,255,.15)'},areaStyle:{color:'rgba(34,211,238,.04)'}}}
+    ],
+    series
+  }, true);
+  // 立即 resize 一次确保首次渲染
+  setTimeout(()=>historyChart && historyChart.resize(), 50);
+}
+function exportHistory(){
+  if(!curDev) return;
+  const params = Array.from(curParams);
+  const startTs = curHsStart || (Date.now() - 3600*1000);
+  const endTs = curHsEnd || Date.now();
+  const span = Math.max(endTs - startTs, 60*1000);
+  let interval; // 分钟
+  if(span <= 6*3600*1000) interval = 1;
+  else if(span <= 24*3600*1000) interval = 5;
+  else if(span <= 3*24*3600*1000) interval = 10;
+  else if(span <= 7*24*3600*1000) interval = 30;
+  else if(span <= 30*24*3600*1000) interval = 60;
+  else interval = 24*60;
+  const n = Math.max(12, Math.floor(span / (interval*60*1000)));
+  let csv = '时间,' + params.map(p => paramName(p) + (paramUnit(p) ? '(' + paramUnit(p) + ')' : '')).join(',') + '\n';
+  for(let i=0;i<n;i++){
+    const t = new Date(startTs + i*interval*60*1000);
+    const time = t.toISOString().replace('T',' ').substring(0,19);
+    const row = [time];
+    params.forEach(p=>{ const base = curDev[p] != null ? curDev[p] : 1; row.push(+(base + (Math.random()-0.5)*base*0.15).toFixed(3)); });
+    csv += row.join(',') + '\n';
+  }
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const durLabel = `${Math.round(span/3600000)}H`;
+  a.href = url;
+  a.download = `历史曲线_${curDev.id}_${curDev.model}_${durLabel}_${new Date().toISOString().substring(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert(`✓ 已导出 ${curParams.size} 个参数 × ${n} 个数据点`);
+}
+
+/* ===== 控制记录弹窗（起止时间） ===== */
+let curCtrlType = 'all';
+let curClStart = null;
+let curClEnd = null;
+function setClRange(hours){
+  const now = Date.now();
+  if(hours === 0){
+    curClStart = 0;
+    curClEnd = now;
+  } else {
+    curClStart = now - hours*3600*1000;
+    curClEnd = now;
+  }
+  if($('#clStart')){
+    $('#clStart').value = curClStart ? toLocalDT(curClStart) : '';
+    $('#clEnd').value = curClEnd ? toLocalDT(curClEnd) : '';
+  }
+  renderCtrlLog();
+}
+function openCtrlLog(){
+  $('#clNum').textContent = curDev.id;
+  $('#clName').textContent = curDev.name;
+  $('#clModel').textContent = curDev.model;
+  $('#clId').textContent = curDev.id;
+  $('#clName2').textContent = curDev.name;
+  $('#clModel2').textContent = curDev.model;
+  $('#clLoc').textContent = curDev.loc;
+  $('#clStation').textContent = curDev.station || paramStation;
+  if(curClStart == null) setClRange(24);
+  else renderCtrlLog();
+  $('#ctrlLogModal').classList.add('open');
+}
+function closeCtrlLog(){ $('#ctrlLogModal').classList.remove('open'); }
+function renderCtrlLog(){
+  const start = curClStart || 0;
+  const end = curClEnd || Date.now();
+  let logs = ctrlLogs.filter(l => {
+    const t = new Date(l.ts.replace(/-/g,'/')).getTime();
+    return t >= start && t <= end;
+  });
+  if(curCtrlType !== 'all') logs = logs.filter(l => l.obj === curCtrlType);
+  if(!logs.length){
+    $('#ctrlLogBody').innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--txt-2);padding:24px">📭 暂无控制记录</td></tr>`;
+    return;
+  }
+  const objName = {obj1:'Obj1 断路器',obj2:'Obj2',obj3:'Obj3',obj4:'Obj4',obj5:'Obj5',obj6:'Obj6'};
+  const actName = {close:'合闸',trip:'分闸',reset:'复归'};
+  $('#ctrlLogBody').innerHTML = logs.map(l=>{
+    const lvlCls = l.act==='trip' ? 'lvl-warn' : 'lvl-ok';
+    return `<tr>
+      <td>${l.ts}</td>
+      <td class="op">${l.operator}</td>
+      <td class="action">${objName[l.obj]||l.obj}</td>
+      <td class="${lvlCls}">${actName[l.act]||l.act}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===== 防误操作 ===== */
+let pendingAction = null;
+function openConfirm(objIdx, act){
+  const o = REMOTE_OBJS[objIdx];
+  const actName = act === 'close' ? '合闸' : '分闸';
+  const selReg = act === 'close' ? o.closeAddr : o.selAddr;
+  const execReg = o.execAddr;
+  pendingAction = {objIdx, act, reg:`${selReg} + ${execReg}`};
+  $('#cfTitle').textContent = '防误操作二次确认';
+  $('#cfDev').textContent = `${curDev.id} ${curDev.name} · ${curDev.loc} · ${curDev.model}`;
+  $('#cfAction').textContent = `${o.id} ${o.name} - 遥控${actName}`;
+  $('#cfReg').textContent = `选择 ${selReg} + 执行 ${execReg} (Modbus 06 写)`;
+  const off = curDev.s === STATUS.OFFLINE;
+  $('#cfState').textContent = off ? '离线 - 操作不可用' : (act==='close' ? '分位 / 远方 / 无保护动作' : '合位 / 远方 / 无保护动作');
+  $('#cfTime').textContent = new Date().toLocaleString('zh-CN',{hour12:false});
+  $('#opConfirm').checked = false;
+  $('#btnDoCtrl').disabled = true;
+  $('#btnDoCtrl').className = act === 'trip' ? 'btn-confirm' : 'btn-confirm normal';
+  $('#btnDoCtrl').textContent = `确认${actName}`;
+  $('#confirmModal').classList.add('open');
+}
+function closeConfirm(){
+  $('#confirmModal').classList.remove('open');
+  pendingAction = null;
+}
+function doControl(){
+  if(!pendingAction || !curDev) return;
+  const t = new Date().toLocaleString('zh-CN',{hour12:false});
+  const {objIdx, act, reg} = pendingAction;
+  const o = REMOTE_OBJS[objIdx];
+  const actName = act === 'close' ? '合闸' : '分闸';
+  ctrlLogs.unshift({ts:t, operator:'admin', obj:`obj${objIdx+1}`, act});
+  closeConfirm();
+  alert(`✓ ${o.id} ${o.name} 遥控${actName}命令已下发\n操作人: admin\n时间: ${t}`);
+}
+
+/* ===== 事件 ===== */
+function bindEvents(){
+  document.querySelectorAll('[data-close]').forEach(b=>{
+    b.addEventListener('click', ()=>{ $('#'+b.dataset.close).classList.remove('open'); });
+  });
+  $('#goBack').addEventListener('click', ()=>{ location.href = 'relay-monitor.html'; });
+  $('#goStation').addEventListener('click', ()=>{ location.href = 'relay-monitor.html'; });
+  $('#btnBack').addEventListener('click', ()=>{ location.href = 'relay-monitor.html'; });
+  $('#btnClose').addEventListener('click', ()=>{ window.close(); });
+  $('#btnHistory').addEventListener('click', openHistory);
+  $('#btnCtrlLog').addEventListener('click', openCtrlLog);
+  $('#btnHistAlarms').addEventListener('click', openHistAlarms);
+
+  document.querySelectorAll('#paramChips .chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      c.classList.toggle('on');
+      const p = c.dataset.p;
+      if(c.classList.contains('on')) curParams.add(p);
+      else curParams.delete(p);
+      refreshHistoryChart();
+    });
+  });
+  document.querySelectorAll('#timeRange button').forEach(b=>{});  // 兼容旧 DOM（已不使用）
+  $('#btnExport').addEventListener('click', exportHistory);
+
+  /* 控制记录：起止时间 + 预设 */
+  function bindTimePresets(presetId, applyId, startId, endId, onApply){
+    document.querySelectorAll('#' + presetId + ' .time-preset').forEach(p=>{
+      p.addEventListener('click', ()=>{
+        document.querySelectorAll('#' + presetId + ' .time-preset').forEach(x=>x.classList.remove('on'));
+        p.classList.add('on');
+        const h = +p.dataset.h;
+        const now = Date.now();
+        if(h === 0){
+          $('#' + startId).value = '';
+          $('#' + endId).value = toLocalDT(now);
+        } else {
+          $('#' + startId).value = toLocalDT(now - h*3600*1000);
+          $('#' + endId).value = toLocalDT(now);
+        }
+        onApply();
+      });
+    });
+    $('#' + applyId).addEventListener('click', ()=>{
+      const s = $('#' + startId).value;
+      const e = $('#' + endId).value;
+      if(s) curClStart || curHsStart || curHistStart;  // 兼容
+      if(presetId === 'haPresets'){ curHistStart = s ? new Date(s).getTime() : 0; curHistEnd = e ? new Date(e).getTime() : Date.now(); renderHistAlarms(); }
+      else if(presetId === 'hsPresets'){ curHsStart = s ? new Date(s).getTime() : 0; curHsEnd = e ? new Date(e).getTime() : Date.now(); refreshHistoryChart(); }
+      else if(presetId === 'clPresets'){ curClStart = s ? new Date(s).getTime() : 0; curClEnd = e ? new Date(e).getTime() : Date.now(); renderCtrlLog(); }
+      // 清掉预设高亮（用户自定义起止）
+      document.querySelectorAll('#' + presetId + ' .time-preset').forEach(x=>x.classList.remove('on'));
+    });
+  }
+  bindTimePresets('clPresets', 'clApply', 'clStart', 'clEnd', renderCtrlLog);
+  bindTimePresets('hsPresets', 'hsApply', 'hsStart', 'hsEnd', refreshHistoryChart);
+  bindTimePresets('haPresets', 'haApply', 'haStart', 'haEnd', renderHistAlarms);
+  document.querySelectorAll('#ctrlObjFilter .chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      document.querySelectorAll('#ctrlObjFilter .chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      curCtrlType = c.dataset.t;
+      renderCtrlLog();
+    });
+  });
+
+  document.querySelectorAll('#haTimeRange button').forEach(b=>{});  // 兼容旧 DOM（已不使用）
+  document.querySelectorAll('#haLvlFilter .chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      document.querySelectorAll('#haLvlFilter .chip').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      curHistLvl = c.dataset.l;
+      renderHistAlarms();
+    });
+  });
+
+  $('#btnConfirmCancel').addEventListener('click', closeConfirm);
+  $('#opConfirm').addEventListener('change', ()=>{ $('#btnDoCtrl').disabled = !$('#opConfirm').checked; });
+  $('#btnDoCtrl').addEventListener('click', doControl);
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      if($('#confirmModal').classList.contains('open')) closeConfirm();
+      else if($('#historyAlarmModal').classList.contains('open')) closeHistAlarms();
+      else if($('#historyModal').classList.contains('open')) closeHistory();
+      else if($('#ctrlLogModal').classList.contains('open')) closeCtrlLog();
+    }
+  });
+}
+
+function refreshAll(){
+  fillPath();
+  fillHero();
+  renderRow1();
+  renderRow2();
+  renderDI();
+  renderCtrl();
+  renderCurAlarmList();
+}
+
+refreshAll();
+bindEvents();
+waitForEcharts(initHistoryChart);
+
+setInterval(()=>{
+  if(curDev.s === STATUS.OFFLINE) return;
+  curDev.P = Math.max(0, curDev.P + (Math.random()-0.5)*0.1);
+  curDev.Q = Math.max(0, curDev.Q + (Math.random()-0.5)*0.05);
+  curDev.S = Math.sqrt(curDev.P*curDev.P + curDev.Q*curDev.Q);
+  curDev.Ia = Math.max(0, curDev.Ia + Math.round((Math.random()-0.5)*8));
+  curDev.Ib = Math.max(0, curDev.Ib + Math.round((Math.random()-0.5)*8));
+  curDev.Ic = Math.max(0, curDev.Ic + Math.round((Math.random()-0.5)*8));
+  if(curDev.Ua > 30){
+    curDev.Ua = 38.5 + (Math.random()-0.5)*0.1;
+    curDev.Ub = 38.4 + (Math.random()-0.5)*0.1;
+    curDev.Uc = 38.6 + (Math.random()-0.5)*0.1;
+  } else if(curDev.Ua > 5){
+    curDev.Ua = 10.4 + (Math.random()-0.5)*0.08;
+    curDev.Ub = curDev.Ua - 0.04;
+    curDev.Uc = curDev.Ua + 0.03;
+  } else if(curDev.Ua > 0){
+    curDev.Ua = 0.4 + (Math.random()-0.5)*0.01;
+    curDev.Ub = curDev.Ua; curDev.Uc = curDev.Ua;
+  }
+  curDev.f = 50.00 + (Math.random()-0.5)*0.04;
+  renderRow1();
+  renderRow2();
+  fillHero();
+},5000);
+</script>
+</body>
+</html>

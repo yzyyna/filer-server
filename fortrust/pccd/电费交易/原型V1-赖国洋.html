@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电费交易结算管理系统 v1.0 · 融合门户</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1F3A68;
+    --primary-2: #1749D9;
+    --primary-soft: #EEF2FA;
+    --bg: #F5F7FA;
+    --surface: #FFFFFF;
+    --border: #E5E7EB;
+    --text: #1F2937;
+    --text-2: #6B7280;
+    --text-3: #9CA3AF;
+    --orange: #F59E0B;
+  }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 14px; color: var(--text); background: var(--bg); line-height: 1.6;
+  }
+  a { color: var(--primary-2); text-decoration: none; cursor: pointer; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+  /* 顶部导航栏 */
+  .topbar {
+    height: 64px;
+    background: linear-gradient(135deg, #1F3A68 0%, #1749D9 100%);
+    color: #fff;
+    display: flex; align-items: center;
+    padding: 0 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 12px; }
+  .topbar .brand .logo {
+    width: 32px; height: 32px;
+    background: #fff; color: var(--primary-2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+  }
+  .topbar .brand .title { font-weight: 600; font-size: 16px; }
+  .topbar .brand .ver { font-size: 12px; color: rgba(255,255,255,.7); margin-left: 4px; }
+
+  .topbar .tabs { display: flex; margin-left: 48px; gap: 4px; }
+  .topbar .tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    color: rgba(255,255,255,.7);
+    font-size: 14px; font-weight: 500;
+    transition: all .15s;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar .tab:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .topbar .tab.active { background: rgba(255,255,255,.18); color: #fff; }
+  .topbar .tab .badge {
+    background: rgba(255,255,255,.2);
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .topbar .tab.active .badge { background: var(--orange); color: #fff; }
+
+  .topbar .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 13px; }
+  .topbar .topbar-right .info { color: rgba(255,255,255,.85); }
+  .topbar .topbar-right .open-btn {
+    background: rgba(255,255,255,.15); color: #fff;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px;
+    display: flex; align-items: center; gap: 6px;
+    transition: all .15s;
+  }
+  .topbar .topbar-right .open-btn:hover { background: rgba(255,255,255,.25); }
+
+  /* 主体布局 */
+  .body { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 64px); }
+
+  /* 主内容区 */
+  .content { background: #fff; position: relative; }
+  .content iframe {
+    width: 100%; height: calc(100vh - 64px);
+    border: none;
+    display: block;
+    background: #fff;
+  }
+  .content .loading {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-2); font-size: 13px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 900px) {
+    .topbar { padding: 0 12px; }
+    .topbar .tabs { margin-left: 12px; }
+    .topbar .tab { padding: 6px 10px; font-size: 12px; }
+    .topbar .topbar-right .info { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">电</div>
+    <div class="title">电费交易结算管理系统 <span class="ver">v1.0</span></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="proto" onclick="switchTab('proto')">
+      <span>🎨</span> 原型页面 <span class="badge">18 页面</span>
+    </div>
+    <div class="tab" data-tab="flow" onclick="switchTab('flow')">
+      <span>📊</span> 流程图 <span class="badge">8 张</span>
+    </div>
+    <div class="tab" data-tab="prd" onclick="switchTab('prd')">
+      <span>📋</span> 需求文档 <span class="badge">PRD</span>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <span class="info" id="infoText">原型页面 · 18 个核心页面 + 12 个弹窗抽屉</span>
+    <a class="open-btn" id="openBtn" href="index.html" target="_blank">
+      <span>🔗</span> 新窗口打开
+    </a>
+  </div>
+</div>
+
+<!-- 主体 -->
+<div class="body">
+  <main class="content">
+    <div class="loading" id="loading">加载中...</div>
+    <iframe id="contentFrame" src="index.html" onload="hideLoading()"></iframe>
+  </main>
+</div>
+
+<script>
+  // URL Hash 路由
+  window.addEventListener('hashchange', handleHash);
+  function handleHash() {
+    const h = window.location.hash.replace('#', '');
+    if (h === 'flow' || h === 'prd' || h === 'proto') {
+      switchTab(h);
+    }
+  }
+  setTimeout(handleHash, 100);
+
+  // Tab 配置
+  const tabs = {
+    proto: { file: 'index.html', info: '原型页面 · 18 个核心页面 + 12 个弹窗抽屉' },
+    flow:  { file: 'docs.html',   info: '业务流程图 · 8 张 SVG 流程图' },
+    prd:   { file: 'PRD.html',    info: 'PRD 文档 · 12 章 + 验收自检 37 项' }
+  };
+  let currentTab = 'proto';
+
+  function switchTab(name) {
+    if (name === currentTab) return;
+    currentTab = name;
+
+    document.querySelectorAll('.topbar .tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.topbar .tab[data-tab="${name}"]`).classList.add('active');
+
+    document.getElementById('infoText').textContent = tabs[name].info;
+    document.getElementById('openBtn').href = tabs[name].file;
+
+    showLoading();
+    document.getElementById('contentFrame').src = tabs[name].file;
+  }
+
+  function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+  }
+  function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>

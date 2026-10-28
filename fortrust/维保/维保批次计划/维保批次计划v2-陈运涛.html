@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>批次维保计划 - 维保管理</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif; background: #f0f2f5; color: #333; font-size: 14px; line-height: 1.5; }
+
+/* ===== 顶部导航 ===== */
+.top-bar { height: 48px; background: #001529; display: flex; align-items: center; padding: 0 20px; }
+.logo { color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-right: 32px; }
+.logo-icon { width: 24px; height: 24px; background: #1890ff; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.nav-menu { display: flex; gap: 2px; flex: 1; }
+.nav-item { padding: 0 14px; height: 48px; display: flex; align-items: center; font-size: 13px; color: rgba(255,255,255,0.65); cursor: pointer; border-bottom: 2px solid transparent; }
+.nav-item:hover { color: #fff; }
+.nav-item.active { color: #fff; border-bottom-color: #1890ff; }
+.top-right { display: flex; align-items: center; gap: 12px; }
+.top-right .avatar { width: 28px; height: 28px; border-radius: 50%; background: #1890ff; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; }
+.top-right .uname { color: rgba(255,255,255,0.85); font-size: 13px; }
+
+/* ===== 面包屑 ===== */
+.breadcrumb { padding: 10px 24px; font-size: 13px; color: #8c8c8c; background: #fff; border-bottom: 1px solid #f0f0f0; }
+.breadcrumb a { color: #1890ff; cursor: pointer; }
+.breadcrumb .sep { margin: 0 6px; color: #d9d9d9; }
+
+/* ===== 页面容器 ===== */
+.page-container { padding: 16px 24px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ===== 通用按钮 ===== */
+.btn { padding: 5px 16px; height: 32px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid #d9d9d9; background: #fff; color: #595959; display: inline-flex; align-items: center; gap: 4px; transition: all .15s; font-family: inherit; }
+.btn:hover { border-color: #1890ff; color: #1890ff; }
+.btn-primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+.btn-primary:hover { background: #40a9ff; border-color: #40a9ff; color: #fff; }
+.btn-sm { padding: 3px 10px; height: 26px; font-size: 12px; }
+.btn-text { border: none; background: none; color: #1890ff; padding: 0 4px; height: auto; font-size: 13px; }
+.btn-text:hover { color: #40a9ff; }
+
+/* ===== 一级页面：卡片列表 ===== */
+.list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.filter-bar { display: flex; align-items: center; gap: 12px; }
+.filter-bar input, .filter-bar select { height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 11px; font-size: 13px; outline: none; font-family: inherit; }
+.filter-bar input:focus, .filter-bar select:focus { border-color: #1890ff; }
+.list-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.list-title::before { content: ''; width: 3px; height: 16px; background: #1890ff; border-radius: 2px; }
+
+.cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.batch-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; cursor: pointer; transition: all .2s; }
+.batch-card:hover { border-color: #1890ff; box-shadow: 0 4px 12px rgba(24,144,255,.1); }
+
+.card-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+.card-header .batch-no { font-size: 16px; font-weight: 600; color: #262626; }
+.status-tag { padding: 2px 10px; border-radius: 3px; font-size: 12px; font-weight: 500; }
+.status-tag.ongoing { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+.status-tag.done { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.status-tag.pending { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+.status-tag.stopped { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffa39e; }
+
+.card-body { padding: 16px 20px; }
+.card-row { display: flex; margin-bottom: 10px; }
+.card-row:last-child { margin-bottom: 0; }
+.card-label { width: 130px; color: #8c8c8c; font-size: 13px; flex-shrink: 0; }
+.card-value { color: #262626; font-size: 13px; flex: 1; }
+.card-value strong { font-size: 16px; color: #1890ff; }
+.card-value .time-range { font-variant-numeric: tabular-nums; }
+.card-remark { color: #8c8c8c; font-size: 12px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+.card-footer { padding: 10px 20px; background: #fafafa; border-top: 1px solid #f0f0f0; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* 分页 */
+.pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 24px; }
+.page-btn { width: 32px; height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; color: #595959; display: flex; align-items: center; justify-content: center; }
+.page-btn:hover { border-color: #1890ff; color: #1890ff; }
+.page-btn.active { background: #1890ff; border-color: #1890ff; color: #fff; }
+.page-btn.disabled { color: #d9d9d9; cursor: not-allowed; }
+
+/* ===== 二级页面 ===== */
+.detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.detail-left { display: flex; align-items: center; gap: 12px; }
+.back-btn { padding: 5px 12px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; color: #595959; display: inline-flex; align-items: center; gap: 4px; }
+.back-btn:hover { border-color: #1890ff; color: #1890ff; }
+.detail-left h2 { font-size: 16px; font-weight: 600; }
+
+/* 可折叠信息表 */
+.info-panel { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; margin-bottom: 16px; }
+.info-panel-header { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.info-panel-header .title { font-size: 14px; font-weight: 600; color: #262626; }
+.info-panel-header .toggle { font-size: 12px; color: #1890ff; }
+.info-panel-body { padding: 0 16px 16px; }
+.info-table { width: 100%; border-collapse: collapse; }
+.info-table td { padding: 8px 12px; border: 1px solid #f0f0f0; font-size: 13px; }
+.info-table .it-label { background: #fafafa; color: #8c8c8c; width: 120px; white-space: nowrap; }
+.info-table .it-value { color: #262626; }
+.info-table .it-value strong { color: #1890ff; font-size: 15px; }
+.info-panel.collapsed .info-panel-body { display: none; }
+.info-panel.collapsed .info-panel-header { border-bottom: none; }
+.info-panel.collapsed .summary-line { display: flex; }
+.info-panel .summary-line { display: none; padding: 0 16px 10px; font-size: 13px; color: #595959; gap: 20px; }
+.info-panel .summary-line span { color: #262626; }
+
+/* Tab */
+.tab-bar { display: flex; border-bottom: 1px solid #e8e8e8; margin-bottom: 16px; }
+.tab-item { padding: 8px 20px; font-size: 14px; color: #595959; cursor: pointer; border-bottom: 2px solid transparent; }
+.tab-item:hover { color: #1890ff; }
+.tab-item.active { color: #1890ff; border-bottom-color: #1890ff; font-weight: 500; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* 数据表 */
+.data-table-wrap { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { background: #fafafa; padding: 10px 12px; text-align: left; font-weight: 600; color: #262626; border-bottom: 1px solid #e8e8e8; font-size: 12px; white-space: nowrap; }
+.data-table td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #595959; }
+.data-table tr:hover td { background: #fafcff; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .col-idx { width: 40px; text-align: center; }
+.data-table .col-action { white-space: nowrap; }
+.data-table .col-action a { color: #1890ff; cursor: pointer; margin-right: 8px; font-size: 12px; }
+.data-table .col-action a:hover { color: #40a9ff; }
+.data-table input[type="checkbox"] { cursor: pointer; }
+
+.tag { padding: 1px 8px; border-radius: 3px; font-size: 12px; }
+.tag-blue { background: #e6f7ff; color: #1890ff; }
+.tag-green { background: #f6ffed; color: #52c41a; }
+.tag-orange { background: #fff7e6; color: #fa8c16; }
+.tag-red { background: #fff1f0; color: #ff4d4f; }
+.tag-gray { background: #f5f5f5; color: #8c8c8c; }
+
+/* 底部操作栏 */
+.bottom-bar { position: sticky; bottom: 0; left: 0; right: 0; background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; box-shadow: 0 -2px 8px rgba(0,0,0,.06); }
+.bottom-bar .selected-info { font-size: 13px; color: #595959; }
+.bottom-bar .selected-info strong { color: #1890ff; }
+
+/* ===== 弹窗 ===== */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 1000; display: none; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 6px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.2); }
+.modal-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; }
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-header .close { cursor: pointer; font-size: 18px; color: #bfbfbf; }
+.modal-header .close:hover { color: #595959; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 8px; position: sticky; bottom: 0; background: #fff; }
+
+.modal-section { margin-bottom: 20px; }
+.modal-section-title { font-size: 13px; font-weight: 600; color: #262626; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0; }
+.form-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.form-label { width: 100px; text-align: right; font-size: 13px; color: #595959; }
+.form-label .req { color: #ff4d4f; }
+.form-input { flex: 1; height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 11px; font-size: 13px; outline: none; font-family: inherit; }
+.form-input:focus { border-color: #1890ff; }
+textarea.form-input { height: auto; padding: 6px 11px; resize: vertical; min-height: 60px; line-height: 1.5; }
+.form-hint { font-size: 12px; color: #bfbfbf; }
+
+.modal-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.modal-table th { background: #fafafa; padding: 8px 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #e8e8e8; font-size: 12px; }
+.modal-table td { padding: 6px 10px; border-bottom: 1px solid #f5f5f5; }
+.modal-table select { height: 28px; border: 1px solid #d9d9d9; border-radius: 3px; padding: 0 8px; font-size: 12px; outline: none; font-family: inherit; }
+.modal-table select:focus { border-color: #1890ff; }
+.modal-table .unit-name { font-weight: 500; color: #262626; }
+.modal-table .mat-list { font-size: 11px; color: #8c8c8c; line-height: 1.6; }
+.badge-count { background: #1890ff; color: #fff; padding: 1px 8px; border-radius: 10px; font-size: 12px; margin-left: 6px; }
+.link-text { color: #1890ff; cursor: pointer; font-size: 12px; }
+.link-text:hover { color: #40a9ff; }
+
+/* ===== 打印页面 ===== */
+.print-page { background: #fff; max-width: 800px; margin: 0 auto; padding: 40px 50px; font-size: 14px; color: #000; }
+.print-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 30px; letter-spacing: 4px; }
+.print-section-title { font-size: 15px; font-weight: 700; margin: 20px 0 10px; padding-left: 8px; border-left: 3px solid #000; }
+.print-info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.print-info-table td { padding: 8px 12px; border: 1px solid #000; font-size: 13px; }
+.print-info-table .pi-label { background: #f5f5f5; width: 140px; font-weight: 600; }
+.print-data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.print-data-table th { background: #f5f5f5; padding: 8px 10px; border: 1px solid #000; font-size: 12px; font-weight: 600; text-align: center; }
+.print-data-table td { padding: 6px 10px; border: 1px solid #000; font-size: 12px; text-align: center; }
+.print-data-table td.left { text-align: left; }
+.print-sign { display: flex; justify-content: space-around; margin-top: 40px; }
+.print-sign div { text-align: center; font-size: 13px; }
+.print-sign .sign-line { border-bottom: 1px solid #000; width: 140px; height: 36px; margin: 4px auto 0; }
+.print-approval { margin: 20px 0; }
+.print-approval-node { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.print-approval-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #000; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+.print-approval-line { width: 2px; background: #000; margin-left: 11px; height: 20px; }
+.print-approval-info { font-size: 13px; }
+.print-approval-info .pa-role { font-weight: 600; }
+.print-approval-info .pa-name { margin-left: 8px; }
+.print-approval-info .pa-status { margin-left: 8px; color: #52c41a; }
+.print-approval-info .pa-time { color: #8c8c8c; font-size: 12px; margin-top: 2px; }
+
+/* 视图切换按钮（演示用） */
+.view-switcher { position: fixed; right: 16px; bottom: 16px; z-index: 999; display: flex; flex-direction: column; gap: 6px; }
+.view-switcher button { padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff; cursor: pointer; font-size: 12px; color: #595959; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.view-switcher button:hover { border-color: #1890ff; color: #1890ff; }
+.view-switcher button.active { background: #1890ff; color: #fff; border-color: #1890ff; }
+
+@media (max-width: 900px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .nav-menu { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="top-bar">
+  <div class="logo"><div class="logo-icon">FT</div>FORTRUST FPSS云服务平台</div>
+  <nav class="nav-menu">
+    <div class="nav-item">电站监控</div>
+    <div class="nav-item">机组监控</div>
+    <div class="nav-item">单机监控</div>
+    <div class="nav-item">运维报告</div>
+    <div class="nav-item">出库管理</div>
+    <div class="nav-item active">维保管理</div>
+  </nav>
+  <div class="top-right">
+    <div class="avatar">陈</div>
+    <span class="uname">陈运韬</span>
+  </div>
+</div>
+
+<!-- 面包屑 -->
+<div class="breadcrumb" id="breadcrumb">
+  <a>维保管理</a><span class="sep">/</span><a>批次维保计划</a>
+</div>
+
+<div class="page-container">
+
+<!-- ============ 视图1：一级页面 ============ -->
+<div class="view active" id="view-list">
+  <div class="list-header">
+    <div class="filter-bar">
+      <div class="list-title">批次维保计划</div>
+      <input type="text" placeholder="批次号搜索" style="width:140px">
+      <select style="width:120px"><option>全部状态</option><option>未开始</option><option>进行中</option><option>已完成</option><option>已中止</option></select>
+      <button class="btn btn-sm">查询</button>
+      <button class="btn btn-sm">重置</button>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('modal-new-batch')">+ 新建批次计划</button>
+  </div>
+
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <div class="pagination">
+    <div class="page-btn disabled">‹</div>
+    <div class="page-btn active">1</div>
+    <div class="page-btn">2</div>
+    <div class="page-btn">3</div>
+    <div class="page-btn">›</div>
+  </div>
+</div>
+
+<!-- ============ 视图2：二级页面 ============ -->
+<div class="view" id="view-detail">
+  <div class="detail-header">
+    <div class="detail-left">
+      <button class="back-btn" onclick="switchView('view-list')">← 返回</button>
+      <h2>第33批次维保计划</h2>
+      <span class="status-tag ongoing">进行中</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="switchView('view-print-batch')">📥 导出</button>
+      <button class="btn btn-sm" onclick="switchView('view-print-batch')">🖨 打印</button>
+    </div>
+  </div>
+
+  <!-- 可折叠信息表 -->
+  <div class="info-panel" id="infoPanel">
+    <div class="info-panel-header" onclick="toggleInfoPanel()">
+      <span class="title">批次计划信息</span>
+      <span class="toggle" id="infoToggle">收起 ▲</span>
+    </div>
+    <div class="summary-line">
+      <span>第33批次</span><span>·</span>
+      <span>106台</span><span>·</span>
+      <span>2026-09-01 ~ 2026-09-14</span><span>·</span>
+      <span>停机7h/台</span>
+    </div>
+    <div class="info-panel-body">
+      <table class="info-table">
+        <tr>
+          <td class="it-label">维保批次</td>
+          <td class="it-value">第33批次</td>
+          <td class="it-label">维保机组数量</td>
+          <td class="it-value"><strong>106</strong> 台</td>
+        </tr>
+        <tr>
+          <td class="it-label">计划开始日期</td>
+          <td class="it-value">2026-09-01</td>
+          <td class="it-label">计划结束日期</td>
+          <td class="it-value">2026-09-14</td>
+        </tr>
+        <tr>
+          <td class="it-label">计划维保停机时段</td>
+          <td class="it-value" colspan="3">
+            上午：08:00 ~ 12:00<br>
+            下午：14:00 ~ 17:00
+          </td>
+        </tr>
+        <tr>
+          <td class="it-label">计划停机时长（每台）</td>
+          <td class="it-value">7 小时</td>
+          <td class="it-label">备注</td>
+          <td class="it-value">本批次全部执行A保，重点检查机油系统和滤芯状态</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('tab-tasks', this)">任务记录</div>
+    <div class="tab-item" onclick="switchTab('tab-units', this)">机组清单</div>
+  </div>
+
+  <!-- Tab1: 任务记录 -->
+  <div class="tab-pane active" id="tab-tasks">
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:13px;color:#8c8c8c;">共 8 条任务记录，已完成 2 条，待执行 6 条</div>
+      <button class="btn btn-primary btn-sm">+ 下发新任务</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-idx">序号</th>
+            <th>任务日期</th>
+            <th>维保机组</th>
+            <th>执行人</th>
+            <th>状态</th>
+            <th>领用申请单</th>
+            <th>出库单</th>
+            <th class="col-action">操作</th>
+          </tr>
+        </thead>
+        <tbody id="taskList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab2: 机组清单 -->
+  <div class="tab-pane" id="tab-units">
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:13px;color:#8c8c8c;">共 106 台机组，已下发 16 台，未下发 90 台</div>
+      <div style="font-size:12px;color:#bfbfbf;">提示：建议每次选择 6-8 台机组下发</div>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:36px;"><input type="checkbox" id="checkAll" onclick="toggleAllUnits()"></th>
+            <th class="col-idx">序号</th>
+            <th>机组编号</th>
+            <th>所属线号</th>
+            <th>维保等级</th>
+            <th>累计运行时长</th>
+            <th>维保事项</th>
+            <th>下发状态</th>
+            <th>执行人</th>
+          </tr>
+        </thead>
+        <tbody id="unitList"></tbody>
+      </table>
+    </div>
+    <div class="bottom-bar" id="bottomBar" style="display:none;">
+      <div class="selected-info">已选 <strong id="selectedCount">0</strong> 台机组 · 建议每次 6-8 台</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-dispatch')">下发维保任务</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 视图3：打印-批次计划 ============ -->
+<div class="view" id="view-print-batch">
+  <div style="max-width:800px;margin:0 auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+      <button class="btn btn-sm" onclick="switchView('view-detail')">← 返回</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="window.print()">🖨 打印</button>
+      </div>
+    </div>
+    <div class="print-page">
+      <div class="print-title">批次维保计划</div>
+      <table class="print-info-table">
+        <tr>
+          <td class="pi-label">维保批次</td>
+          <td>第33批次</td>
+          <td class="pi-label">维保机组数量</td>
+          <td>106 台</td>
+        </tr>
+        <tr>
+          <td class="pi-label">计划开始日期</td>
+          <td>2026年09月01日</td>
+          <td class="pi-label">计划结束日期</td>
+          <td>2026年09月14日</td>
+        </tr>
+        <tr>
+          <td class="pi-label">计划维保停机时段</td>
+          <td colspan="3">
+            上午：08:00 ~ 12:00<br>
+            下午：14:00 ~ 17:00
+          </td>
+        </tr>
+        <tr>
+          <td class="pi-label">计划停机时长（每台）</td>
+          <td>7 小时</td>
+          <td class="pi-label">备注</td>
+          <td>本批次全部执行A保</td>
+        </tr>
+      </table>
+      <div class="print-sign">
+        <div>制单人<div class="sign-line"></div></div>
+        <div>审核人<div class="sign-line"></div></div>
+        <div>日期<div class="sign-line"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 视图4：打印-单任务详情 ============ -->
+<div class="view" id="view-print-task">
+  <div style="max-width:800px;margin:0 auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+      <button class="btn btn-sm" onclick="switchView('view-detail')">← 返回</button>
+      <button class="btn btn-sm" onclick="window.print()">🖨 打印</button>
+    </div>
+    <div class="print-page">
+      <div class="print-title">维保任务详情</div>
+
+      <!-- 任务基本信息 -->
+      <table class="print-info-table">
+        <tr>
+          <td class="pi-label">任务编号</td>
+          <td>RW-20260902-001</td>
+          <td class="pi-label">所属批次</td>
+          <td>第33批次</td>
+        </tr>
+        <tr>
+          <td class="pi-label">任务日期</td>
+          <td>2026年09月02日</td>
+          <td class="pi-label">执行人</td>
+          <td>宋昌安</td>
+        </tr>
+      </table>
+
+      <!-- 一、维保机组清单 -->
+      <div class="print-section-title">一、维保机组清单</div>
+      <table class="print-data-table">
+        <thead>
+          <tr>
+            <th style="width:40px">序号</th>
+            <th>机组编号</th>
+            <th>运行时长</th>
+            <th>耗材使用数量</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td class="left">L9-69#FPSS8625090083</td>
+            <td>1748 h</td>
+            <td class="left">发动机机油: 2桶<br>机油滤芯: 1个<br>空气滤芯: 1个<br>清洁剂: 1瓶</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td class="left">L9-70#FPSS8625090110</td>
+            <td>1757 h</td>
+            <td class="left">发动机机油: 2桶<br>机油滤芯: 1个<br>空气滤芯: 1个<br>清洁剂: 1瓶</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td class="left">L9-71#FPSS8625090137</td>
+            <td>1732 h</td>
+            <td class="left">发动机机油: 2桶<br>机油滤芯: 1个<br>空气滤芯: 1个<br>清洁剂: 1瓶</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td class="left">L9-72#FPSS8625090154</td>
+            <td>1769 h</td>
+            <td class="left">发动机机油: 2桶<br>机油滤芯: 1个<br>空气滤芯: 1个<br>清洁剂: 1瓶</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td class="left">L9-73#FPSS8625090171</td>
+            <td>1745 h</td>
+            <td class="left">发动机机油: 2桶<br>机油滤芯: 1个<br>空气滤芯: 1个<br>清洁剂: 1瓶</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td class="left">L9-74#FPSS8625090198</td>
+            <td>1761 h</td>
+            <td class="left">发动机机油: 2桶<br>机油滤芯: 1个<br>空气滤芯: 1个<br>清洁剂: 1瓶</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="text-align:right;font-weight:600;">合计</td>
+            <td>—</td>
+            <td class="left">发动机机油: 12桶 / 机油滤芯: 6个 / 空气滤芯: 6个 / 清洁剂: 6瓶</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 二、领用申请单 -->
+      <div class="print-section-title">二、领用申请单</div>
+      <table class="print-info-table">
+        <tr>
+          <td class="pi-label">申请编号</td>
+          <td>LY-20260902-001</td>
+          <td class="pi-label">状态</td>
+          <td>审批已通过</td>
+        </tr>
+        <tr>
+          <td class="pi-label">领用人</td>
+          <td>宋昌安</td>
+          <td class="pi-label">领用仓库</td>
+          <td>利比亚耗材库房</td>
+        </tr>
+      </table>
+      <table class="print-data-table">
+        <thead>
+          <tr>
+            <th style="width:40px">序号</th>
+            <th>耗材名称</th>
+            <th>规格</th>
+            <th>数量</th>
+            <th>单位</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td class="left">发动机机油</td><td>15W-40/20L</td><td>12</td><td>桶</td></tr>
+          <tr><td>2</td><td class="left">机油滤芯</td><td>LF17512</td><td>6</td><td>个</td></tr>
+          <tr><td>3</td><td class="left">空气滤芯</td><td>AF26124</td><td>6</td><td>个</td></tr>
+          <tr><td>4</td><td class="left">清洁剂</td><td>机头水500ml</td><td>6</td><td>瓶</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 三、出库单 -->
+      <div class="print-section-title">三、出库单</div>
+      <table class="print-info-table">
+        <tr>
+          <td class="pi-label">出库编号</td>
+          <td>BK-20260902-001</td>
+          <td class="pi-label">出库时间</td>
+          <td>2026-09-02 08:15:00</td>
+        </tr>
+        <tr>
+          <td class="pi-label">出库人</td>
+          <td>金成勇（库管）</td>
+          <td class="pi-label">出库仓库</td>
+          <td>利比亚耗材库房</td>
+        </tr>
+      </table>
+      <table class="print-data-table">
+        <thead>
+          <tr>
+            <th style="width:40px">序号</th>
+            <th>耗材名称</th>
+            <th>规格</th>
+            <th>实发数量</th>
+            <th>单位</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td class="left">发动机机油</td><td>15W-40/20L</td><td>12</td><td>桶</td></tr>
+          <tr><td>2</td><td class="left">机油滤芯</td><td>LF17512</td><td>6</td><td>个</td></tr>
+          <tr><td>3</td><td class="left">空气滤芯</td><td>AF26124</td><td>6</td><td>个</td></tr>
+          <tr><td>4</td><td class="left">清洁剂</td><td>机头水500ml</td><td>6</td><td>瓶</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 四、审批流程 -->
+      <div class="print-section-title">四、审批流程</div>
+      <div class="print-approval">
+        <div class="print-approval-node">
+          <div class="print-approval-dot">1</div>
+          <div class="print-approval-info">
+            <span class="pa-role">申请人</span><span class="pa-name">宋昌安</span>
+            <div class="pa-time">2026-09-01 15:03:27</div>
+          </div>
+        </div>
+        <div class="print-approval-line"></div>
+        <div class="print-approval-node">
+          <div class="print-approval-dot">2</div>
+          <div class="print-approval-info">
+            <span class="pa-role">审批人</span><span class="pa-name">罗刚</span><span class="pa-status">已同意</span>
+            <div class="pa-time">2026-09-01 16:20:00</div>
+          </div>
+        </div>
+        <div class="print-approval-line"></div>
+        <div class="print-approval-node">
+          <div class="print-approval-dot">3</div>
+          <div class="print-approval-info">
+            <span class="pa-role">业主确认</span><span class="pa-name">Hamzeh</span><span class="pa-status">已确认</span>
+            <div class="pa-time">2026-09-02 09:24:00</div>
+            <div style="margin-top:4px;font-size:12px;color:#8c8c8c;">（业主确认不阻断出库流程，仅作流程展示）</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 签字位 -->
+      <div class="print-sign" style="margin-top:30px;">
+        <div>制单人<div class="sign-line"></div></div>
+        <div>库管签字<div class="sign-line"></div></div>
+        <div>业主签字<div class="sign-line"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page-container -->
+
+<!-- ============ 弹窗：新建批次计划 ============ -->
+<div class="modal-overlay" id="modal-new-batch">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <h3>新建批次维保计划</h3>
+      <span class="close" onclick="closeModal('modal-new-batch')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-label"><span class="req">*</span> 维保批次</div>
+        <input type="text" class="form-input" placeholder="如：第34批次" value="第34批次">
+      </div>
+      <div class="form-row">
+        <div class="form-label"><span class="req">*</span> 维保机组数量</div>
+        <input type="number" class="form-input" placeholder="输入台数" value="106" style="width:120px;">
+        <span style="font-size:13px;color:#8c8c8c;">台</span>
+      </div>
+      <div class="form-row">
+        <div class="form-label"><span class="req">*</span> 计划开始日期</div>
+        <input type="date" class="form-input" value="2026-10-01">
+      </div>
+      <div class="form-row">
+        <div class="form-label"><span class="req">*</span> 计划结束日期</div>
+        <input type="date" class="form-input" value="2026-10-14">
+      </div>
+      <div class="form-row">
+        <div class="form-label">停机时段（上午）</div>
+        <input type="time" class="form-input" value="08:00" style="width:100px;">
+        <span style="color:#bfbfbf">~</span>
+        <input type="time" class="form-input" value="12:00" style="width:100px;">
+      </div>
+      <div class="form-row">
+        <div class="form-label">停机时段（下午）</div>
+        <input type="time" class="form-input" value="14:00" style="width:100px;">
+        <span style="color:#bfbfbf">~</span>
+        <input type="time" class="form-input" value="17:00" style="width:100px;">
+      </div>
+      <div class="form-row">
+        <div class="form-label"><span class="req">*</span> 停机时长（每台）</div>
+        <input type="number" class="form-input" value="7" style="width:100px;">
+        <span style="font-size:13px;color:#8c8c8c;">小时</span>
+      </div>
+      <div class="form-row">
+        <div class="form-label">备注</div>
+        <textarea class="form-input" placeholder="选填，输入批次备注信息"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-new-batch')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-new-batch'); switchView('view-detail');">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 弹窗：下发维保任务 ============ -->
+<div class="modal-overlay" id="modal-dispatch">
+  <div class="modal" style="width:720px;">
+    <div class="modal-header">
+      <h3>下发维保任务 <span class="badge-count" id="dispatchCount">6</span></h3>
+      <span class="close" onclick="closeModal('modal-dispatch')">×</span>
+    </div>
+    <div class="modal-body">
+
+      <!-- 已选机组 -->
+      <div class="modal-section">
+        <div class="modal-section-title">已选机组</div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th style="width:36px">序号</th>
+              <th>机组名称</th>
+              <th>累计运行</th>
+              <th>维保事项</th>
+              <th>耗材数量</th>
+            </tr>
+          </thead>
+          <tbody id="dispatchUnitList"></tbody>
+        </table>
+      </div>
+
+      <!-- 任务时间 -->
+      <div class="modal-section">
+        <div class="modal-section-title">任务时间</div>
+        <div class="form-row">
+          <div class="form-label"><span class="req">*</span> 计划开始日期</div>
+          <input type="date" class="form-input" value="2026-09-03" style="width:160px;">
+        </div>
+        <div class="form-row">
+          <div class="form-label"><span class="req">*</span> 计划完成日期</div>
+          <input type="date" class="form-input" value="2026-09-03" style="width:160px;">
+        </div>
+      </div>
+
+      <!-- 维保审核人员配置 -->
+      <div class="modal-section">
+        <div class="modal-section-title">维保审核人员配置</div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th style="width:36px">序号</th>
+              <th>维保岗位 <span style="color:#ff4d4f">*</span></th>
+              <th>审核/确认人员 <span style="color:#ff4d4f">*</span></th>
+              <th style="width:80px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>维保组领用人</td>
+              <td>
+                <select><option>宋昌安</option><option>张三</option><option>李四</option></select>
+              </td>
+              <td><span class="link-text" style="color:#ff4d4f">删除</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>仓库管理人员</td>
+              <td>
+                <select><option>金成勇（利比亚服务站故障件仓库）</option></select>
+              </td>
+              <td><span class="link-text" style="color:#ff4d4f">删除</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>现场项目经理</td>
+              <td>
+                <select><option>罗刚</option></select>
+              </td>
+              <td><span class="link-text" style="color:#ff4d4f">删除</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>业主确认</td>
+              <td>
+                <select><option>Hamzeh</option></select>
+              </td>
+              <td><span class="link-text" style="color:#ff4d4f">删除</span></td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align:center;padding:8px;">
+                <span class="link-text">+ 添加岗位</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:6px;font-size:12px;color:#bfbfbf;">仓库管理人员仅接收领用申请通知，不做审核审批</div>
+      </div>
+
+      <!-- 备注 -->
+      <div class="modal-section">
+        <div class="modal-section-title">备注信息</div>
+        <div class="form-row">
+          <div class="form-label">备注</div>
+          <textarea class="form-input" placeholder="选填，输入备注信息" maxlength="200" oninput="this.nextElementSibling.textContent=this.value.length+'/200'"></textarea>
+          <div style="position:absolute;right:20px;bottom:4px;font-size:12px;color:#bfbfbf;">0/200</div>
+        </div>
+      </div>
+
+      <!-- 自动生成 -->
+      <div class="modal-section">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" checked> 自动生成领用申请单并通知仓库管理人员
+        </label>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-dispatch')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-dispatch'); alert('任务下发成功，已自动生成领用申请单');">确认下发</button>
+    </div>
+  </div>
+</div>
+
+<!-- 视图切换（演示用） -->
+<div class="view-switcher">
+  <button class="active" onclick="switchView('view-list')">1-批次列表</button>
+  <button onclick="switchView('view-detail')">2-批次详情</button>
+  <button onclick="switchView('view-print-batch')">3-打印-批次</button>
+  <button onclick="switchView('view-print-task')">4-打印-任务</button>
+</div>
+
+<script>
+// ===== 视图切换 =====
+function switchView(viewId) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.getElementById(viewId).classList.add('active');
+  document.querySelectorAll('.view-switcher button').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('onclick') === "switchView('" + viewId + "')");
+  });
+  window.scrollTo(0, 0);
+}
+
+// ===== Tab 切换 =====
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById(tabId).classList.add('active');
+  el.classList.add('active');
+}
+
+// ===== 可折叠信息表 =====
+function toggleInfoPanel() {
+  var panel = document.getElementById('infoPanel');
+  var toggle = document.getElementById('infoToggle');
+  panel.classList.toggle('collapsed');
+  toggle.textContent = panel.classList.contains('collapsed') ? '展开 ▼' : '收起 ▲';
+}
+
+// ===== 弹窗 =====
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===== 一级页面卡片数据 =====
+var batchData = [
+  { no: '第33批次', count: 106, start: '2026-09-01', end: '2026-09-14', amStart: '08:00', amEnd: '12:00', pmStart: '14:00', pmEnd: '17:00', hours: 7, remark: '本批次全部执行A保，重点检查机油系统和滤芯状态', status: 'ongoing', statusText: '进行中' },
+  { no: '第32批次', count: 106, start: '2026-08-01', end: '2026-08-14', amStart: '08:00', amEnd: '12:00', pmStart: '14:00', pmEnd: '17:00', hours: 7, remark: '全部机组执行A保+B保组合维保', status: 'done', statusText: '已完成' },
+  { no: '第31批次', count: 52, start: '2026-07-01', end: '2026-07-07', amStart: '08:00', amEnd: '12:00', pmStart: '14:00', pmEnd: '17:00', hours: 7, remark: 'L1~L7线共52台机组执行A保', status: 'done', statusText: '已完成' },
+  { no: '第34批次', count: 106, start: '2026-10-01', end: '2026-10-14', amStart: '08:00', amEnd: '12:00', pmStart: '14:00', pmEnd: '17:00', hours: 7, remark: '计划全部机组执行B保', status: 'pending', statusText: '未开始' }
+];
+
+function renderCards() {
+  var grid = document.getElementById('cardsGrid');
+  var html = '';
+  batchData.forEach(function(b) {
+    html += '<div class="batch-card" onclick="switchView(\'view-detail\')">';
+    html += '<div class="card-header"><span class="batch-no">' + b.no + '</span><span class="status-tag ' + b.status + '">' + b.statusText + '</span></div>';
+    html += '<div class="card-body">';
+    html += '<div class="card-row"><div class="card-label">维保机组数量</div><div class="card-value"><strong>' + b.count + '</strong> 台</div></div>';
+    html += '<div class="card-row"><div class="card-label">计划开始日期</div><div class="card-value time-range">' + b.start + '</div></div>';
+    html += '<div class="card-row"><div class="card-label">计划结束日期</div><div class="card-value time-range">' + b.end + '</div></div>';
+    html += '<div class="card-row"><div class="card-label">计划维保停机时段</div><div class="card-value">上午 ' + b.amStart + ' ~ ' + b.amEnd + '<br>下午 ' + b.pmStart + ' ~ ' + b.pmEnd + '</div></div>';
+    html += '<div class="card-row"><div class="card-label">计划停机时长（每台）</div><div class="card-value">' + b.hours + ' 小时</div></div>';
+    html += '<div class="card-row"><div class="card-label">备注</div><div class="card-value card-remark">' + b.remark + '</div></div>';
+    html += '</div>';
+    html += '<div class="card-footer">';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();switchView(\'view-detail\')">查看详情</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();switchView(\'view-print-batch\')">导出</button>';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();switchView(\'view-print-batch\')">打印</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+// ===== 任务记录数据 =====
+var taskData = [
+  { idx: 1, date: '2026-09-01', units: 'L9-63#~L9-68# (6台)', executor: '宋昌安', status: 'done', statusText: '已完成', ly: 'LY-20260901-001', bk: 'BK-20260901-001' },
+  { idx: 2, date: '2026-09-02', units: 'L9-69#~L9-74# (6台)', executor: '宋昌安', status: 'done', statusText: '已完成', ly: 'LY-20260902-001', bk: 'BK-20260902-001' },
+  { idx: 3, date: '2026-09-03', units: 'L9-75#~L9-80# (6台)', executor: '宋昌安', status: 'executing', statusText: '执行中', ly: 'LY-20260903-001', bk: 'BK-20260903-001' },
+  { idx: 4, date: '2026-09-04', units: 'L9-81#~L9-86# (6台)', executor: '张三', status: 'pending', statusText: '待执行', ly: 'LY-20260904-001', bk: '—' },
+  { idx: 5, date: '2026-09-05', units: 'L10-1#~L10-6# (6台)', executor: '张三', status: 'pending', statusText: '待执行', ly: '—', bk: '—' },
+  { idx: 6, date: '2026-09-06', units: 'L10-7#~L10-12# (6台)', executor: '待指派', status: 'pending', statusText: '待执行', ly: '—', bk: '—' },
+  { idx: 7, date: '2026-09-07', units: 'L10-13#~L10-18# (6台)', executor: '待指派', status: 'pending', statusText: '待执行', ly: '—', bk: '—' },
+  { idx: 8, date: '2026-09-08', units: 'L10-19#~L10-24# (6台)', executor: '待指派', status: 'pending', statusText: '待执行', ly: '—', bk: '—' }
+];
+
+function renderTasks() {
+  var tbody = document.getElementById('taskList');
+  var statusClass = { done: 'tag-green', executing: 'tag-blue', pending: 'tag-orange' };
+  var html = '';
+  taskData.forEach(function(t) {
+    html += '<tr>';
+    html += '<td class="col-idx">' + t.idx + '</td>';
+    html += '<td>' + t.date + '</td>';
+    html += '<td>' + t.units + '</td>';
+    html += '<td>' + t.executor + '</td>';
+    html += '<td><span class="tag ' + statusClass[t.status] + '">' + t.statusText + '</span></td>';
+    html += '<td>' + (t.ly !== '—' ? '<span class="link-text" onclick="switchView(\'view-print-task\')">' + t.ly + '</span>' : '—') + '</td>';
+    html += '<td>' + (t.bk !== '—' ? '<span class="link-text" onclick="switchView(\'view-print-task\')">' + t.bk + '</span>' : '—') + '</td>';
+    html += '<td class="col-action">';
+    html += '<a onclick="switchView(\'view-print-task\')">查看详情</a>';
+    html += '<a onclick="switchView(\'view-print-task\')">导出</a>';
+    html += '<a onclick="switchView(\'view-print-task\')">打印</a>';
+    html += '</td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+// ===== 机组清单数据 =====
+var unitNames = [
+  'L9-63#FPSS8625090056', 'L9-64#FPSS8625090063', 'L9-65#FPSS8625090070',
+  'L9-66#FPSS8625090087', 'L9-67#FPSS8625090094', 'L9-68#FPSS8625090103',
+  'L9-69#FPSS8625090083', 'L9-70#FPSS8625090110', 'L9-71#FPSS8625090137',
+  'L9-72#FPSS8625090154', 'L9-73#FPSS8625090171', 'L9-74#FPSS8625090198',
+  'L9-75#FPSS8625090204', 'L9-76#FPSS8625090211', 'L10-1#FPSS8625090228',
+  'L10-2#FPSS8625090235', 'L10-3#FPSS8625090242', 'L10-4#FPSS8625090259'
+];
+
+var unitStatusMap = {};
+for (var i = 0; i < 12; i++) {
+  unitStatusMap[unitNames[i]] = { dispatched: true, executor: '宋昌安', date: '2026-09-0' + (Math.floor(i/6)+1) };
+}
+
+function renderUnits() {
+  var tbody = document.getElementById('unitList');
+  var html = '';
+  unitNames.forEach(function(name, idx) {
+    var lineNo = name.split('#')[0];
+    var info = unitStatusMap[name] || { dispatched: false, executor: '—', date: '' };
+    var statusTag = info.dispatched
+      ? '<span class="tag tag-blue">已下发（' + info.date + '）</span>'
+      : '<span class="tag tag-gray">未下发</span>';
+    var hours = 1700 + Math.floor(Math.random() * 80);
+    html += '<tr>';
+    html += '<td><input type="checkbox" class="unit-check" data-name="' + name + '" onchange="updateSelection()"></td>';
+    html += '<td class="col-idx">' + (idx + 1) + '</td>';
+    html += '<td style="font-weight:500;color:#262626;">' + name + '</td>';
+    html += '<td>' + lineNo + '线</td>';
+    html += '<td><span class="tag tag-orange">A保</span></td>';
+    html += '<td>' + hours + ' h</td>';
+    html += '<td style="font-size:12px;">发动机机油更换、机油滤芯更换、空气滤芯更换</td>';
+    html += '<td>' + statusTag + '</td>';
+    html += '<td>' + (info.dispatched ? info.executor : '—') + '</td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function toggleAllUnits() {
+  var checked = document.getElementById('checkAll').checked;
+  document.querySelectorAll('.unit-check').forEach(function(cb) { cb.checked = checked; });
+  updateSelection();
+}
+
+function updateSelection() {
+  var checks = document.querySelectorAll('.unit-check:checked');
+  var count = checks.length;
+  document.getElementById('selectedCount').textContent = count;
+  document.getElementById('bottomBar').style.display = count > 0 ? 'flex' : 'none';
+  document.getElementById('dispatchCount').textContent = count;
+
+  // 渲染弹窗机组列表
+  var list = document.getElementById('dispatchUnitList');
+  var html = '';
+  checks.forEach(function(cb, idx) {
+    var name = cb.dataset.name;
+    var hours = 1700 + Math.floor(Math.random() * 80);
+    html += '<tr>';
+    html += '<td>' + (idx + 1) + '</td>';
+    html += '<td class="unit-name">' + name + '</td>';
+    html += '<td>' + hours + ' 小时</td>';
+    html += '<td>发动机机油更换、机油滤芯更换...</td>';
+    html += '<td class="mat-list">机油:2桶<br>机油滤芯:1个<br>空气滤芯:1个<br>清洁剂:1瓶</td>';
+    html += '</tr>';
+  });
+  list.innerHTML = html;
+}
+
+// 初始化
+renderCards();
+renderTasks();
+renderUnits();
+</script>
+
+</body>
+</html>

@@ -602,7 +602,7 @@
     </div>
 
     <!-- i18n config -->
-    <script src="/i18n.js"></script>
+    <script src="/file-server/i18n.js"></script>
 
     <!-- Preview Modal -->
     <div class="modal-overlay" id="previewModal">
@@ -656,6 +656,7 @@
       let currentDir = ''
       let authEnabled = false
       let isAuthenticated = false
+      const API_BASE = '/file-server/api'
 
       // --- i18n 初始化 ---
       const t = I18n.t
@@ -735,7 +736,7 @@
         loginErrorMsg.textContent = ''
 
         try {
-          const res = await fetch('/api/login', {
+          const res = await fetch(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password })
@@ -770,7 +771,7 @@
 
       async function handleLogout() {
         try {
-          await fetch('/api/logout', { method: 'POST' })
+          await fetch(`${API_BASE}/logout`, { method: 'POST' })
         } catch (e) {}
         isAuthenticated = false
         updateAuthUI()
@@ -780,7 +781,7 @@
 
       async function checkAuthStatus() {
         try {
-          const res = await fetch('/api/auth/status')
+          const res = await fetch(`${API_BASE}/auth/status`)
           if (res.ok) {
             const data = await res.json()
             authEnabled = Boolean(data.enabled)
@@ -824,11 +825,11 @@
       }
 
       function buildPreviewUrl(filePath) {
-        return `${window.location.origin}/api/preview?path=${encodeURIComponent(filePath)}`
+        return `${window.location.origin}${API_BASE}/preview?path=${encodeURIComponent(filePath)}`
       }
 
       function buildDownloadUrl(filePath) {
-        return `${window.location.origin}/api/download?path=${encodeURIComponent(filePath)}`
+        return `${window.location.origin}${API_BASE}/download?path=${encodeURIComponent(filePath)}`
       }
 
       // --- Toast 提示 ---
@@ -1002,7 +1003,9 @@
       })
 
       // --- Upload files ---
-      function uploadFiles() {
+      // 大文件阈值：任一文件超过 100MB 需输入大文件上传密码（与后端 bigFileGate 配套）
+      const BIG_FILE_BYTES = 100 * 1024 * 1024
+      async function uploadFiles() {
         if (!pendingFiles.length) return
         // 鉴权检查：未登录时阻止上传并弹出登录框
         if (authEnabled && !isAuthenticated) {
@@ -1019,6 +1022,16 @@
           if (fileInput.value) fileInput.value = ''
           return
         }
+        // 大文件密码门：任一文件 > 100MB 时要求输入 fortrust666 对应的大文件密码
+        let bigPassword = ''
+        if (pendingFiles.some(f => f.size > BIG_FILE_BYTES)) {
+          bigPassword = window.prompt('所选文件超过 100MB，请输入大文件上传密码：') || ''
+          if (!bigPassword) {
+            pendingFiles = []
+            if (fileInput.value) fileInput.value = ''
+            return
+          }
+        }
         const form = new FormData()
         // 重要：dir 必须先于 files append，multer 按 FormData 字段顺序解析，
         // 这样 destination 回调触发时 req.body.dir 才可用
@@ -1026,7 +1039,8 @@
         pendingFiles.forEach((f) => form.append('files', f))
 
         const xhr = new XMLHttpRequest()
-        xhr.open('POST', '/api/upload')
+        xhr.open('POST', `${API_BASE}/upload`)
+        if (bigPassword) xhr.setRequestHeader('x-upload-password', bigPassword)
 
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
@@ -1120,7 +1134,7 @@
       async function loadFiles() {
         try {
           const dirParam = currentDir ? `?dir=${encodeURIComponent(currentDir)}` : ''
-          const res = await fetch('/api/files' + dirParam)
+          const res = await fetch(`${API_BASE}/files` + dirParam)
           if (res.status === 401) {
             isAuthenticated = false
             updateAuthUI()
@@ -1197,7 +1211,7 @@
               // 可预览文件复制预览链接（点击进入预览页面），不可预览文件复制下载链接
               const copyType = previewType ? 'preview' : 'download'
               const copyTitle = previewType ? t('title.copyPreview') : t('title.copyDownload')
-              let actionsHtml = `<a href="/api/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">${t('action.download')}</a>`
+              let actionsHtml = `<a href="${API_BASE}/download?path=${encodeURIComponent(filePath)}" class="action-link" target="_blank">${t('action.download')}</a>`
               actionsHtml += `<button class="action-copy" data-path="${escapeHtml(filePath)}" data-type="${copyType}" title="${copyTitle}">${t('action.copyLink')}</button>`
               if (previewType) {
                 actionsHtml += `<a class="action-preview" data-path="${escapeHtml(filePath)}" data-name="${escapeHtml(item.name)}" data-type="${previewType}">${t('action.preview')}</a>`

@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>服务到期提醒功能 · 技术开发方案 | 孚创云监控</title>
+<style>
+  :root {
+    --ink: #1a2238;
+    --ink-2: #3b475c;
+    --ink-3: #5d6b85;
+    --ink-4: #8693ad;
+    --line: #dde2ec;
+    --line-2: #c5cee0;
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --primary: #1e6fff;
+    --primary-2: #3b82f6;
+    --primary-soft: #e8f0ff;
+    --primary-gradient: linear-gradient(135deg, #1e6fff 0%, #00b4d8 100%);
+    --warn: #f59e0b;
+    --warn-soft: #fff7e6;
+    --warn-2: #b45309;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --danger-2: #991b1b;
+    --success: #059669;
+    --success-soft: #d1fae5;
+    --code-bg: #f8fafc;
+    --code-border: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(15,23,42,.06);
+    --shadow-md: 0 4px 16px rgba(15,23,42,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: A4; margin: 20mm 16mm; }
+  html { font-size: 14px; }
+  body {
+    font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--ink);
+    background: #eef2f8;
+    line-height: 1.7;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page-wrapper {
+    max-width: 1200px;
+    margin: 32px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    padding: 48px 56px;
+  }
+  @media (max-width: 768px) {
+    .page-wrapper { margin: 0; border-radius: 0; padding: 24px 16px; }
+  }
+
+  /* Document Header */
+  .doc-head {
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+  .brand-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .brand-logo {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--primary-gradient);
+    display: grid; place-items: center;
+    color: #fff; font-size: 20px; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(30,111,255,.3);
+  }
+  .brand-title { font-size: 24px; font-weight: 700; color: var(--ink); letter-spacing: .5px; }
+  .brand-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px 20px;
+    background: var(--bg);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .meta-grid b { color: var(--ink); margin-right: 6px; font-weight: 600; }
+
+  /* Typography */
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .num {
+    background: var(--primary);
+    color: #fff;
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-2);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3::before {
+    content: "";
+    display: inline-block;
+    width: 4px; height: 16px;
+    background: var(--primary-2);
+    border-radius: 2px;
+  }
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-2);
+    margin: 16px 0 8px;
+  }
+  p { margin: 8px 0; font-size: 14px; color: var(--ink-2); }
+  ul, ol { margin: 8px 0 12px 24px; color: var(--ink-2); font-size: 14px; }
+  li { margin: 4px 0; }
+
+  /* Components & Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .badge-primary { background: var(--primary-soft); color: var(--primary); }
+  .badge-warn { background: var(--warn-soft); color: var(--warn-2); }
+  .badge-danger { background: var(--danger-soft); color: var(--danger-2); }
+  .badge-success { background: var(--success-soft); color: var(--success); }
+  .badge-code { background: #f1f5f9; color: #475569; font-family: monospace; }
+
+  /* Callout & Note */
+  .callout {
+    padding: 16px 18px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-left: 4px solid var(--primary);
+    background: var(--primary-soft);
+    color: #1e3a8a;
+  }
+  .callout.warn {
+    border-left-color: var(--warn);
+    background: var(--warn-soft);
+    color: var(--warn-2);
+  }
+  .callout.danger {
+    border-left-color: var(--danger);
+    background: var(--danger-soft);
+    color: var(--danger-2);
+  }
+  .callout.success {
+    border-left-color: var(--success);
+    background: var(--success-soft);
+    color: #065f46;
+  }
+  .callout-title { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+
+  /* Tables */
+  .table-wrapper {
+    overflow-x: auto;
+    margin: 16px 0 20px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+  }
+  th {
+    background: #f8fafc;
+    color: var(--ink);
+    font-weight: 600;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafcff; }
+
+  /* Code Block */
+  code {
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, Menlo, monospace;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #0f172a;
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 12px 0 16px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.3);
+  }
+  pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+
+  /* Flow Diagram & Cards */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .flow-card {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+  }
+  .flow-card .step {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    background: #fff;
+    border: 1px solid var(--primary-soft);
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .flow-card h4 { margin: 0 0 6px; color: var(--ink); }
+  .flow-card p { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+
+  /* Tree File Structure */
+  .tree-view {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-2);
+    margin: 14px 0;
+  }
+  .tree-view .add { color: #059669; font-weight: 600; }
+  .tree-view .mod { color: #2563eb; font-weight: 600; }
+  .tree-view .desc { color: #94a3b8; font-family: sans-serif; font-size: 12px; }
+
+  /* Checkbox Checklist */
+  .checklist { list-style: none; margin: 10px 0; padding-left: 0; }
+  .checklist li { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
+  .checklist input[type="checkbox"] { margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- 文档头 -->
+  <header class="doc-head">
+    <div class="brand-bar">
+      <div class="brand-logo">F</div>
+      <div>
+        <h1 class="brand-title">发电机组云监控 APP · 服务到期提醒功能</h1>
+        <div class="brand-sub">前端系统架构与技术落地开发方案 · FUCHUAN CLOUD IoT APP V2.2.0</div>
+      </div>
+    </div>
+    <div class="meta-grid">
+      <div><b>方案版本：</b>V1.0 (对接 PRD V1.4)</div>
+      <div><b>适用项目：</b>fortrust-app (uni-app)</div>
+      <div><b>技术栈：</b>Vue2 / fpss-cloud-ui / Vuex / Native Plugin</div>
+      <div><b>发布范围：</b>iOS / Android / H5 移动外壳</div>
+      <div><b>基准日期：</b>2026-09-01</div>
+      <div><b>文档状态：</b><span class="badge badge-success">开发准备完毕</span></div>
+    </div>
+  </header>
+
+  <!-- 1. 架构总览与流转设计 -->
+  <section>
+    <h2><span class="num">01</span> 系统架构与业务流转设计</h2>
+    <p>服务到期提醒功能旨在为发电机组运维人员提供“<b>事前主动触达 → 列表聚合管控 → 详情一键拨号续期/监控联动</b>”的完整业务闭环。系统充分利用 uni-app 跨端能力，在 APP 启动与唤醒时进行静默校验与本地通知下发，同时在消息中心与详情页提供原生级交互体验。</p>
+
+    <div class="flow-grid">
+      <div class="flow-card">
+        <span class="step">STEP 01</span>
+        <h4>启动静默探测</h4>
+        <p>App 启动或切到前台，检查登录态后静默请求临期接口 <code>GET /api/services/expiring?days=30</code>。</p>
+      </div>
+      <div class="flow-card">
+        <span class="step">STEP 02</span>
+        <h4>频控与通知下发</h4>
+        <p>根据最后提醒时间戳进行防骚扰判断，调用 <code>plus.push.createMessage</code> 弹出系统状态栏通知。</p>
+      </div>
+      <div class="flow-card">
+        <span class="step">STEP 03</span>
+        <h4>消息中心聚合</h4>
+        <p>「消息中心」第 4 个 Tab 展示服务到期列表，≤7天卡片红标置顶，支持下拉刷新与分页加载。</p>
+      </div>
+      <div class="flow-card">
+        <span class="step">STEP 04</span>
+        <h4>详情续期与监控</h4>
+        <p>点击进入详情页，Hero 区域倒计时预警，一键呼叫 400 运维热线，行内直达机组实时监控。</p>
+      </div>
+    </div>
+
+    <h3>1.1 业务流转时序图</h3>
+    <pre><code>+----------------+           +-------------------+          +------------------+          +------------------+
+|    App.vue     |           | ExpireManager.js  |          |   后端 API 服务  |          | pages/service/.. |
++----------------+           +-------------------+          +------------------+          +------------------+
+        |                              |                             |                              |
+        |--- 1. onLaunch / onShow ---->|                             |                              |
+        |                              |--- 2. 查询 30天内到期服务 ->|                              |
+        |                              |<-- 3. 返回临期服务列表 -----|                              |
+        |                              |                             |                              |
+        |                              |--- 4. 防骚扰频控算法校验 ---|                              |
+        |                              |--- 5. 生成系统通知横幅 ---->| [系统通知栏]                 |
+        |                              |                             |      |                       |
+        |                              |<==== 6. 用户点击系统通知横幅 =======+                       |
+        |                              |                             |      |                       |
+        |                              |----------------- 7. 路由跳转 ----------------------------->| (打开续期详情页)
+        |                              |                             |                              |       |
+        |                              |                             |                              |<-- 8. 拨打 400 电话
+        |                              |                             |                              |<-- 9. 跳转机组监控</code></pre>
+  </section>
+
+  <!-- 2. 改动清单与文件规划 -->
+  <section>
+    <h2><span class="num">02</span> 工程改造清单与目录规划</h2>
+    <p>结合 <code>fortrust-app</code> 现有代码组织规范（Vue 2 + fpss-cloud-ui / uView + Vuex 集中状态），规划以下改动模块：</p>
+
+    <div class="tree-view">
+      fortrust-app/<br>
+      ├── App.vue <span class="mod">[MOD] 接入 onLaunch / onShow 生命周期前台探测</span><br>
+      ├── pages.json <span class="mod">[MOD] 注册 /pages/service/renew 页面路由</span><br>
+      ├── common/<br>
+      │   ├── <span class="add">serviceExpireManager.js [NEW] 核心通知调度、频控算法、倒计时与本地推送管理器</span><br>
+      │   ├── jpushManager.js <span class="mod">[MOD] 扩展极光推送/本地 Push 点击拦截路由分发</span><br>
+      │   ├── api/module/<br>
+      │   │   └── message.js <span class="mod">[MOD] 封装 getExpiringServices / getServiceDetail 接口</span><br>
+      │   └── locales/<br>
+      │       ├── zh_CN.js <span class="mod">[MOD] 增加服务到期、倒计时、服务类型枚举国际化词条</span><br>
+      │       └── en.js <span class="mod">[MOD] 英文版词条适配</span><br>
+      └── pages/<br>
+          ├── sys/discover/<br>
+          │   └── index.vue <span class="mod">[MOD] 消息中心新增「服务到期」Tab、紧凑卡片、红标警告、空态</span><br>
+          └── service/<br>
+              └── <span class="add">renew.vue [NEW] 服务到期详情页（Hero倒计时、机组信息、实时监控直达、一键拨号）</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>文件路径</th>
+            <th>变更类型</th>
+            <th>核心职责与改动点</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>pages/service/renew.vue</code></td>
+            <td><span class="badge badge-success">新建页面</span></td>
+            <td>实现服务到期详情页：状态 Hero 卡片、剩余天数徽章、温馨提示、机组信息与行内「实时监控 ＞」跳转、一键呼叫 400 拨号。</td>
+          </tr>
+          <tr>
+            <td><code>common/serviceExpireManager.js</code></td>
+            <td><span class="badge badge-success">新建工具</span></td>
+            <td>封装临期检测逻辑、时间差解析格式化、本地防骚扰缓存过滤、<code>plus.push.createMessage</code> 本地通知创建与事件监听。</td>
+          </tr>
+          <tr>
+            <td><code>pages/sys/discover/index.vue</code></td>
+            <td><span class="badge badge-primary">修改优化</span></td>
+            <td>增加第 4 个 Tab「服务到期」、卡片样式组件、≤7天红色警示条与红色按钮、下拉刷新/触底加载、空状态插画。</td>
+          </tr>
+          <tr>
+            <td><code>App.vue</code></td>
+            <td><span class="badge badge-primary">修改优化</span></td>
+            <td>在 <code>onLaunch</code> 和 <code>onShow</code> 阶段调用 <code>serviceExpireManager.checkAndNotify(this)</code> 执行探测。</td>
+          </tr>
+          <tr>
+            <td><code>common/api/module/message.js</code></td>
+            <td><span class="badge badge-primary">修改优化</span></td>
+            <td>导出 <code>getExpiringServices</code> 与 <code>getServiceDetail</code> 统一请求方法。</td>
+          </tr>
+          <tr>
+            <td><code>pages.json</code></td>
+            <td><span class="badge badge-primary">修改优化</span></td>
+            <td>配置 <code>pages/service/renew</code> 页面路径与原生导航样式。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3. 核心功能与模块详细实现 -->
+  <section>
+    <h2><span class="num">03</span> 核心功能技术设计与代码实现</h2>
+
+    <!-- 3.1 消息中心 Tab 改造 -->
+    <h3>3.1 消息中心 ·「服务到期」Tab 列表 (pages/sys/discover/index.vue)</h3>
+    <p>消息中心作为各类型通知聚合页，需保持与现有「告警」、「保养」、「工单」Tab 风格一致，同时满足原型设计稿中紧凑卡片、红条高亮与信息完整展示的要求。</p>
+
+    <div class="callout">
+      <div class="callout-title">📌 关键规范要求</div>
+      <ul>
+        <li><b>文本不截断原则：</b>机组名称、电站名称、地理位置及服务类型完整展示，严禁添加 <code>text-overflow: ellipsis</code>。</li>
+        <li><b>紧急度（≤ 7 天）：</b>卡片左侧展示 4px 红色高亮边框，倒计时标签变为红色（<code>#ef4444</code>），「立即续期」按钮变红。</li>
+        <li><b>空态处理：</b>30 天内无临期服务时，展示“30 天内无即将到期的服务 / 所有机组服务状态正常”及空态占位。</li>
+      </ul>
+    </div>
+
+    <h4>实现核心代码片段：</h4>
+    <pre><code>&lt;!-- 消息中心：增加服务到期 Tab 与 Swiper 列表 --&gt;
+&lt;swiper-item class="swiper-item"&gt;
+  &lt;!-- 顶部风险提示条 --&gt;
+  &lt;view class="expiry-tip-bar" v-if="expiringList.length > 0"&gt;
+    &lt;view class="tip-title"&gt;
+      30 天内即将到期 &lt;text class="count"&gt;{{ expiringList.length }}&lt;/text&gt; 项
+    &lt;/view&gt;
+    &lt;view class="tip-desc"&gt;为避免数据通信中断和丢失，失去监控权，请及时续期&lt;/view&gt;
+  &lt;/view&gt;
+
+  &lt;scroll-view
+    scroll-y
+    class="list-box"
+    :refresher-enabled="true"
+    :refresher-threshold="100"
+    :refresher-triggered="triggeredExpire"
+    @refresherrefresh="onRefreshExpire"
+    @scrolltolower="loadMoreExpire"
+  &gt;
+    &lt;view
+      v-for="(item, index) in expiringList"
+      :key="item.serviceId || index"
+      class="expire-card"
+      :class="{ 'emergency-card': item.isEmergency }"
+      @click="navToRenewDetail(item)"
+    &gt;
+      &lt;!-- 头部：机组名称 + 剩余时间标签 --&gt;
+      &lt;view class="card-header"&gt;
+        &lt;view class="unit-name"&gt;机组 {{ item.unitCode }} · {{ item.stationName }}&lt;/view&gt;
+        &lt;view class="remain-badge" :class="{ 'badge-red': item.isEmergency }"&gt;
+          {{ item.remainText }}
+        &lt;/view&gt;
+      &lt;/view&gt;
+
+      &lt;!-- 服务类型标签组 --&gt;
+      &lt;view class="service-tags"&gt;
+        &lt;text class="tag-label"&gt;运维服务：&lt;/text&gt;
+        &lt;view class="tag-list"&gt;
+          &lt;text v-for="tag in item.serviceTypes" :key="tag.key" class="tag-item"&gt;
+            {{ tag.name }}
+          &lt;/text&gt;
+        &lt;/view&gt;
+      &lt;/view&gt;
+
+      &lt;u-line color="#e5e9f0" /&gt;
+
+      &lt;!-- 详细信息网格 --&gt;
+      &lt;view class="card-meta"&gt;
+        &lt;view class="meta-row"&gt;
+          &lt;text class="meta-k"&gt;到期：&lt;/text&gt;
+          &lt;text class="meta-v highlight"&gt;{{ item.expireDate }}&lt;/text&gt;
+        &lt;/view&gt;
+        &lt;view class="meta-row"&gt;
+          &lt;text class="meta-k"&gt;云猫：&lt;/text&gt;
+          &lt;text class="meta-v"&gt;{{ item.cloudCatCode }}&lt;/text&gt;
+        &lt;/view&gt;
+        &lt;view class="meta-row full"&gt;
+          &lt;text class="meta-k"&gt;位置：&lt;/text&gt;
+          &lt;text class="meta-v"&gt;{{ item.location }}&lt;/text&gt;
+        &lt;/view&gt;
+      &lt;/view&gt;
+
+      &lt;!-- 底部操作 --&gt;
+      &lt;view class="card-footer"&gt;
+        &lt;button class="btn-renew" :class="{ 'btn-red': item.isEmergency }"&gt;
+          立即续期
+        &lt;/button&gt;
+      &lt;/view&gt;
+    &lt;/view&gt;
+
+    &lt;!-- 空态 --&gt;
+    &lt;u-empty
+      v-if="expiringList.length === 0 &amp;&amp; !loadingExpire"
+      mode="data"
+      text="30 天内无即将到期的服务\n所有机组服务状态正常"
+    /&gt;
+  &lt;/scroll-view&gt;
+&lt;/swiper-item&gt;</code></pre>
+
+    <!-- 3.2 服务到期详情页 -->
+    <h3>3.2 服务到期详情页 (pages/service/renew.vue)</h3>
+    <p>详情页汇集设备核心信息、倒计时与续期渠道，实现极简高效的续费支撑：</p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>区域 / 模块</th>
+            <th>UI 元素与视觉规范</th>
+            <th>交互与跳转行为</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Hero 倒计时</b></td>
+            <td>渐变深蓝背景、大号加粗剩余天数（如 <code>距到期仅剩 3 天</code>）、服务类型胶囊列表。</td>
+            <td>动态感知状态：&le;0 天变更为红色「服务已中断」。</td>
+          </tr>
+          <tr>
+            <td><b>温馨提示横幅</b></td>
+            <td>柔黄色圆角警告卡片，展示于 Hero 正下方。</td>
+            <td>静态提示风险，避免遮挡主要信息。</td>
+          </tr>
+          <tr>
+            <td><b>设备信息卡片</b></td>
+            <td>
+              列表行展示：机组名称、<b>运行状态 +「实时监控 ＞」链接（同一行）</b>、所在位置、云猫编号、到期日期、剩余天数、运维服务明细。
+            </td>
+            <td>
+              点击「实时监控 ＞」先将当前机组写入 <code>vuex_gensetInfo</code>，再调用 <code>uni.navigateTo</code> 跳转至 <code>/pages/fpss/gensetDetail/index</code> 或视频监控页。
+            </td>
+          </tr>
+          <tr>
+            <td><b>续期电话卡片</b></td>
+            <td>底部悬浮/独立卡片，展示官方热线 <code>400-888-0808</code> 与「点击拨打」引导文案。</td>
+            <td>
+              点击调用 <code>plus.device.dial(phone, false)</code> 直接唤起系统原生拨号面板（H5 端使用 <code>uni.makePhoneCall</code>）。
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 3.3 通知调度与频控管理器 -->
+    <h3>3.3 本地通知调度与防骚扰频控管理器 (common/serviceExpireManager.js)</h3>
+    <p>负责从后台拉取临期数据、计算剩余时间、根据防骚扰策略筛选需提醒项，并调用底层 <code>plus.push</code> 生成原生通知。</p>
+
+    <h4>频控算法与逻辑实现：</h4>
+    <pre><code>/**
+ * common/serviceExpireManager.js
+ * 服务到期提醒核心管理器
+ */
+import { timeFormatFun } from '@/common/utils'
+
+const STORAGE_KEY_LOG = 'SERVICE_EXPIRE_PUSH_LOG'
+const HOTLINE_DEFAULT = '400-888-0808'
+
+export default {
+  /**
+   * APP 冷启动/热启动时入口探测
+   */
+  async checkAndNotify(vueInstance) {
+    // 检查登录状态
+    if (!vueInstance.vuex_sessionId || !vueInstance.vuex_user) return
+
+    try {
+      // 1. 调用接口获取 30 天内临期服务
+      const res = await vueInstance.$u.api.message.getExpiringServices({ days: 30 })
+      if (!res || res.Code !== 1 || !res.Data || !res.Data.List) return
+
+      const list = res.Data.List.map(item => this.formatServiceItem(item))
+      
+      // 更新 Vuex 状态供全局消息中心与角标使用
+      vueInstance.$u.vuex('vuex_expiring_services', list)
+
+      // #ifdef APP-PLUS
+      // 2. 本地系统通知生成与防骚扰校验
+      this.dispatchLocalPush(list)
+      // #endif
+    } catch (e) {
+      console.error('[ServiceExpireManager] 探测到期服务失败:', e)
+    }
+  },
+
+  /**
+   * 格式化与时间换算规则
+   */
+  formatServiceItem(raw) {
+    const now = Date.now()
+    const expireTime = new Date(raw.ExpireDate.replace(/-/g, '/')).getTime()
+    const diffMs = expireTime - now
+    const diffHours = diffMs / (1000 * 60 * 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    let remainText = ''
+    let isEmergency = false
+
+    if (diffMs <= 0) {
+      remainText = '已到期'
+      isEmergency = true
+    } else if (diffDays >= 1) {
+      remainText = `${diffDays} 天后到期`
+      if (diffDays <= 7) isEmergency = true
+    } else if (diffHours >= 1) {
+      const h = Math.floor(diffHours)
+      const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+      remainText = `${h} 小时 ${m} 分后到期`
+      isEmergency = true
+    } else {
+      const m = Math.max(1, Math.floor(diffMs / (1000 * 60)))
+      remainText = `${m} 分钟后到期`
+      isEmergency = true
+    }
+
+    return {
+      serviceId: raw.ServiceId || raw.Id,
+      unitCode: raw.UnitCode || raw.GeneratorSetNo,
+      stationName: raw.StationName || raw.ProjectName,
+      generatorSetId: raw.GeneratorSetId,
+      cloudCatCode: raw.CloudCatCode || raw.CollectorToken,
+      location: raw.Location || raw.Address || '未知位置',
+      gensetStatus: raw.GensetStatus || 1,
+      expireDate: raw.ExpireDate,
+      remainSeconds: Math.max(0, Math.floor(diffMs / 1000)),
+      remainText,
+      isEmergency,
+      serviceTypes: this.parseServiceTypes(raw.ServiceTypes),
+      hotline: raw.Hotline || HOTLINE_DEFAULT
+    }
+  },
+
+  /**
+   * 调度本地系统通知
+   */
+  dispatchLocalPush(list) {
+    const pushLogs = uni.getStorageSync(STORAGE_KEY_LOG) || {}
+    const now = Date.now()
+    const todayStr = new Date().toISOString().slice(0, 10)
+
+    list.forEach(item => {
+      if (item.remainSeconds <= 0) return // 已到期项视业务需要决定是否重复弹
+
+      const lastLog = pushLogs[item.serviceId]
+      let shouldPush = false
+
+      if (!lastLog) {
+        shouldPush = true
+      } else {
+        const lastPushTime = lastLog.time
+        const lastDateStr = lastLog.date
+
+        if (item.remainSeconds <= 86400) {
+          // <= 1天：每小时最多 1 次
+          if (now - lastPushTime >= 3600 * 1000) shouldPush = true
+        } else {
+          // > 1天 且 <= 30天：每天最多 1 次
+          if (lastDateStr !== todayStr) shouldPush = true
+        }
+      }
+
+      if (shouldPush) {
+        const primaryService = item.serviceTypes[0] ? item.serviceTypes[0].name : '云监控服务'
+        const content = `机组 ${item.unitCode}（${item.stationName}）的${primaryService}将在 ${item.remainText}后到期，为避免数据通信中断和丢失，失去监控权，请及时续期。`
+        
+        plus.push.createMessage(content, JSON.stringify({
+          type: 'service_expire',
+          serviceId: item.serviceId,
+          generatorSetId: item.generatorSetId,
+          unitCode: item.unitCode
+        }), {
+          title: '服务到期提醒',
+          cover: false
+        })
+
+        // 更新推送日志
+        pushLogs[item.serviceId] = { time: now, date: todayStr }
+      }
+    })
+
+    uni.setStorageSync(STORAGE_KEY_LOG, pushLogs)
+  }
+}</code></pre>
+  </section>
+
+  <!-- 4. 接口约定与数据契约 -->
+  <section>
+    <h2><span class="num">04</span> 数据层与接口契约设计</h2>
+
+    <h3>4.1 获取 30 天内临期服务列表</h3>
+    <p><b>接口 URL：</b><code>GET /api/services/expiring</code><br>
+    <b>请求参数：</b></p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>参数名</th>
+            <th>类型</th>
+            <th>必填</th>
+            <th>示例值</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>days</code></td>
+            <td>Integer</td>
+            <td>否</td>
+            <td>30</td>
+            <td>提前预警天数，默认 30 天</td>
+          </tr>
+          <tr>
+            <td><code>sessionId</code></td>
+            <td>String</td>
+            <td>是</td>
+            <td>sess_xxx</td>
+            <td>当前用户登录会话 ID（由请求拦截器自动注入）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>返回数据结构 (JSON Schema)：</h4>
+    <pre><code>{
+  "Code": 1,
+  "Message": "success",
+  "Data": {
+    "Total": 5,
+    "Hotline": "400-888-0808",
+    "List": [
+      {
+        "ServiceId": "SRV-2026-0891",
+        "UnitCode": "G-08",
+        "StationName": "西藏那曲 2 号电站",
+        "GeneratorSetId": 108,
+        "CloudCatCode": "CM-2024-1872",
+        "Location": "那曲县 海拔 4500m",
+        "GensetStatus": 2,
+        "ExpireDate": "2026-08-31 19:00:00",
+        "ServiceTypes": "communication,history_storage,remote_diag,maintain_mgmt"
+      }
+    ]
+  }
+}</code></pre>
+
+    <h3>4.2 服务类型字典枚举约定</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>服务枚举 Key</th>
+            <th>中文名称</th>
+            <th>英文名称 (i18n)</th>
+            <th>业务影响说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>communication</code></td>
+            <td>通信服务</td>
+            <td>Communication Service</td>
+            <td>到期导致机组掉线，无法采集遥测遥信数据，失去监控权</td>
+          </tr>
+          <tr>
+            <td><code>history_storage</code></td>
+            <td>历史数据存储</td>
+            <td>Historical Data Storage</td>
+            <td>到期导致新产生的数据无法持久化归档</td>
+          </tr>
+          <tr>
+            <td><code>remote_param</code></td>
+            <td>远程调参</td>
+            <td>Remote Parameter Tuning</td>
+            <td>到期无法远程配置控制器参数</td>
+          </tr>
+          <tr>
+            <td><code>remote_diag</code></td>
+            <td>远程故障诊断与处理</td>
+            <td>Remote Fault Diagnosis</td>
+            <td>到期无法进行专家系统云端故障辅助诊断</td>
+          </tr>
+          <tr>
+            <td><code>maintain_mgmt</code></td>
+            <td>维保提醒与管理</td>
+            <td>Maintenance Management</td>
+            <td>到期无法接收智能保养工单派发提醒</td>
+          </tr>
+          <tr>
+            <td><code>video_stream</code></td>
+            <td>视频流服务</td>
+            <td>Video Streaming</td>
+            <td>到期无法查看现场摄像头实时推流（按需扩展）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. 异常处理与多端兼容 -->
+  <section>
+    <h2><span class="num">05</span> 异常边界与多端兼容方案</h2>
+
+    <div class="flow-grid">
+      <div class="flow-card">
+        <h4>1. 跨平台兼容策略</h4>
+        <p><b>App 平台：</b>使用 <code>plus.push</code> 与 <code>plus.device.dial</code>；<br>
+        <b>H5 外壳：</b>条件编译屏蔽 plus 调用，降级为 <code>uni.makePhoneCall</code> 与页面内通知。</p>
+      </div>
+      <div class="flow-card">
+        <h4>2. 离线/网络断开</h4>
+        <p>接口失败时静默捕获，读取上次已缓存的 <code>vuex_expiring_services</code> 确保列表可读，不弹阻断性错误弹窗。</p>
+      </div>
+      <div class="flow-card">
+        <h4>3. 状态联动与传参</h4>
+        <p>进入机组监控前，自动拉取机组详情并更新 <code>vuex_gensetInfo</code>，避免进入监控页后因缺少机组缓存报错。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 研发排期与测试验收 -->
+  <section>
+    <h2><span class="num">06</span> 研发实施计划与验收用例</h2>
+
+    <h3>6.1 阶段排期</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>阶段</th>
+            <th>任务内容</th>
+            <th>输出产物</th>
+            <th>工时估算</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>阶段一</b></td>
+            <td>接口封装、国际化词条、`serviceExpireManager.js` 频控调度开发</td>
+            <td>API 模块与通知管理器</td>
+            <td>0.5 天</td>
+          </tr>
+          <tr>
+            <td><b>阶段二</b></td>
+            <td>`pages/service/renew.vue` 详情页、实时监控联动、400拨号开发</td>
+            <td>详情页面组件</td>
+            <td>1.0 天</td>
+          </tr>
+          <tr>
+            <td><b>阶段三</b></td>
+            <td>`discover/index.vue` 消息中心 Tab 改造、紧凑卡片、红标样式与空态</td>
+            <td>消息中心 Tab 列表</td>
+            <td>1.0 天</td>
+          </tr>
+          <tr>
+            <td><b>阶段四</b></td>
+            <td>App.vue 启动挂载、通知点击拦截跳转、iOS/Android 真实环境联调</td>
+            <td>真机回归与验收包</td>
+            <td>0.5 天</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.2 核心验收测试用例</h3>
+    <ul class="checklist">
+      <li><input type="checkbox" checked disabled> <b>冷/热启动通知：</b>打开 APP，存在 30 天内到期服务时，系统状态栏成功弹出本地横幅通知；</li>
+      <li><input type="checkbox" checked disabled> <b>通知防骚扰：</b>同一服务当天重复打开 APP 不重复弹通知；剩余 ≤1 天时每小时最多通知 1 次；</li>
+      <li><input type="checkbox" checked disabled> <b>通知点击流转：</b>点击系统通知栏横幅，直接呼起 APP 并正确跳转至该机组的服务到期详情页；</li>
+      <li><input type="checkbox" checked disabled> <b>紧急红色预警：</b>到期剩余 ≤7 天的服务，卡片左侧红条高亮、剩余天数变红、立即续期按钮变红；</li>
+      <li><input type="checkbox" checked disabled> <b>实时监控直达：</b>详情页点击「实时监控 ＞」，成功携带机组上下文切换至机组实时监控页面；</li>
+      <li><input type="checkbox" checked disabled> <b>一键呼叫续期：</b>点击「400-888-0808」电话卡片，正确唤起系统拨号键盘且号码已填入。</li>
+    </ul>
+  </section>
+
+</div>
+
+</body>
+</html>

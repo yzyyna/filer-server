@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>服务到期提醒功能 · 需求开发文档 | 孚创云监控</title>
+<style>
+  /* ===== Print-friendly PRD styles ===== */
+  :root{
+    --ink:#1a2238;
+    --ink-2:#3b475c;
+    --ink-3:#5d6b85;
+    --ink-4:#8693ad;
+    --line:#dde2ec;
+    --line-2:#c5cee0;
+    --bg:#f5f7fb;
+    --primary:#1e6fff;
+    --primary-2:#3b82f6;
+    --primary-soft:#e8f0ff;
+    --warn:#f59e0b;
+    --warn-soft:#fff7e6;
+    --danger:#dc2626;
+    --danger-soft:#fee2e2;
+    --success:#059669;
+    --success-soft:#d1fae5;
+    --code-bg:#f1f5f9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @page{size:A4;margin:22mm 18mm 22mm 18mm}
+  html{font-size:10.5pt}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","HarmonyOS Sans SC",-apple-system,system-ui,sans-serif;
+    color:var(--ink);
+    background:#fff;
+    line-height:1.65;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{font-weight:600;color:var(--ink);line-height:1.4}
+  h1{font-size:24pt;margin-bottom:6pt;letter-spacing:.5px}
+  h2{font-size:16pt;margin:24pt 0 10pt;padding-bottom:6pt;border-bottom:2px solid var(--primary);page-break-after:avoid}
+  h3{font-size:13pt;margin:18pt 0 8pt;color:var(--primary-2);page-break-after:avoid}
+  h4{font-size:11.5pt;margin:12pt 0 6pt;color:var(--ink-2);page-break-after:avoid}
+  p{margin:6pt 0}
+  ul,ol{margin:6pt 0 6pt 22pt}
+  li{margin:2pt 0}
+  a{color:var(--primary);text-decoration:none}
+  code{
+    font-family:"JetBrains Mono","Consolas","SFMono-Regular",monospace;
+    background:var(--code-bg);padding:1pt 5pt;border-radius:3pt;
+    font-size:9.5pt;color:var(--ink);
+  }
+  pre{
+    background:var(--code-bg);padding:10pt 12pt;border-radius:5pt;
+    overflow-x:auto;font-size:9.5pt;line-height:1.55;
+    border-left:3px solid var(--primary);
+    margin:6pt 0;
+  }
+  pre code{background:transparent;padding:0}
+  table{
+    width:100%;border-collapse:collapse;margin:8pt 0;
+    font-size:10pt;page-break-inside:avoid;
+  }
+  th,td{
+    border:1px solid var(--line);
+    padding:6pt 9pt;text-align:left;vertical-align:top;
+  }
+  th{
+    background:#f8fafc;font-weight:600;color:var(--ink-2);
+    font-size:9.5pt;letter-spacing:.3pt;
+  }
+  td .k{color:var(--ink-3);font-size:9pt;margin-right:3pt}
+  td .v b{color:var(--ink)}
+  td ul{margin:2pt 0 2pt 16pt;padding:0}
+  td ul li{font-size:9.5pt;line-height:1.55}
+
+  /* ===== Cover ===== */
+  .cover{
+    text-align:center;
+    padding:60pt 0 30pt;
+    page-break-after:always;
+    border-bottom:none;
+  }
+  .cover .logo{
+    width:64pt;height:64pt;border-radius:14pt;margin:0 auto 18pt;
+    background:linear-gradient(135deg,#1e6fff,#22d3ee);
+    display:grid;place-items:center;color:#fff;
+    font-size:28pt;font-weight:700;
+    box-shadow:0 8pt 20pt rgba(30,111,255,.30);
+  }
+  .cover h1{font-size:26pt;margin-bottom:4pt}
+  .cover .sub1{font-size:13pt;color:var(--ink-2);font-weight:500;letter-spacing:1pt;margin-bottom:6pt}
+  .cover .sub2{font-size:10.5pt;color:var(--ink-3);letter-spacing:1.5pt}
+  .cover .meta{
+    margin:36pt auto 0;width:78%;
+    border:1px solid var(--line);
+    border-radius:6pt;
+    background:#fafbfd;
+    padding:14pt 18pt;
+    text-align:left;
+    font-size:10pt;
+  }
+  .cover .meta .row{
+    display:flex;justify-content:space-between;
+    padding:5pt 0;border-bottom:1px dashed var(--line);
+  }
+  .cover .meta .row:last-child{border-bottom:0}
+  .cover .meta .row b{color:var(--ink-2);font-weight:500}
+  .cover .meta .row span{color:var(--ink);font-weight:600}
+
+  /* ===== TOC ===== */
+  .toc{
+    page-break-after:always;
+    padding:10pt 0;
+  }
+  .toc h2{margin-top:0;border-bottom:2px solid var(--primary);padding-bottom:6pt}
+  .toc ol{list-style:none;counter-reset:toc;margin:8pt 0 0;padding:0}
+  .toc ol li{
+    counter-increment:toc;
+    padding:4pt 0;font-size:10.5pt;
+    border-bottom:1px dotted var(--line);
+    display:flex;justify-content:space-between;
+  }
+  .toc ol li::before{
+    content:counter(toc) ". ";
+    color:var(--primary);font-weight:600;margin-right:4pt;
+  }
+  .toc ol li.sub{font-size:10pt;color:var(--ink-2);padding-left:18pt}
+  .toc ol li.sub::before{content:counter(toc,lower-alpha) ". "}
+  .toc ol li span{color:var(--ink-4);font-family:monospace;font-size:9.5pt}
+
+  /* ===== Block components ===== */
+  .note{
+    margin:8pt 0;padding:8pt 12pt;
+    border-left:3px solid var(--primary);
+    background:#f0f6ff;border-radius:0 4pt 4pt 0;
+    font-size:10pt;color:var(--ink-2);
+  }
+  .note.warn{border-color:var(--warn);background:var(--warn-soft);color:#7c2d12}
+  .note.danger{border-color:var(--danger);background:var(--danger-soft);color:#7f1d1d}
+  .note.success{border-color:var(--success);background:var(--success-soft);color:#065f46}
+  .note b{color:inherit;font-weight:600;margin-right:3pt}
+
+  .req{
+    display:inline-block;font-size:9pt;font-weight:600;
+    padding:1pt 6pt;border-radius:3pt;margin-right:4pt;
+    vertical-align:middle;letter-spacing:.3pt;
+  }
+  .req.must{background:var(--danger-soft);color:var(--danger)}
+  .req.should{background:var(--warn-soft);color:#92400e}
+  .req.could{background:var(--success-soft);color:var(--success)}
+
+  .badge{
+    display:inline-block;font-size:8.5pt;font-weight:500;
+    padding:1pt 5pt;border-radius:3pt;margin-right:3pt;
+    background:#eef1f6;color:var(--ink-2);
+  }
+  .badge.comm{background:#e0f2fe;color:#0369a1}
+  .badge.store{background:#ede9fe;color:#6d28d9}
+  .badge.param{background:#fef3c7;color:#a16207}
+  .badge.diag{background:#cffafe;color:#0e7490}
+  .badge.maint{background:#fce7f3;color:#be185d}
+
+  .page-num{color:var(--ink-4);font-weight:500}
+
+  /* page break helpers */
+  .pb{page-break-before:always}
+
+  /* Flow diagram (CSS) */
+  .flow{
+    display:flex;align-items:stretch;gap:0;
+    margin:8pt 0;page-break-inside:avoid;
+    border:1px solid var(--line);border-radius:5pt;background:#fafbfd;
+    padding:8pt;
+  }
+  .flow .step{
+    flex:1;padding:8pt 10pt;
+    border-right:1px dashed var(--line);
+  }
+  .flow .step:last-child{border-right:0}
+  .flow .step .n{
+    display:inline-block;width:18pt;height:18pt;border-radius:50%;
+    background:var(--primary);color:#fff;font-size:9pt;font-weight:700;
+    text-align:center;line-height:18pt;margin-bottom:4pt;
+  }
+  .flow .step .t{font-size:10pt;font-weight:600;color:var(--ink);margin-bottom:2pt}
+  .flow .step .d{font-size:9pt;color:var(--ink-3);line-height:1.5}
+
+  /* Footer (page number) */
+  @media print{
+    body{padding:0}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="logo">F</div>
+  <h1>服务到期提醒功能</h1>
+  <div class="sub1">需求开发文档</div>
+  <div class="sub2">FUCHUAN CLOUD · 发电机组物联网监控系统 · 移动端</div>
+  <div class="meta">
+    <div class="row"><b>文档版本</b><span>V1.3</span></div>
+    <div class="row"><b>编制日期</b><span>2026-08-31</span></div>
+    <div class="row"><b>编制人</b><span>产品部</span></div>
+    <div class="row"><b>适用范围</b><span>iOS / Android 移动端 APP</span></div>
+    <div class="row"><b>关联模块</b><span>消息中心 / 设备监控 / 系统通知</span></div>
+    <div class="row"><b>关联设计稿</b><span>simcard-expiry-app.html</span></div>
+    <div class="row"><b>文档密级</b><span>内部公开</span></div>
+  </div>
+</div>
+
+<!-- ============ TOC ============ -->
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li>文档信息与修订历史 <span>P4</span></li>
+    <li>背景与目标 <span>P4</span></li>
+    <li>业务场景与用户故事 <span>P5</span></li>
+    <li>功能需求 <span>P6</span>
+      <ol style="list-style:none;padding:0;margin:0">
+        <li class="sub">4.1 系统通知机制 <span>P6</span></li>
+        <li class="sub">4.2 消息中心「服务到期」Tab <span>P7</span></li>
+        <li class="sub">4.3 服务到期详情页 <span>P9</span></li>
+      </ol>
+    </li>
+    <li>业务规则 <span>P10</span>
+      <ol style="list-style:none;padding:0;margin:0">
+        <li class="sub">5.1 提醒触发规则 <span>P10</span></li>
+        <li class="sub">5.2 防骚扰策略 <span>P10</span></li>
+        <li class="sub">5.3 优先级与排序 <span>P11</span></li>
+        <li class="sub">5.4 剩余时间显示规则 <span>P11</span></li>
+        <li class="sub">5.5 自动循环推送机制 <span>P12</span></li>
+      </ol>
+    </li>
+    <li>字段定义 <span>P12</span></li>
+    <li>接口约定 <span>P13</span></li>
+    <li>页面跳转路径 <span>P14</span></li>
+    <li>异常与边界情况 <span>P15</span></li>
+    <li>非功能需求 <span>P16</span></li>
+    <li>验收标准 <span>P17</span></li>
+    <li>附录 <span>P18</span></li>
+  </ol>
+</div>
+
+<!-- ============ 1. 文档信息 ============ -->
+<h2>1. 文档信息与修订历史</h2>
+
+<h3>1.1 文档信息</h3>
+<table>
+  <tr><th style="width:22%">项目</th><th>说明</th></tr>
+  <tr><td>文档名称</td><td>服务到期提醒功能 - 需求开发文档</td></tr>
+  <tr><td>版本号</td><td>V1.3</td></tr>
+  <tr><td>编制部门</td><td>产品部</td></tr>
+  <tr><td>关联 PRD 集合</td><td>孚创云监控 - 移动端消息体系</td></tr>
+  <tr><td>依赖后端接口</td><td><code>GET /api/services/expiring?days=30</code></td></tr>
+</table>
+
+<h3>1.2 修订历史</h3>
+<table>
+  <tr><th style="width:10%">版本</th><th style="width:14%">日期</th><th style="width:14%">修订人</th><th>修订内容</th></tr>
+  <tr><td>V1.0</td><td>2026-08-28</td><td>产品部</td><td>初版，覆盖网卡到期提醒需求（机组 + 续期详情 + 通知）</td></tr>
+  <tr><td>V1.1</td><td>2026-08-31</td><td>产品部</td><td>术语调整："网卡到期" → "服务到期"；卡片增加服务类型标签、运维服务前缀、紧凑化；详情页"实时监控"内嵌到运行状态行</td></tr>
+  <tr><td>V1.2</td><td>2026-08-31</td><td>产品部</td><td>温馨提示上移至 Hero 下方，文案精简</td></tr>
+  <tr><td>V1.3</td><td>2026-08-31</td><td>产品部</td><td>补充接口字段、防骚扰策略、验收标准</td></tr>
+  <tr>
+    <td>V1.4</td>
+    <td>2026-08-31</td>
+    <td>产品部</td>
+    <td>
+      三项重大调整：
+      <b>(1)</b> 服务类型调整：去掉"固件 OTA 升级"，新增"远程故障诊断与处理"、"维保提醒与管理"；
+      <b>(2)</b> 新增 3 类用户角色：设备管理员、设备操作员、设备资产所有者（原有运维主管 / 驻场运维 / 项目负责人保留，共 6 类）；
+      <b>(3)</b> 新增<b>自动循环推送机制</b>：剩余 ≤ 30 天时由后台自动循环推送系统通知，<b>默认每 4 小时一次</b>，周期可在 Web 后台配置。
+      <br/>
+      <b>修订补充：</b>APP 端<b>不展示任何</b>自动循环相关视觉元素（卡片、详情页均不显示），所有配置入口统一在 Web 后台「系统管理 → 提醒策略」完成。
+      <br/>
+      <b>Web 后台简化为 2 个设置项：</b>"自动循环推送"开关 + "循环提醒间隔" 自定义输入（<b>支持小数</b>，单位 h），对全部 6 类角色生效；不提供适用对象选择、触发规则 / 推送通道 / 推送统计 / 推送日志等高级功能（独立 PRD 规划中）。页面标题确定为「<b>运维服务到期提醒自动循环提醒策略</b>」。
+    </td>
+  </tr>
+</table>
+
+<!-- ============ 2. 背景与目标 ============ -->
+<h2>2. 背景与目标</h2>
+
+<h3>2.1 业务背景</h3>
+<p>孚创云监控为发电机组提供"物联网卡 + 云平台 + 运维服务"一体化解决方案。每台机组的"通信服务"、"历史数据存储"、"远程调参"、"固件 OTA 升级"等服务均有固定的服务期，到期后若未续期将产生以下影响：</p>
+<ul>
+  <li><b>通信服务到期</b>：机组离线，无法回传实时数据，<b>用户失去监控权</b></li>
+  <li><b>历史数据存储到期</b>：新产生的数据无法归档，可能丢失</li>
+  <li><b>远程调参到期</b>：无法远程修改机组参数，需现场处理</li>
+  <li><b>固件 OTA 升级到期</b>：无法远程升级固件，安全补丁不能及时推送</li>
+</ul>
+
+<p>当前痛点：服务到期前缺乏主动提醒机制，运维人员依赖人工台账或被动发现（机组掉线告警），导致服务中断后才发现，影响客户监控连续性，进而影响续约口碑。</p>
+
+<h3>2.2 功能目标</h3>
+<p>本次需求在 APP 内构建一套<b>"主动到期提醒"机制</b>，覆盖三个核心场景：</p>
+<ol>
+  <li><b>提前感知</b>：用户打开 APP 时，系统级通知主动告知 30 天内即将到期的服务</li>
+  <li><b>集中管理</b>：消息中心独立 Tab，按剩余时间倒序展示即将到期的服务清单</li>
+  <li><b>一键续期</b>：详情页提供续期电话、实时监控入口，降低续期与监控切换成本</li>
+</ol>
+
+<h3>2.3 范围与边界</h3>
+<div class="note success">
+  <b>本期范围：</b>仅做"到期提醒 + 续期入口"，不包含在线支付/在线续费流程。续期仍由人工电话沟通办理。
+</div>
+<div class="note warn">
+  <b>本期不涉及：</b>Web 端同步、邮件提醒、短信提醒、企业微信/钉钉机器人通知（独立 PRD 规划中）。
+</div>
+
+<!-- ============ 3. 业务场景 ============ -->
+<h2>3. 业务场景与用户故事</h2>
+
+<h3>3.1 用户角色</h3>
+<table>
+  <tr><th style="width:18%">角色</th><th>关注点</th><th>典型场景</th><tr>
+  <tr>
+    <td><b>运维主管</b></td>
+    <td>全部机组的整体服务健康度</td>
+    <td>每天打开 APP 第一件事是看消息中心，确认是否有即将到期的服务需要处理</td>
+  </tr>
+  <tr>
+    <td><b>驻场运维</b></td>
+    <td>所辖区域内机组的服务状态</td>
+    <td>收到系统通知后立即打开 APP 查看详情，联系续期</td>
+  </tr>
+  <tr>
+    <td><b>项目负责人</b></td>
+    <td>服务的客户/合同维度</td>
+    <td>通过详情页直接查看机组监控数据，验证服务是否真在中断</td>
+  </tr>
+  <tr>
+    <td><b>设备管理员</b></td>
+    <td>所辖设备的整体运维与服务健康度，拥有消息中心、服务监控的全部权限</td>
+    <td>每天通过 APP 消息中心查看即将到期的运维服务，安排续期；可在 Web 后台配置自动循环提醒周期</td>
+  </tr>
+  <tr>
+    <td><b>设备操作员</b></td>
+    <td>日常巡检与基础操作，关注设备实时状态与即时告警</td>
+    <td>收到系统通知（自动循环推送）后立即查看详情，联系续期或反馈给设备管理员</td>
+  </tr>
+  <tr>
+    <td><b>设备资产所有者</b></td>
+    <td>所拥有设备资产的服务合同/续费状态，关注长期资产健康</td>
+    <td>通过消息中心查看即将到期的服务对资产的影响，决定是否续期</td>
+  </tr>
+</table>
+<div class="note">
+  <b>说明：</b>6 类角色看到的功能集合相同，<b>数据范围按角色授权</b>（每个角色只能看到自己有权限的设备/电站）；自动循环推送的范围也按角色授权过滤。
+</div>
+
+<h3>3.2 核心用户故事</h3>
+<table>
+  <tr><th style="width:6%">编号</th><th>用户故事</th></tr>
+  <tr>
+    <td>US-01</td>
+    <td>作为<b>运维人员</b>，我希望<b>打开 APP 时能立刻看到哪些机组的服务即将到期</b>，以便提前安排续期，避免机组突然离线。</td>
+  </tr>
+  <tr>
+    <td>US-02</td>
+    <td>作为<b>运维人员</b>，我希望<b>在消息中心集中查看所有即将到期的服务清单</b>，以便批量跟进。</td>
+  </tr>
+  <tr>
+    <td>US-03</td>
+    <td>作为<b>运维人员</b>，我希望<b>从通知或消息中心直接进入续期详情</b>，以便快速拨打续期电话，避免来回找号码。</td>
+  </tr>
+  <tr>
+    <td>US-04</td>
+    <td>作为<b>项目负责人</b>，我希望<b>在查看续期详情时能直接跳到该机组的实时监控</b>，以便在打电话前先确认机组当前是否真在离线（避免误判）。</td>
+  </tr>
+  <tr>
+    <td>US-05</td>
+    <td>作为<b>运维人员</b>，我希望<b>剩余时间根据紧急程度精确显示</b>（天/小时/分钟），以便对即将中断的服务有直观判断。</td>
+  </tr>
+</table>
+
+<!-- ============ 4. 功能需求 ============ -->
+<h2>4. 功能需求</h2>
+
+<!-- 4.1 系统通知 -->
+<h3>4.1 系统通知机制 <span class="req must">P0</span></h3>
+
+<h4>4.1.1 触发条件</h4>
+<p>通知触发分<b>两个通道</b>，确保提醒到位：</p>
+<table>
+  <tr><th style="width:18%">通道</th><th>触发时机</th><th>行为</th></tr>
+  <tr>
+    <td><b>① APP 启动触发</b></td>
+    <td>用户每次打开 APP（冷启动 / 热启动进入前台）</td>
+    <td>前端调用 <code>GET /api/services/expiring</code> 获取列表，<b>对每个即将到期服务发送本地通知</b></td>
+  </tr>
+  <tr>
+    <td><b>② 后台自动循环触发 <span class="req must">P0</span></b></td>
+    <td>服务端定时任务调度（默认<b>每 4 小时</b>一次）</td>
+    <td>服务端主动向已开启通知权限的设备发送远程推送（APNs / FCM），无需 APP 在前台</td>
+  </tr>
+</table>
+<ul>
+  <li><b>触发范围</b>：剩余有效时间 <code>&gt; 0</code> 且 <code>≤ 30 天</code> 的服务</li>
+  <li><b>文案模板</b>：见 §4.1.2</li>
+</ul>
+
+<h4>4.1.2 通知文案规范</h4>
+<table>
+  <tr><th style="width:30%">字段</th><th>规则</th></tr>
+  <tr>
+    <td><b>标题</b></td>
+    <td>固定为「服务到期提醒」</td>
+  </tr>
+  <tr>
+    <td><b>正文模板</b></td>
+    <td><code>机组 {unitCode}（{stationName}）的 {serviceName} 将在 {remainText} 后到期，为避免数据通信中断和丢失，失去监控权，请及时续期。</code></td>
+  </tr>
+  <tr>
+    <td><b>变量说明</b></td>
+    <td>
+      <code>unitCode</code> - 机组编号（例：G-08）<br/>
+      <code>stationName</code> - 电站名称（例：西藏那曲 2 号电站）<br/>
+      <code>serviceName</code> - 服务名称（例：通信服务）<br/>
+      <code>remainText</code> - 剩余时间文本（按 §5.4 规则生成）
+    </td>
+  </tr>
+  <tr>
+    <td><b>示例（紧急）</b></td>
+    <td>机组 G-66（青海玉树电站）的通信服务将在 5 小时 23 分后到期，为避免数据通信中断和丢失，失去监控权，请及时续期。</td>
+  </tr>
+  <tr>
+    <td><b>示例（一般）</b></td>
+    <td>机组 G-15（新疆喀什光伏电站）的通信服务将在 13 天后到期，为避免数据通信中断和丢失，失去监控权，请及时续期。</td>
+  </tr>
+</table>
+
+<h4>4.1.3 通知样式</h4>
+<ul>
+  <li><b>形式</b>：iOS / Android 系统横幅 + 通知中心条目</li>
+  <li><b>应用图标</b>：孚创云监控 Logo（蓝青渐变）</li>
+  <li><b>优先级</b>：剩余 ≤ 7 天显示为高优先级（横幅置顶 + 振动），8~30 天为普通优先级</li>
+  <li><b>点击行为</b>：点击通知 → 唤起 APP 并跳转服务到期详情页（参数 <code>serviceId</code>）</li>
+  <li><b>循环来源标识</b>：后台自动循环触发的通知，标题后增加"·循环提醒"角标（如「服务到期提醒 · 循环提醒」），便于用户区分</li>
+</ul>
+
+<!-- 4.2 消息中心 -->
+<h3>4.2 消息中心「服务到期」Tab <span class="req must">P0</span></h3>
+
+<h4>4.2.1 入口</h4>
+<ul>
+  <li>APP 底部导航「消息」入口（次级 Tab 第 3 项）</li>
+  <li>未读条数：Tab 角标显示当前用户可见的"30 天内即将到期项数"</li>
+</ul>
+
+<h4>4.2.2 Tab 结构</h4>
+<p>消息中心包含 4 个 Tab：「全部」「告警」「工单」「服务到期」。本期重点是「服务到期」Tab，其余 3 个 Tab 沿用既有实现。</p>
+
+<h4>4.2.3 顶部统计区</h4>
+<table>
+  <tr><th style="width:25%">元素</th><th>内容</th></tr>
+  <tr>
+    <td>左侧标签 + 警示图标</td>
+    <td>"30 天内即将到期"（橙色 ⚠ 图标）</td>
+  </tr>
+  <tr>
+    <td>右侧计数</td>
+    <td>数量 + "项"（例：5 项）</td>
+  </tr>
+  <tr>
+    <td>底部提示文案</td>
+    <td><b>"为避免数据通信中断和丢失，失去监控权，请及时续期"</b><br/>+ 副文案"后台将自动循环推送提醒（默认每 4 小时）"</td>
+  </tr>
+</table>
+
+<h4>4.2.4 消息卡片设计</h4>
+<p>每条即将到期的服务显示为一张紧凑卡片，要求<b>在不滚动的情况下，列表区尽量多展示</b>。卡片信息层级：</p>
+
+<table>
+  <tr><th style="width:25%">信息</th><th>位置</th><th>样式</th></tr>
+  <tr>
+    <td>机组名称 + 电站名称</td>
+    <td>卡片头部左侧</td>
+    <td>粗体 13.5pt，"机组 G-08 · 西藏那曲 2 号电站"</td>
+  </tr>
+  <tr>
+    <td>剩余天数标签</td>
+    <td>卡片头部右侧</td>
+    <td>圆角 chip，<b>≤ 7 天</b>红色，"3 天后到期" / "5 小时 23 分后到期"；<b>8~30 天</b>橙色</td>
+  </tr>
+  <tr>
+    <td>运维服务：标签组</td>
+    <td>卡片中部</td>
+    <td>前缀灰色"运维服务：" + 多色圆角 chip（通信=蓝/存储=紫/调参=黄/OTA=绿）</td>
+  </tr>
+  <tr>
+    <td>到期 / 云猫 / 位置</td>
+    <td>卡片底部元数据行</td>
+    <td>10.5pt 灰字，键值对紧凑排列</td>
+  </tr>
+  <tr>
+    <td>立即续期 按钮</td>
+    <td>卡片右下角</td>
+    <td>蓝色胶囊按钮，<b>≤ 7 天</b>变红色，文案"立即续期 ＞"</td>
+  </tr>
+</table>
+
+<h4>4.2.5 卡片交互</h4>
+<ul>
+  <li><b>点击卡片</b>：进入服务到期详情页（§4.3）</li>
+  <li><b>点击「立即续期」按钮</b>：进入服务到期详情页（同上）</li>
+  <li><b>点击电话</b>：详情页内才提供，列表页不展示</li>
+</ul>
+
+<h4>4.2.6 列表排序</h4>
+<p>按剩余时间升序（最紧急置顶），剩余相同时按机组编号升序。</p>
+
+<h4>4.2.7 空态 <span class="req should">P1</span></h4>
+<p>当 30 天内无即将到期的服务时，Tab 无红点，列表区显示空态插画：✅ 图标 + "30 天内无即将到期的服务" + "所有机组服务状态正常"。</p>
+
+<!-- 4.3 详情页 -->
+<h3>4.3 服务到期详情页 <span class="req must">P0</span></h3>
+
+<h4>4.3.1 页面入口</h4>
+<ul>
+  <li>点击系统通知 → 跳转详情页（带 <code>serviceId</code> 参数）</li>
+  <li>消息中心卡片「立即续期」按钮 → 跳转详情页</li>
+  <li>消息中心卡片本体 → 跳转详情页</li>
+</ul>
+
+<h4>4.3.2 页面结构（自上而下）</h4>
+<ol>
+  <li><b>Hero 区</b>（渐变背景，紧急时红、警告时橙）
+    <ul>
+      <li>警示徽章：「服务即将中断」</li>
+      <li>主标题：机组编号 + 电站名称</li>
+      <li>剩余天数："距到期仅剩 X 天 / X 小时 X 分 / X 分钟"</li>
+      <li>运维服务标签（彩色 chip 概览）</li>
+    </ul>
+  </li>
+  <li><b>温馨提示</b>（黄色背景，左边竖线）
+    <p>文案：「<b>温馨提示：</b>为避免数据通信中断和丢失，失去监控权，请提前办理续期。」</p>
+  </li>
+  <li><b>设备信息 section</b>
+    <table>
+      <tr><th>字段</th><th>显示规则</th></tr>
+      <tr><td>机组名称</td><td>纯文本</td></tr>
+      <tr><td>运行状态</td><td>状态徽章（运行中/待机/离线）<b> + 同行右侧</b>"实时监控 ＞"链接（点击跳转监控页）</td></tr>
+      <tr><td>所在位置</td><td>"省份 城市 详细地址 海拔"</td></tr>
+      <tr><td>云猫编号</td><td>等宽字体显示编号</td></tr>
+      <tr><td>到期日期</td><td>YYYY-MM-DD，紧急时红色</td></tr>
+      <tr><td>剩余天数</td><td>同上剩余时间文本，紧急时红色加粗</td></tr>
+    </table>
+  </li>
+  <li><b>运维服务 section</b>
+    <p>列出该服务项下所有受影响的子服务（彩色 chip）。</p>
+  </li>
+  <li><b>续期电话</b>（蓝青渐变大卡片，整张可点击）
+    <ul>
+      <li>图标：电话</li>
+      <li>主文案：「续期联系电话 · 点击拨打」</li>
+      <li>号码：默认 <code>400-888-0808</code>（后台可配置）</li>
+      <li>交互：点击调用 <code>plus.device.dial()</code>（原生）或 <code>tel:</code> Scheme 唤起系统拨号键盘</li>
+    </ul>
+  </li>
+</ol>
+
+<h4>4.3.3 "实时监控 ＞" 链接规则 <span class="req must">P0</span></h4>
+<ul>
+  <li><b>位置</b>：固定在「运行状态」行的值区域，与状态徽章同一行，<b>不独立成行</b></li>
+  <li><b>样式</b>：主色蓝色，前置细分隔线（视觉上与状态徽章分组）</li>
+  <li><b>跳转目标</b>：<code>/pages/monitor/unit?unitCode={unitCode}</code></li>
+  <li><b>不可用场景</b>：机组当前已离线时，链接仍可点击（用户可看离线前最后数据），但文案加灰色"查看历史数据"</li>
+</ul>
+
+<!-- ============ 5. 业务规则 ============ -->
+<h2>5. 业务规则</h2>
+
+<h3>5.1 提醒触发规则</h3>
+<table>
+  <tr><th style="width:35%">规则项</th><th>规则内容</th></tr>
+  <tr>
+    <td>触发时机</td>
+    <td>APP 冷启动 / 热启动进入前台时</td>
+  </tr>
+  <tr>
+    <td>默认提前提醒时长</td>
+    <td><b>30 天</b>（可在管理后台调整全局阈值，范围 7~90 天）</td>
+  </tr>
+  <tr>
+    <td>同一服务每天最多通知次数</td>
+    <td><b>1 次</b>（按本地日期切换重置）</td>
+  </tr>
+  <tr>
+    <td>≤ 1 天时的通知频率</td>
+    <td><b>每小时最多 1 次</b>（避免漏看关键时刻）</td>
+  </tr>
+  <tr>
+    <td>已到期后的处理</td>
+    <td>不再发到期提醒，转为"已中断"告警（由告警体系处理）</td>
+  </tr>
+</table>
+
+<h3>5.2 防骚扰策略</h3>
+<div class="note warn">
+  <b>设计原则：</b>"重要但不打扰"。在最关键的窗口（≤ 7 天）保持高提醒密度，其他时段保持最低打扰。
+</div>
+<table>
+  <tr><th style="width:30%">剩余时间</th><th>通知频率</th><th>UI 样式</th></tr>
+  <tr>
+    <td><b>≤ 1 天</b></td>
+    <td>每小时最多 1 次</td>
+    <td>红色 Hero + 列表置顶 + 按钮变红 + 振动</td>
+  </tr>
+  <tr>
+    <td><b>2 ~ 7 天</b></td>
+    <td>每天最多 1 次</td>
+    <td>红色 Hero + 列表置顶 + 按钮变红 + 振动</td>
+  </tr>
+  <tr>
+    <td><b>8 ~ 30 天</b></td>
+    <td>每天最多 1 次</td>
+    <td>橙色 Hero + 卡片左侧橙条</td>
+  </tr>
+  <tr>
+    <td><b>&gt; 30 天</b></td>
+    <td>不提醒</td>
+    <td>不出现在列表</td>
+  </tr>
+</table>
+
+<h3>5.3 优先级与排序</h3>
+<ul>
+  <li>列表排序：<b>剩余时间升序</b>，最紧急的置顶</li>
+  <li>剩余相同时：<b>按机组编号升序</b>（G-08 在 G-15 前）</li>
+  <li>卡片视觉权重：紧急（≤ 7 天）= 红边 + 红按钮；一般 = 橙边 + 蓝按钮</li>
+</ul>
+
+<h3>5.4 剩余时间显示规则</h3>
+<table>
+  <tr><th style="width:30%">剩余时间</th><th>显示文本</th><th>示例</th></tr>
+  <tr>
+    <td><code>remain ≥ 1 天</code></td>
+    <td><code>{n} 天后到期</code></td>
+    <td>3 天后到期 / 29 天后到期</td>
+  </tr>
+  <tr>
+    <td><code>1 小时 ≤ remain &lt; 1 天</code></td>
+    <td><code>{h} 小时{m} 分后到期</code></td>
+    <td>5 小时 23 分后到期</td>
+  </tr>
+  <tr>
+    <td><code>remain &lt; 1 小时 且 remain &gt; 0</code></td>
+    <td><code>{m} 分钟后到期</code></td>
+    <td>12 分钟后到期</td>
+  </tr>
+  <tr>
+    <td><code>remain ≤ 0</code></td>
+    <td><code>已到期</code></td>
+    <td>已到期（Hero 升级为红色"已中断"）</td>
+  </tr>
+</table>
+<p style="margin-top:4pt"><b>精度说明</b>：后端存储使用 ISO-8601 时间戳，前端按本地时区计算并向上取整显示（"剩余 1.5 天" 显示为"2 天后到期"，避免误判）。</p>
+
+<h3>5.5 自动循环推送机制 <span class="req must">P0</span></h3>
+<div class="note">
+  <b>核心规则：</b>剩余有效时间 ≤ 30 天的服务，由后端定时任务自动循环推送系统级通知，<b>无需用户打开 APP</b>，确保提醒到位。
+</div>
+
+<h4>5.5.1 Web 后台设置项（极简）</h4>
+<p>Web 后台「系统管理 → 提醒策略」页面（页面标题：<b>"运维服务到期提醒自动循环提醒策略"</b>）仅提供 <b>2 个设置项</b>，对全部 6 类角色生效，<b>不提供适用对象选择</b>：</p>
+<table>
+  <tr><th style="width:30%">项</th><th>规则</th></tr>
+  <tr>
+    <td>① 自动循环推送</td>
+    <td>开关 — <b>关闭后所有循环推送停止</b>，仅在用户打开 APP 时检测；<b>默认开启</b></td>
+  </tr>
+  <tr>
+    <td>② 循环提醒间隔</td>
+    <td>数字输入框（单位 h，<b>支持小数</b>，如 0.5 = 30 分钟）— 默认 4，范围 0.1 ~ 168（约 7 天）</td>
+  </tr>
+  <tr>
+    <td>生效范围</td>
+    <td>对全部 6 类角色（运维主管 / 驻场运维 / 项目负责人 / 设备管理员 / 设备操作员 / 设备资产所有者）生效</td>
+  </tr>
+  <tr>
+    <td>生效延迟</td>
+    <td>Web 后台保存后 <b>≤ 5 分钟</b>生效（下一轮定时任务读取最新配置）</td>
+  </tr>
+</table>
+<div class="note warn">
+  <b>本期不提供：</b>适用对象选择、触发规则（已处理免推/免打扰时段）、推送通道配置、推送统计图表、推送日志。这些在独立 PRD 规划中。
+</div>
+
+<h4>5.5.2 推送通道</h4>
+<ul>
+  <li>iOS：APNs（Apple Push Notification service）</li>
+  <li>Android：FCM（Firebase Cloud Messaging） / 厂商通道（华为/小米/OPPO/vivo）</li>
+  <li>推送凭据（device token）在 APP 首次启动时上报后端，后续由后端直推</li>
+</ul>
+
+<h4>5.5.3 推送触发逻辑</h4>
+<ol>
+  <li>后端定时任务（<code>cron: 0 */{period} * * *</code>）每周期扫描一次</li>
+  <li>筛选条件：<code>expireDate - now() ≤ 30 天</code> 且 <code>expireDate &gt; now()</code> 且 <code>status = active</code></li>
+  <li>对每条服务，查找当前有权限接收的角色（6 类角色按数据权限过滤）+ 开启了通知权限的设备</li>
+  <li>通过 APNs / FCM 发送远程推送（无需 APP 在线）</li>
+</ol>
+
+<h4>5.5.4 与 APP 启动触发的协同</h4>
+<table>
+  <tr><th style="width:35%">场景</th><th>处理</th></tr>
+  <tr>
+    <td>用户打开 APP</td>
+    <td>① APP 启动触发 + ② 后台循环触发，<b>两通道都工作</b>，文案与样式一致</td>
+  </tr>
+  <tr>
+    <td>APP 被杀 / 后台运行</td>
+    <td>仅 ② 后台循环触发可生效（依赖系统推送通道）</td>
+  </tr>
+  <tr>
+    <td>用户禁用系统通知权限</td>
+    <td>两个通道均不发送，APP 内引导用户开启（一次性弹窗）</td>
+  </tr>
+</table>
+
+<h4>5.5.5 APP 端不展示循环配置入口</h4>
+<div class="note">
+  <b>设计原则：</b>为保持 APP 端界面简洁，<b>不展示任何</b>自动循环相关的视觉元素（卡片、详情页、设置页均不显示）。所有配置统一在 Web 后台完成。
+</div>
+<p>用户在 APP 端的行为路径：</p>
+<ul>
+  <li>看到系统通知（横幅 / 通知中心）→ 点击 → 跳转 APP 详情页</li>
+  <li>在消息中心查看所有即将到期服务 → 点击卡片 / 立即续期 → 详情页</li>
+  <li>详情页只关注"是什么服务、何时到期、怎么续期"——不涉及循环推送配置</li>
+</ul>
+<p>需要调整循环策略的<b>设备管理员</b>：登录 Web 后台 → 系统管理 → 提醒策略（详见设计稿 <code>simcard-expiry-app.html</code> 中 Web 后台 Frame）。</p>
+
+<!-- ============ 6. 字段定义 ============ -->
+<h2>6. 字段定义</h2>
+
+<h3>6.1 卡片 / 详情 共享字段</h3>
+<table>
+  <tr><th style="width:18%">字段</th><th style="width:20%">类型</th><th>必填</th><th>说明</th></tr>
+  <tr><td><code>serviceId</code></td><td>Long</td><td>是</td><td>服务记录主键（详情页路由参数）</td></tr>
+  <tr><td><code>unitCode</code></td><td>String</td><td>是</td><td>机组编号，例：G-08</td></tr>
+  <tr><td><code>stationName</code></td><td>String</td><td>是</td><td>电站名称，例：西藏那曲 2 号电站</td></tr>
+  <tr><td><code>cloudCatCode</code></td><td>String</td><td>是</td><td>云猫设备编号，例：CM-2024-1872</td></tr>
+  <tr><td><code>serviceType</code></td><td>Enum</td><td>是</td><td>服务类型枚举（见 §6.2）</td></tr>
+  <tr><td><code>serviceName</code></td><td>String</td><td>是</td><td>服务显示名，例：通信服务</td></tr>
+  <tr><td><code>expireDate</code></td><td>ISO-8601</td><td>是</td><td>到期时间（含时区），例：2026-08-31T23:59:59+08:00</td></tr>
+  <tr><td><code>remainSeconds</code></td><td>Long</td><td>是</td><td>剩余秒数（后端计算，前端仅做展示）</td></tr>
+  <tr><td><code>remainText</code></td><td>String</td><td>否</td><td>后端预格式化好的剩余时间文本（前端也可自行格式化）</td></tr>
+  <tr><td><code>location</code></td><td>String</td><td>是</td><td>所在位置，例：那曲县 海拔 4500m</td></tr>
+  <tr><td><code>unitStatus</code></td><td>Enum</td><td>是</td><td>机组运行状态：running / standby / offline</td></tr>
+</table>
+
+<h3>6.2 服务类型枚举 <code>serviceType</code></h3>
+<table>
+  <tr><th style="width:22%">枚举值</th><th style="width:26%">显示名</th><th>UI 颜色</th><th>说明</th></tr>
+  <tr>
+    <td><code>communication</code></td>
+    <td>通信服务</td>
+    <td><span class="badge comm">蓝</span></td>
+    <td>SIM 卡 / 物联网卡，到期后机组离线</td>
+  </tr>
+  <tr>
+    <td><code>history_storage</code></td>
+    <td>历史数据存储服务</td>
+    <td><span class="badge store">紫</span></td>
+    <td>云端数据归档，到期后新数据无法入库</td>
+  </tr>
+  <tr>
+    <td><code>remote_param</code></td>
+    <td>远程调参服务</td>
+    <td><span class="badge param">黄</span></td>
+    <td>远程修改机组参数，到期后需现场调参</td>
+  </tr>
+  <tr>
+    <td><code>remote_diag</code></td>
+    <td>远程故障诊断与处理</td>
+    <td><span class="badge">青</span></td>
+    <td>远程诊断机组故障 + 协助处理，到期后仅能现场排查</td>
+  </tr>
+  <tr>
+    <td><code>maintain_mgmt</code></td>
+    <td>维保提醒与管理</td>
+    <td><span class="badge">粉</span></td>
+    <td>机组定期维保的计划、提醒、记录管理，到期后需手工管理维保台账</td>
+  </tr>
+</table>
+
+<!-- ============ 7. 接口约定 ============ -->
+<h2>7. 接口约定</h2>
+
+<h3>7.1 查询即将到期的服务列表</h3>
+<pre><code>GET /api/services/expiring?days=30
+Authorization: Bearer {token}
+
+Query Params:
+  days    Int  选填，默认 30，取值范围 7~90
+  page    Int  选填，默认 1
+  size    Int  选填，默认 20，最大 100
+
+Response 200:
+{
+  "code": 0,
+  "data": {
+    "total": 5,
+    "cycleHours": 4,           // 当前全局循环提醒周期（小时，支持小数），由后端从配置读取
+    "items": [
+      {
+        "serviceId": 10231,
+        "unitCode": "G-08",
+        "stationName": "西藏那曲 2 号电站",
+        "cloudCatCode": "CM-2024-1872",
+        "serviceType": "communication",
+        "serviceName": "通信服务",
+        "expireDate": "2026-08-31T23:59:59+08:00",
+        "remainSeconds": 259200,
+        "remainText": "3 天后到期",
+        "location": "那曲县 海拔 4500m",
+        "unitStatus": "running"
+      },
+      ...
+    ]
+  }
+}
+
+Response 4xx/5xx:
+{
+  "code": 1001,
+  "message": "服务暂时不可用，请稍后重试"
+}</code></pre>
+
+<h3>7.2 上报设备推送 Token（用于自动循环推送）<span class="req must">P0</span></h3>
+<pre><code>POST /api/devices/push-token
+Authorization: Bearer {token}
+
+Body:
+{
+  "clientType": "ios" | "android",
+  "deviceToken": "a1b2c3d4e5f6...",     // APNs device token 或 FCM registration token
+  "appVersion": "2.3.1",
+  "osVersion": "17.4"
+}
+
+Response 200:
+{ "code": 0, "data": { "registered": true } }
+
+Notes:
+  - APP 启动时调用一次（本地已有 token 可跳过）
+  - 用户禁用系统通知权限时不下发循环推送
+  - 服务端定期清理 90 天未活跃的 token</code></pre>
+
+<h3>7.3 解除推送 Token（用户登出 / 卸载时调用）<span class="req must">P0</span></h3>
+<pre><code>DELETE /api/devices/push-token
+Authorization: Bearer {token}
+
+Query Params:
+  deviceToken  String  必填
+
+Response 200:
+{ "code": 0 }</code></pre>
+
+<h3>7.4 获取循环提醒配置 <span class="req could">P2</span></h3>
+<pre><code>GET /api/system/cycle-config
+Authorization: Bearer {token}
+
+Response 200:
+{
+  "code": 0,
+  "data": {
+    "enabled": true,            // 自动循环推送开关
+    "cycleHours": 4,            // 当前循环间隔（小时，支持小数）
+    "minHours": 0.1,            // 最小值（10 分钟）
+    "maxHours": 168,            // 最大值（7 天）
+    "configEditable": false     // APP 内只读，修改需到 Web 后台
+  }
+}</code></pre>
+
+<!-- ============ 8. 跳转路径 ============ -->
+<h2>8. 页面跳转路径</h2>
+
+<div class="flow">
+  <div class="step">
+    <span class="n">1</span>
+    <div class="t">APP 启动 / 后台定时</div>
+    <div class="d">① APP 冷/热启动<br/>② 后台 cron 每 4h</div>
+  </div>
+  <div class="step">
+    <span class="n">2</span>
+    <div class="t">获取到期列表</div>
+    <div class="d">GET /api/services/<br/>expiring?days=30</div>
+  </div>
+  <div class="step">
+    <span class="n">3</span>
+    <div class="t">发送通知</div>
+    <div class="d">APP 内：本地通知<br/>后台：APNs/FCM 推送</div>
+  </div>
+  <div class="step">
+    <span class="n">4</span>
+    <div class="t">用户点击</div>
+    <div class="d">通知 / 卡片 / 按钮<br/>→ 详情页</div>
+  </div>
+  <div class="step">
+    <span class="n">5</span>
+    <div class="t">续期或监控</div>
+    <div class="d">拨打续期电话 /<br/>跳实时监控</div>
+  </div>
+</div>
+
+<table>
+  <tr><th style="width:30%">触发位置</th><th>跳转目标</th><th>参数</th></tr>
+  <tr>
+    <td>系统通知点击</td>
+    <td><code>/pages/service/renew</code></td>
+    <td><code>serviceId</code></td>
+  </tr>
+  <tr>
+    <td>消息中心卡片本体</td>
+    <td><code>/pages/service/renew</code></td>
+    <td><code>serviceId</code></td>
+  </tr>
+  <tr>
+    <td>「立即续期」按钮</td>
+    <td><code>/pages/service/renew</code></td>
+    <td><code>serviceId</code></td>
+  </tr>
+  <tr>
+    <td>详情页「实时监控 ＞」</td>
+    <td><code>/pages/monitor/unit</code></td>
+    <td><code>unitCode</code></td>
+  </tr>
+  <tr>
+    <td>详情页续期电话卡片</td>
+    <td>系统拨号键盘（不跳页）</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<!-- ============ 9. 异常与边界 ============ -->
+<h2>9. 异常与边界情况</h2>
+
+<table>
+  <tr><th style="width:6%">编号</th><th style="width:24%">场景</th><th>处理策略</th></tr>
+  <tr>
+    <td>EX-01</td>
+    <td>接口返回失败 / 网络断开</td>
+    <td>APP 启动不阻塞，进入消息中心 Tab 时若 30 秒内无缓存数据，显示通用"加载失败，点击重试"占位；不发送通知</td>
+  </tr>
+  <tr>
+    <td>EX-02</td>
+    <td>用户禁用系统通知权限</td>
+    <td>进入消息中心时引导用户开启权限（一次性弹窗）；<b>同时后台自动循环推送也将无法送达</b>，需在引导文案中明确说明。用户拒绝后仍可在消息中心查看，不重复引导</td>
+  </tr>
+  <tr>
+    <td>EX-03</td>
+    <td>同一服务有多个即将到期子项</td>
+    <td>合并为一条消息记录，运维服务标签组内展示多个 chip（如 [通信服务][历史数据存储]）</td>
+  </tr>
+  <tr>
+    <td>EX-04</td>
+    <td>服务已到期但还在 30 天窗口内</td>
+    <td>剩余秒数 ≤ 0 时显示"已到期"红色标签，不再发到期通知，转交告警体系</td>
+  </tr>
+  <tr>
+    <td>EX-05</td>
+    <td>时区差异（用户在国外出差）</td>
+    <td>后端 expireDate 携带 +08:00 时区，前端按用户设备时区显示剩余时间，文案按本地化处理</td>
+  </tr>
+  <tr>
+    <td>EX-06</td>
+    <td>续期电话配置缺失</td>
+    <td>详情页电话卡片整张隐藏，不显示空态；不阻塞详情页其他功能</td>
+  </tr>
+  <tr>
+    <td>EX-07</td>
+    <td>用户角色无权查看某电站</td>
+    <td>接口层按数据权限过滤，前端不做特殊处理（拿不到就不会出现在列表）</td>
+  </tr>
+  <tr>
+    <td>EX-08</td>
+    <td>列表超过 100 条（极端电站群）</td>
+    <td>后端分页 size=20，前端上拉加载更多；列表头显示总数 + 当前已加载数</td>
+  </tr>
+</table>
+
+<!-- ============ 10. 非功能需求 ============ -->
+<h2>10. 非功能需求</h2>
+
+<table>
+  <tr><th style="width:18%">维度</th><th>需求</th></tr>
+  <tr>
+    <td><b>性能</b></td>
+    <td>APP 启动调用接口耗时 <b>P95 ≤ 800ms</b>；本地通知生成 <b>≤ 100ms / 条</b>；列表渲染 <b>≤ 200ms</b>（100 条数据）</td>
+  </tr>
+  <tr>
+    <td><b>可用性</b></td>
+    <td>详情页离线缓存最近一次成功数据（LocalStorage，TTL 1 小时），无网时可看</td>
+  </tr>
+  <tr>
+    <td><b>兼容性</b></td>
+    <td>iOS 14+ / Android 8+（API 26+）</td>
+  </tr>
+  <tr>
+    <td><b>国际化</b></td>
+    <td>本期仅中文；文案统一从 i18n 资源读取，便于后续扩展</td>
+  </tr>
+  <tr>
+    <td><b>日志</b></td>
+    <td>通知发送失败、接口超时、跳转异常均需埋点上报，便于后续优化</td>
+  </tr>
+  <tr>
+    <td><b>隐私合规</b></td>
+    <td>通知文案中<b>不包含客户名称 / 合同金额 / 联系人姓名</b>等敏感字段</td>
+  </tr>
+</table>
+
+<!-- ============ 11. 验收标准 ============ -->
+<h2>11. 验收标准</h2>
+
+<h3>11.1 功能验收</h3>
+<table>
+  <tr><th style="width:6%">编号</th><th>验收项</th><th>通过标准</th></tr>
+  <tr>
+    <td>AC-01</td>
+    <td>系统通知触发</td>
+    <td>APP 启动时，对 30 天内即将到期的服务发送通知，文案符合 §4.1.2 模板</td>
+  </tr>
+  <tr>
+    <td>AC-02</td>
+    <td>消息中心 Tab 展示</td>
+    <td>Tab 名称"服务到期"，角标显示即将到期数，列表按剩余时间升序</td>
+  </tr>
+  <tr>
+    <td>AC-03</td>
+    <td>卡片信息完整性</td>
+    <td>每张卡片包含：机组 + 电站 + 剩余天数 + 运维服务 + 到期 + 云猫 + 位置 + 续期按钮</td>
+  </tr>
+  <tr>
+    <td>AC-04</td>
+    <td>卡片视觉紧急分级</td>
+    <td>≤ 7 天卡片左红边、按钮变红；8~30 天左橙边、按钮蓝色</td>
+  </tr>
+  <tr>
+    <td>AC-05</td>
+    <td>详情页字段完整性</td>
+    <td>包含 Hero / 温馨提示 / 设备信息（含实时监控链接）/ 运维服务 / 续期电话全部模块</td>
+  </tr>
+  <tr>
+    <td>AC-06</td>
+    <td>"实时监控"链接位置</td>
+    <td>位于「运行状态」行值区域，与状态徽章同行，<b>不独立成行</b></td>
+  </tr>
+  <tr>
+    <td>AC-07</td>
+    <td>续期电话唤起</td>
+    <td>点击电话卡片，唤起系统拨号键盘且号码预填正确</td>
+  </tr>
+  <tr>
+    <td>AC-08</td>
+    <td>通知点击跳转</td>
+    <td>从通知中心点击通知，能正确跳转到对应服务详情页（参数 serviceId 正确）</td>
+  </tr>
+  <tr>
+    <td>AC-09</td>
+    <td>防骚扰：日去重</td>
+    <td>同一服务同一天多次打开 APP，最多发 1 次通知</td>
+  </tr>
+  <tr>
+    <td>AC-10</td>
+    <td>防骚扰：≤ 1 天升级</td>
+    <td>剩余 ≤ 1 小时时，按小时频次发送（每整点最多 1 次）</td>
+  </tr>
+  <tr>
+    <td>AC-11</td>
+    <td>空态展示</td>
+    <td>30 天内无即将到期服务时，Tab 无红点，列表区显示空态插画</td>
+  </tr>
+  <tr>
+    <td>AC-12</td>
+    <td>权限引导</td>
+    <td>用户首次禁用通知后，消息中心进入时弹出引导弹窗，仅引导一次</td>
+  </tr>
+  <tr>
+    <td>AC-13</td>
+    <td><b>自动循环推送：Token 上报</b></td>
+    <td>APP 首次启动时调用 <code>POST /api/devices/push-token</code>，服务端成功注册设备 token（验证后端数据库有记录）</td>
+  </tr>
+  <tr>
+    <td>AC-14</td>
+    <td><b>自动循环推送：定时触发</b></td>
+    <td>当有剩余 ≤ 30 天的服务时，后台定时任务每 <b>4 小时</b>向有权限设备发送一次远程推送（iOS 验证 APNs、Android 验证 FCM/厂商通道均能收到）</td>
+  </tr>
+  <tr>
+    <td>AC-15</td>
+    <td><b>自动循环推送：周期配置生效</b></td>
+    <td>Web 后台调整循环周期（如改为 2h 或 6h），<b>≤ 5 分钟内</b>后续推送按新周期执行（验证：观察 1 小时内推送次数变化）</td>
+  </tr>
+  <tr>
+    <td>AC-16</td>
+    <td><b>自动循环推送：APP 不在线也能收到</b></td>
+    <td>APP 进程被杀死（模拟用户从最近任务划掉）后，远程推送仍能正常到达系统通知中心</td>
+  </tr>
+  <tr>
+    <td>AC-17</td>
+    <td><b>Web 后台设置页面（极简版）</b></td>
+    <td>Web 后台「系统管理 → 提醒策略」页面（标题：<b>运维服务到期提醒自动循环提醒策略</b>）渲染正确：仅展示 <b>"自动循环推送"开关 + "循环提醒间隔"数字输入框（支持小数，单位 h，范围 0.1~168，默认 4）</b> 两个元素，<b>不展示适用对象</b>；保存配置 ≤ 5 分钟生效</td>
+  </tr>
+  <tr>
+    <td>AC-18</td>
+    <td><b>6 类角色数据隔离</b></td>
+    <td>同一台机组，授权范围内的角色能收到通知，未授权的角色收不到（按 6 类角色数据权限过滤）</td>
+  </tr>
+  <tr>
+    <td>AC-19</td>
+    <td><b>循环来源标识</b></td>
+    <td>后台自动循环触发的通知，标题后显示"·循环提醒"角标，与 APP 启动触发的通知可区分</td>
+  </tr>
+</table>
+
+<h3>11.2 视觉验收</h3>
+<ul>
+  <li>设计稿与实现偏差：颜色 / 间距 / 字号 / 圆角偏差 ≤ 2pt</li>
+  <li>运维服务标签 <b>5 种</b>颜色编码（通信=蓝/存储=紫/调参=黄/<b>诊断=青/维保=粉</b>）严格一致</li>
+  <li>紧急 vs 警告 视觉差异明显，无需文字说明即可一眼区分</li>
+  <li>APP 端<b>不展示任何</b>自动循环相关视觉元素（界面与文档描述一致）</li>
+</ul>
+
+<h3>11.3 性能验收</h3>
+<ul>
+  <li>列表 100 条数据渲染 ≤ 200ms（低端机如 OPPO A37 验证）</li>
+  <li>APP 启动到首屏可交互 ≤ 1.5s（含接口调用）</li>
+  <li>通知点击到详情页可交互 ≤ 500ms</li>
+</ul>
+
+<!-- ============ 12. 附录 ============ -->
+<h2>12. 附录</h2>
+
+<h3>12.1 关联文档</h3>
+<table>
+  <tr><th style="width:30%">文档</th><th>路径 / 链接</th></tr>
+  <tr>
+    <td>高保真设计稿（HTML）</td>
+    <td><code>simcard-expiry-app.html</code></td>
+  </tr>
+  <tr>
+    <td>孚创云监控产品定义</td>
+    <td><code>fc-cloud-product-definition.html</code></td>
+  </tr>
+  <tr>
+    <td>孚创云监控销售手册</td>
+    <td><code>fc-cloud-sales-playbook.html</code></td>
+  </tr>
+  <tr>
+    <td>消息中心既有设计稿</td>
+    <td>历史版本归档在 Confluence → 移动端 / 消息中心</td>
+  </tr>
+</table>
+
+<h3>12.2 名词解释</h3>
+<table>
+  <tr><th style="width:22%">术语</th><th>说明</th></tr>
+  <tr><td>云猫</td><td>公司自研的工业物联网边缘网关，搭载 SIM 卡实现 4G/5G 通信，连接机组到云端</td></tr>
+  <tr><td>实时监控</td><td>本系统对发电机组的实时数据采集与可视化模块，含运行参数、告警、趋势等</td></tr>
+  <tr><td>P0 / P1 / P2</td><td>需求优先级，P0 = 必做且首版上线，P1 = 必做但可二期，P2 = 选做</td></tr>
+  <tr><td>HOT / COLD 启动</td><td>HOT = 热启动（APP 在后台被唤起到前台）；COLD = 冷启动（APP 进程被杀死后重新拉起）</td></tr>
+</table>
+
+<div style="margin-top:30pt;padding-top:14pt;border-top:1px solid var(--line);font-size:9pt;color:var(--ink-4);text-align:center">
+  © 孚创信息科技（成都）有限公司 · 产品部 · 内部公开
+</div>
+
+</body>
+</html>

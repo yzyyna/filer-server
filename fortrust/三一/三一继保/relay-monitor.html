@@ -1,0 +1,931 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>继电保护集中监控 | 1#主电站</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  :root{
+    --bg-0:#070b18;
+    --bg-1:#0c1326;
+    --bg-2:#111a36;
+    --bg-3:#16234a;
+    --line:rgba(120,170,255,.10);
+    --line-2:rgba(120,170,255,.22);
+    --txt:#dbe5ff;
+    --txt-2:#a8b8e0;
+    --txt-3:#7a8bb0;
+    --cyan:#22d3ee;
+    --cyan-2:#67e8f9;
+    --blue:#3b82f6;
+    --blue-2:#60a5fa;
+    --green:#22c55e;
+    --green-2:#4ade80;
+    --amber:#f59e0b;
+    --amber-2:#fbbf24;
+    --red:#ef4444;
+    --red-2:#f87171;
+    --gray:#64748b;
+    --violet:#a78bfa;
+    --shadow:0 4px 24px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","HarmonyOS Sans SC",system-ui,sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(59,130,246,.12), transparent 60%),
+      radial-gradient(ellipse 1000px 500px at 100% 0%, rgba(34,211,238,.06), transparent 60%),
+      linear-gradient(180deg, #050913 0%, #0a1024 50%, #050913 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    font-size:13px;
+  }
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background-image:
+      linear-gradient(rgba(120,170,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,170,255,.04) 1px, transparent 1px);
+    background-size:48px 48px;pointer-events:none;z-index:0;
+  }
+  .wrap{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;padding:6px 10px 8px;box-sizing:border-box;gap:6px}
+
+  /* ===== 顶部条：电站下拉 + 5 状态 + 告警轮播 + 图标 ===== */
+  .topbar1{
+    display:flex;align-items:center;gap:8px;flex-shrink:0;
+    padding:5px 8px;min-height:46px;
+    background:linear-gradient(180deg, rgba(17,26,54,.7), rgba(11,16,36,.7));
+    border:1px solid var(--line);border-radius:8px;
+  }
+  /* 电站下拉 - 自定义带搜索 */
+  .station-dd{position:relative;flex-shrink:0}
+  .station-trigger{
+    display:flex;align-items:center;gap:5px;
+    background:rgba(34,211,238,.08);
+    border:1px solid rgba(34,211,238,.25);
+    border-radius:6px;padding:4px 10px;
+    color:#fff;font-size:12px;font-weight:600;cursor:pointer;
+    transition:all .2s;font-family:inherit;min-width:130px;
+  }
+  .station-trigger:hover{background:rgba(34,211,238,.15)}
+  .station-trigger .ico{width:12px;height:12px;color:var(--cyan)}
+  .station-trigger .val{flex:1;text-align:left}
+  .station-trigger .arr{font-size:10px;color:var(--cyan);transition:transform .2s}
+  .station-trigger.open .arr{transform:rotate(180deg)}
+  .station-menu{
+    position:absolute;top:calc(100% + 4px);left:0;z-index:50;
+    min-width:200px;background:linear-gradient(180deg, rgba(11,16,36,.97), rgba(7,11,24,.97));
+    border:1px solid var(--line-2);border-radius:8px;
+    box-shadow:0 12px 32px rgba(0,0,0,.6);padding:6px;
+  }
+  .station-menu[hidden]{display:none}
+  .station-search{
+    width:100%;box-sizing:border-box;
+    background:rgba(20,32,68,.5);border:1px solid var(--line);
+    border-radius:5px;padding:5px 8px;color:#fff;font-size:12px;
+    font-family:inherit;outline:none;margin-bottom:4px;
+  }
+  .station-search:focus{border-color:rgba(34,211,238,.4)}
+  .station-search::placeholder{color:var(--txt-3)}
+  .station-list{list-style:none;max-height:200px;overflow-y:auto}
+  .station-list li{
+    padding:6px 10px;font-size:12px;color:var(--txt);cursor:pointer;
+    border-radius:4px;transition:background .15s;
+  }
+  .station-list li:hover{background:rgba(34,211,238,.1);color:#fff}
+  .station-list li.active{background:rgba(34,211,238,.15);color:var(--cyan);font-weight:600}
+  .station-list li.empty{color:var(--txt-3);cursor:default;text-align:center}
+  .station-list li.empty:hover{background:transparent;color:var(--txt-3)}
+
+  /* 5 状态 stat-tile */
+  .stat-row{display:flex;align-items:center;gap:4px;flex-shrink:0}
+  .stat-tile{
+    display:flex;align-items:baseline;gap:4px;
+    padding:4px 10px;background:rgba(20,32,68,.5);
+    border:1px solid var(--line);border-radius:5px;cursor:pointer;
+    transition:all .2s;flex-shrink:0;
+  }
+  .stat-tile:hover{border-color:var(--line-2);background:rgba(20,32,68,.7)}
+  .stat-tile.on{background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.4)}
+  .stat-tile .k{font-size:9px;color:var(--txt-2);letter-spacing:1px}
+  .stat-tile .v{font-size:14px;color:#fff;font-weight:700;font-family:"DIN Alternate","JetBrains Mono",monospace;line-height:1.1}
+  .stat-tile.on .v{color:var(--cyan)}
+  .stat-tile.warn.on .v{color:var(--amber)}
+  .stat-tile.alarm.on .v{color:var(--red)}
+  .stat-tile.offline.on .v{color:var(--gray)}
+  .stat-tile .u{font-size:9px;color:var(--txt-2);margin-left:1px;font-weight:400}
+
+  /* 告警轮播 - 顶栏内右侧，宽度自适应内容 */
+  .alarm-scroll-inline{
+    height:34px;position:relative;overflow:hidden;
+    background:linear-gradient(90deg, rgba(239,68,68,.10), rgba(245,158,11,.06), rgba(34,211,238,.04));
+    border:1px solid rgba(239,68,68,.3);border-radius:5px;
+    width:auto;max-width:560px;flex-shrink:0;
+    margin-left:auto;  /* 顶栏内靠右 */
+  }
+  .alarm-scroll-inline .slide{position:absolute;inset:0;display:flex;align-items:center;gap:6px;padding:0 10px;transition:transform .45s cubic-bezier(.4,0,.2,1), opacity .45s;cursor:pointer;white-space:nowrap}
+  .alarm-scroll-inline .slide.out{transform:translateY(-100%);opacity:0}
+  .alarm-scroll-inline .slide.in{transform:translateY(100%);opacity:0}
+  .alarm-scroll-inline .slide.show{transform:translateY(0);opacity:1}
+  .alarm-scroll-inline .ind{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .alarm-scroll-inline .ind.crit{background:var(--red);box-shadow:0 0 6px var(--red);animation:pulse 1.2s infinite}
+  .alarm-scroll-inline .ind.warn{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+  .alarm-scroll-inline .lvl{font-size:10px;padding:1px 6px;border-radius:7px;font-weight:700;flex-shrink:0;background:rgba(239,68,68,.22);color:var(--red);border:1px solid rgba(239,68,68,.4);letter-spacing:.5px}
+  .alarm-scroll-inline .lvl.warn{background:rgba(245,158,11,.22);color:var(--amber);border-color:rgba(245,158,11,.4)}
+  /* 设备名（不上下两行，跟动作名同排） */
+  .alarm-scroll-inline .dev{font-size:11px;color:#fff;font-weight:600;flex-shrink:0;display:inline-flex;align-items:center;gap:3px}
+  .alarm-scroll-inline .dev .id{color:var(--cyan-2);font-family:"DIN Alternate",monospace;font-weight:700}
+  /* 事件（同行接排） */
+  .alarm-scroll-inline .event{font-size:11px;color:#fff;font-weight:600;flex-shrink:0;display:inline-flex;align-items:center;gap:4px}
+  .alarm-scroll-inline .event .ec{color:var(--cyan);font-family:monospace;font-size:10px;background:rgba(34,211,238,.12);padding:1px 4px;border-radius:3px;font-weight:600}
+  .alarm-scroll-inline .ts{font-size:10px;color:var(--txt-2);font-family:monospace;flex-shrink:0}
+  .alarm-scroll-inline .view{font-size:10px;background:rgba(34,211,238,.15);color:var(--cyan);border:1px solid rgba(34,211,238,.35);padding:1px 7px;border-radius:8px;cursor:pointer;font-family:inherit;flex-shrink:0;font-weight:600}
+  .alarm-scroll-inline .view:hover{background:rgba(34,211,238,.25)}
+  .alarm-scroll-inline .empty{color:var(--txt-2);font-size:11px;flex:1;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+  .alarm-scroll-inline .empty::before{content:"✓";color:var(--green);font-weight:700;font-size:13px}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.85)}}
+
+  /* 顶部图标按钮（刷新+排序） */
+  .top-icons{display:flex;align-items:center;gap:4px;flex-shrink:0}
+  .iconbtn{
+    width:30px;height:30px;border-radius:6px;background:rgba(20,32,68,.5);
+    border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;
+    color:var(--txt-2);transition:all .2s;flex-shrink:0;
+  }
+  .iconbtn:hover{color:var(--cyan);border-color:var(--line-2);background:rgba(20,32,68,.7)}
+  .iconbtn svg{width:14px;height:14px}
+
+  /* ===== 设备网格 6×5 ===== */
+  .device-grid{
+    flex:1;min-height:0;
+    display:grid;grid-template-columns:repeat(6,1fr);
+    grid-auto-rows:1fr;gap:6px;
+  }
+  @media (max-width:1700px){.device-grid{grid-template-columns:repeat(5,1fr)}}
+  @media (max-width:1400px){.device-grid{grid-template-columns:repeat(4,1fr)}}
+  @media (max-width:1100px){.device-grid{grid-template-columns:repeat(3,1fr)}}
+
+  /* ===== 设备卡片 5 行 - 铺满 ===== */
+  .dev{
+    background:linear-gradient(180deg, rgba(20,32,68,.55), rgba(11,16,36,.55));
+    border:1px solid var(--line);border-radius:7px;padding:4px 7px;
+    cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;gap:2px;min-height:0;
+  }
+  .dev:hover{border-color:var(--line-2);box-shadow:var(--shadow);transform:translateY(-1px)}
+  .dev::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--green)}
+  .dev[data-s="warn"]::before{background:var(--amber)}
+  .dev[data-s="alarm"]::before{background:var(--red);animation:alarmBar 1.2s infinite}
+  .dev[data-s="offline"]::before{background:var(--gray);opacity:.6}
+  @keyframes alarmBar{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* r1: 设备名 + 状态 */
+  .dev .r1{display:flex;align-items:center;justify-content:space-between;gap:6px;height:22px;flex-shrink:0}
+  .dev .r1 .name{font-size:13px;font-weight:600;color:#fff;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .dev .pill{display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3);font-weight:600;flex-shrink:0;cursor:pointer;user-select:none}
+  .dev .pill.warn{background:rgba(245,158,11,.15);color:var(--amber);border-color:rgba(245,158,11,.4)}
+  .dev .pill.alarm{background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.4)}
+  .dev .pill.offline{background:rgba(100,116,139,.2);color:var(--gray);border-color:rgba(100,116,139,.4)}
+  .dev .pill .pdot{width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:0 0 3px currentColor}
+  .dev .pill.alarm .pdot{animation:pulse 1s infinite}
+
+  /* r2: 型号 + 位置 */
+  .dev .r2{display:flex;align-items:center;gap:4px;height:16px;flex-shrink:0;overflow:hidden}
+  .dev .r2 .model{font-family:monospace;background:rgba(34,211,238,.1);color:var(--cyan);padding:1px 5px;border-radius:3px;border:1px solid rgba(34,211,238,.2);font-size:9px;flex-shrink:0;font-weight:600}
+  .dev .r2 .loc{color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;font-size:10px}
+
+  /* r3: P Q f U0 4 个（v 上 k 下 + 单位） */
+  .dev .r3{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:2px;
+    padding:2px 4px;
+    background:linear-gradient(90deg, rgba(34,211,238,.10), rgba(34,211,238,.02));
+    border:1px solid rgba(34,211,238,.18);border-radius:4px;
+    height:42px;flex-shrink:0;
+  }
+  .dev .r3 .item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:0}
+  .dev .r3 .item .v{font-size:14px;color:var(--cyan);font-weight:700;font-family:"DIN Alternate","JetBrains Mono",monospace;line-height:1.1;white-space:nowrap}
+  .dev .r3 .item .v .u{font-size:14px;color:var(--amber-2);margin-left:1px;font-weight:600}
+  .dev .r3 .item .v.alarm{color:var(--red)}
+  .dev .r3 .item .v.warn{color:var(--amber)}
+  .dev .r3 .item .k{font-size:10px;color:var(--txt);font-weight:600;letter-spacing:.3px;line-height:1.1}
+
+  /* r4/5: 三相（v 上 k 下 + 柱条在右贴底，v/k 加大但卡片尺寸不变） */
+  .dev .phase-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;flex:1;min-height:0}
+  .dev .phase{
+    display:flex;align-items:flex-end;gap:2px;
+    padding:1px 3px;background:rgba(15,23,48,.5);
+    border-radius:3px;min-height:28px;height:100%;overflow:hidden;
+  }
+  .dev .phase .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;justify-content:flex-start}
+  .dev .phase .col .v{font-size:11px;color:#fff;font-weight:700;font-family:"DIN Alternate","JetBrains Mono",monospace;line-height:1;display:flex;align-items:baseline;gap:1px}
+  .dev .phase .col .v .u{font-size:11px;color:var(--green-2);font-weight:600}
+  .dev .phase.v .col .v .u{color:var(--green-2)}
+  .dev .phase.i .col .v .u{color:var(--blue-2)}
+  .dev .phase .col .v.alarm{color:var(--red)}
+  .dev .phase .col .k{font-size:10px;color:var(--txt);font-weight:700;line-height:1;letter-spacing:.2px;margin-top:0}
+  .dev .phase .bar{
+    width:3px;height:0;align-self:flex-end;flex-shrink:0;
+    background:linear-gradient(180deg, var(--blue-2), var(--blue));
+    border-radius:1.5px;box-shadow:0 0 3px rgba(96,165,250,.4);
+    transition:height .4s;margin-bottom:1px;
+  }
+  .dev .phase.v .bar{
+    background:linear-gradient(180deg, var(--green-2), var(--green));
+    box-shadow:0 0 3px rgba(74,222,128,.4);
+  }
+  .dev .phase .bar.off{background:rgba(100,116,139,.4);box-shadow:none}
+
+  /* 状态浮窗 */
+  .alarm-tip{position:fixed;z-index:200;background:linear-gradient(180deg, rgba(11,16,36,.97), rgba(7,11,24,.97));border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:10px 12px;min-width:240px;max-width:320px;box-shadow:0 12px 36px rgba(0,0,0,.6);font-size:11px;display:none}
+  .alarm-tip.show{display:block;animation:tipIn .18s ease}
+  @keyframes tipIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  .alarm-tip .h{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  .alarm-tip .h .ind{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red)}
+  .alarm-tip.warn{border-color:rgba(245,158,11,.4)}.alarm-tip.warn .h .ind{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+  .alarm-tip.offline{border-color:rgba(100,116,139,.4)}.alarm-tip.offline .h .ind{background:var(--gray)}
+  .alarm-tip .h .t{font-size:12px;color:#fff;font-weight:600}
+  .alarm-tip .body .row{padding:2px 0;color:var(--txt-2);line-height:1.4;font-size:11px}
+  .alarm-tip .body .row .k{color:var(--txt-3);display:inline-block;width:54px}
+  .alarm-tip .body .row .v{color:var(--txt)}
+  .alarm-tip .body .event{color:#fff;font-weight:600;background:rgba(15,23,48,.6);padding:4px 6px;border-radius:4px;margin-bottom:4px;font-size:12px}
+  .alarm-tip .body .event .ec{color:var(--cyan);font-family:monospace;margin-right:4px}
+  .alarm-tip .foot{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:10px;color:var(--txt-3);font-family:monospace;display:flex;justify-content:space-between;align-items:center}
+  .alarm-tip .foot a{color:var(--cyan);cursor:pointer;text-decoration:underline}
+
+  /* 弹窗 - 居中无模糊 */
+  .modal-mask{position:fixed;inset:0;background:rgba(2,6,18,.6);z-index:99;display:none;align-items:center;justify-content:center;overflow-y:auto}
+  .modal-mask.open{display:flex}
+  .modal{background:linear-gradient(180deg, rgba(11,16,36,.97), rgba(7,11,24,.97));border:1px solid var(--line-2);border-radius:12px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;max-height:90vh;display:flex;flex-direction:column;width:900px;max-width:96vw}
+  .modal.small{width:480px}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line);background:linear-gradient(90deg, rgba(34,211,238,.06), transparent)}
+  .modal-head h2{color:#fff;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .modal-head h2 .bar{width:3px;height:14px;background:linear-gradient(180deg,var(--cyan),var(--blue));border-radius:2px}
+  .modal-head .close{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;color:var(--txt-2);font-size:18px}
+  .modal-head .close:hover{color:var(--red);border-color:rgba(239,68,68,.4)}
+  .modal-body{padding:14px 18px;overflow-y:auto;flex:1}
+  .modal-foot{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line);justify-content:flex-end;flex-shrink:0}
+  .btn-cancel,.btn-confirm{padding:7px 18px;border-radius:5px;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;font-weight:500;min-width:80px;border:1px solid var(--line)}
+  .btn-cancel{background:rgba(20,32,68,.6);color:var(--txt-2)}
+  .btn-cancel:hover{border-color:var(--line-2);color:#fff}
+  .btn-confirm{background:var(--cyan);border-color:var(--cyan);color:#001020}
+  .btn-confirm:hover{background:#06b6d4}
+
+  /* 告警列表弹窗 - 设备信息突出 */
+  .alarm-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:10px 14px;border-bottom:1px dashed var(--line);font-size:12px;cursor:pointer;border-radius:5px;align-items:start;transition:background .15s}
+  .alarm-item:hover{background:rgba(34,211,238,.05);border-color:rgba(34,211,238,.3)}
+  .alarm-item .ind{width:10px;height:10px;border-radius:50%;margin-top:6px;box-shadow:0 0 8px currentColor}
+  .alarm-item .ind.crit{background:var(--red);color:var(--red)}
+  .alarm-item .ind.warn{background:var(--amber);color:var(--amber)}
+  .alarm-item .ind.ok{background:var(--green);color:var(--green)}
+  /* 顺序：设备信息（突出）→ 事件信息 → 状态 */
+  .alarm-item .body{display:flex;flex-direction:column;gap:4px;min-width:0}
+  /* 设备信息条：最突出 */
+  .alarm-item .body .dev{
+    color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    background:rgba(34,211,238,.08);padding:4px 8px;border-radius:4px;
+    border-left:3px solid var(--cyan);
+  }
+  .alarm-item .body .dev .id{color:var(--cyan-2);font-family:"DIN Alternate",monospace;font-size:13px}
+  .alarm-item .body .dev .nm{color:#fff;font-family:inherit;font-weight:700}
+  .alarm-item .body .dev .loc{color:var(--txt-2);font-size:11px;font-weight:500;display:flex;align-items:center;gap:3px}
+  .alarm-item .body .dev .loc::before{content:"📍";font-size:10px;opacity:.7}
+  .alarm-item .body .event{color:#fff;font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:1px}
+  .alarm-item .body .event .lvl{font-size:10px;padding:1px 6px;border-radius:7px;font-weight:700;flex-shrink:0}
+  .alarm-item .body .event .lvl.crit{background:rgba(239,68,68,.18);color:var(--red)}
+  .alarm-item .body .event .lvl.warn{background:rgba(245,158,11,.18);color:var(--amber)}
+  .alarm-item .body .event .lvl.ok{background:rgba(34,197,94,.18);color:var(--green)}
+  .alarm-item .body .event .ec{color:var(--cyan);font-family:monospace;font-size:11px;background:rgba(34,211,238,.08);padding:1px 5px;border-radius:3px;flex-shrink:0}
+  .alarm-item .body .status{color:var(--txt);font-size:11px;font-weight:500}
+  .alarm-item .body .status .lab{color:var(--txt-3);margin-right:4px}
+  .alarm-item .ts{color:var(--txt-2);font-family:monospace;font-size:11px;white-space:nowrap}
+
+  /* 排序弹窗 */
+  .sort-list{display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow-y:auto;padding:2px}
+  .sort-item{
+    display:grid;grid-template-columns:24px 36px 60px 1fr 1fr 30px;gap:8px;align-items:center;
+    padding:6px 10px;background:rgba(15,23,48,.5);border:1px solid var(--line);
+    border-radius:5px;cursor:grab;transition:all .2s;user-select:none;font-size:12px;
+  }
+  .sort-item:hover{background:rgba(15,23,48,.7);border-color:var(--line-2)}
+  .sort-item.dragging{opacity:.5;cursor:grabbing;background:rgba(34,211,238,.1)}
+  .sort-item.drag-over{border-color:var(--cyan);background:rgba(34,211,238,.08)}
+  .sort-item .handle{color:var(--txt-3);font-size:16px;line-height:1;cursor:grab}
+  .sort-item .pos{color:var(--cyan);font-family:"DIN Alternate",monospace;font-weight:700;font-size:13px;text-align:center}
+  .sort-item .id{color:var(--cyan-2);font-family:"DIN Alternate",monospace;font-size:11px}
+  .sort-item .name{color:#fff;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sort-item .loc{color:var(--txt-2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sort-item .sw{font-size:9px;padding:1px 4px;border-radius:7px;background:rgba(34,197,94,.15);color:var(--green);text-align:center;font-weight:600}
+  .sort-item .sw.warn{background:rgba(245,158,11,.18);color:var(--amber)}
+  .sort-item .sw.alarm{background:rgba(239,68,68,.18);color:var(--red)}
+  .sort-item .sw.offline{background:rgba(100,116,139,.18);color:var(--gray)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 顶部条：电站下拉 + 5 状态 + 告警轮播 + 图标 -->
+  <div class="topbar1">
+    <!-- 电站下拉（带搜索） -->
+    <div class="station-dd" id="stationDD">
+      <button class="station-trigger" id="stationTrigger">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+        <span class="val" id="stationVal">1#主电站</span>
+        <span class="arr">▾</span>
+      </button>
+      <div class="station-menu" id="stationMenu" hidden>
+        <input type="text" class="station-search" id="stationSearch" placeholder="🔍 搜索电站名称..." />
+        <ul class="station-list" id="stationList"></ul>
+      </div>
+    </div>
+
+    <!-- 5 状态 stat-tile -->
+    <div class="stat-row" id="statRow">
+      <div class="stat-tile on" data-f="all"><div class="k">全部</div><div class="v" id="sAll">26<span class="u">台</span></div></div>
+      <div class="stat-tile" data-f="normal"><div class="k">在线</div><div class="v" id="sOnline">24<span class="u">台</span></div></div>
+      <div class="stat-tile warn" data-f="warn"><div class="k">告警</div><div class="v" id="sWarn">1<span class="u">台</span></div></div>
+      <div class="stat-tile alarm" data-f="alarm"><div class="k">严重</div><div class="v" id="sAlarm">1<span class="u">台</span></div></div>
+      <div class="stat-tile offline" data-f="offline"><div class="k">离线</div><div class="v" id="sOffline">2<span class="u">台</span></div></div>
+    </div>
+
+    <!-- 告警轮播（顶栏内右侧） -->
+    <div class="alarm-scroll-inline" id="alarmScroll"></div>
+
+    <!-- 顶部图标 -->
+    <div class="top-icons">
+      <button class="iconbtn" id="refreshBtn" title="刷新">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+      <button class="iconbtn" id="sortBtn" title="排序设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 设备网格 6×5 -->
+  <div class="device-grid" id="devGrid"></div>
+</div>
+
+<!-- 状态浮窗 -->
+<div class="alarm-tip" id="alarmTip"></div>
+
+<!-- 告警列表弹窗 -->
+<div class="modal-mask" id="alertListModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><span class="bar"></span>活跃告警列表（点击条目跳转单台）</h2>
+      <div class="close" data-close="alertListModal">×</div>
+    </div>
+    <div class="modal-body" id="alertListBody"></div>
+  </div>
+</div>
+
+<!-- 排序弹窗 -->
+<div class="modal-mask" id="sortModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2><span class="bar"></span>排序设置（长按拖动调整 26 台继保顺序）</h2>
+      <div class="close" data-close="sortModal">×</div>
+    </div>
+    <div class="modal-body" style="padding:10px 14px">
+      <div class="sort-list" id="sortList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" data-close="sortModal">取消</button>
+      <button class="btn-cancel" id="sortReset">恢复默认</button>
+      <button class="btn-confirm" id="sortSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================
+   数据 - 严格按 point_table.xls
+   主页 6 核心参数：P PF f U0 + 三相电流 + 三相电压
+   告警字段按点表"事件记录"：事件代码 + 时标（无 msg）
+   ============================================ */
+const STATUS = {NORMAL:'normal', WARN:'warn', ALARM:'alarm', OFFLINE:'offline'};
+
+/* 电站列表 */
+const stations = [
+  {id:'S1', name:'1#主电站', devs:26},
+  {id:'S2', name:'2#备用电站', devs:0},
+  {id:'S3', name:'3#光伏电站', devs:0},
+  {id:'S4', name:'4#风电场', devs:0},
+  {id:'S5', name:'5#储能站', devs:0},
+];
+
+/* 按电站分组的设备 - 1#主电站有 26 台 */
+const devsByStation = {
+  S1: [
+    {id:'#01',name:'1#发电机保护',loc:'主厂房 A 段',model:'P3G30',s:STATUS.NORMAL, P:4.82,PF:0.97, f:50.02, U0:0.18, Ua:10.42,Ub:10.38,Uc:10.45, Ia:286,Ib:278,Ic:291},
+    {id:'#02',name:'2#发电机保护',loc:'主厂房 A 段',model:'P3G30',s:STATUS.NORMAL, P:3.95,PF:0.98, f:50.01, U0:0.22, Ua:10.38,Ub:10.40,Uc:10.36, Ia:241,Ib:235,Ic:248},
+    {id:'#03',name:'3#发电机保护',loc:'主厂房 B 段',model:'P3G30',s:STATUS.NORMAL, P:4.10,PF:0.96, f:50.00, U0:0.15, Ua:10.40,Ub:10.42,Uc:10.39, Ia:255,Ib:250,Ic:262},
+    {id:'#04',name:'4#发电机保护',loc:'主厂房 B 段',model:'P3G30',s:STATUS.WARN,   P:4.50,PF:0.95, f:49.98, U0:0.35, Ua:10.36,Ub:10.38,Uc:10.34, Ia:280,Ib:275,Ic:286},
+    {id:'#05',name:'5#发电机保护',loc:'主厂房 C 段',model:'P3G30',s:STATUS.NORMAL, P:3.80,PF:0.98, f:50.02, U0:0.20, Ua:10.41,Ub:10.39,Uc:10.43, Ia:232,Ib:228,Ic:238},
+    {id:'#06',name:'6#发电机保护',loc:'主厂房 C 段',model:'P3G30',s:STATUS.NORMAL, P:4.20,PF:0.97, f:50.01, U0:0.19, Ua:10.39,Ub:10.41,Uc:10.37, Ia:265,Ib:260,Ic:270},
+    {id:'#07',name:'7#发电机保护',loc:'辅机房 A',   model:'P3G30',s:STATUS.NORMAL, P:3.60,PF:0.98, f:50.00, U0:0.16, Ua:10.42,Ub:10.40,Uc:10.44, Ia:220,Ib:215,Ic:225},
+    {id:'#08',name:'8#发电机保护',loc:'辅机房 A',   model:'P3G30',s:STATUS.OFFLINE,P:0,   PF:0,    f:0,     U0:0,    Ua:0,   Ub:0,   Uc:0,    Ia:0,  Ib:0,  Ic:0 },
+    {id:'#09',name:'1#主变保护',  loc:'主变区 1',   model:'P3T32',s:STATUS.NORMAL, P:8.62,PF:0.98, f:50.00, U0:0.42, Ua:38.5, Ub:38.4, Uc:38.6, Ia:520,Ib:512,Ic:528},
+    {id:'#10',name:'2#主变保护',  loc:'主变区 1',   model:'P3T32',s:STATUS.NORMAL, P:8.45,PF:0.97, f:50.01, U0:0.38, Ua:38.4, Ub:38.5, Uc:38.3, Ia:510,Ib:505,Ic:518},
+    {id:'#11',name:'1#母联保护',  loc:'35kV 配电室',model:'P3U30',s:STATUS.NORMAL, P:0,   PF:0,    f:50.00, U0:0.10, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0  },
+    {id:'#12',name:'2#母联保护',  loc:'35kV 配电室',model:'P3U30',s:STATUS.NORMAL, P:0,   PF:0,    f:50.00, U0:0.08, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0  },
+    {id:'#13',name:'1#进线保护',  loc:'35kV 配电室',model:'P3L30',s:STATUS.NORMAL, P:5.20,PF:0.97, f:50.00, U0:0.25, Ua:10.40,Ub:10.42,Uc:10.38, Ia:310,Ib:305,Ic:315},
+    {id:'#14',name:'2#进线保护',  loc:'35kV 配电室',model:'P3L30',s:STATUS.NORMAL, P:4.95,PF:0.98, f:50.00, U0:0.21, Ua:10.40,Ub:10.38,Uc:10.42, Ia:295,Ib:290,Ic:300},
+    {id:'#15',name:'3#进线保护',  loc:'10kV 配电室', model:'P3L30',s:STATUS.NORMAL, P:3.20,PF:0.97, f:50.00, U0:0.18, Ua:10.40,Ub:10.40,Uc:10.40, Ia:190,Ib:186,Ic:194},
+    {id:'#16',name:'4#进线保护',  loc:'10kV 配电室', model:'P3L30',s:STATUS.NORMAL, P:2.85,PF:0.96, f:50.00, U0:0.16, Ua:10.40,Ub:10.40,Uc:10.40, Ia:170,Ib:168,Ic:173},
+    {id:'#17',name:'1#馈线保护',  loc:'10kV 配电室', model:'P3U30',s:STATUS.NORMAL, P:1.20,PF:0.98, f:50.00, U0:0.12, Ua:10.40,Ub:10.40,Uc:10.40, Ia:72, Ib:70, Ic:74 },
+    {id:'#18',name:'2#馈线保护',  loc:'10kV 配电室', model:'P3U30',s:STATUS.NORMAL, P:0.95,PF:0.97, f:50.00, U0:0.10, Ua:10.40,Ub:10.40,Uc:10.40, Ia:58, Ib:56, Ic:60 },
+    {id:'#19',name:'3#馈线保护',  loc:'10kV 配电室', model:'P3U30',s:STATUS.NORMAL, P:1.45,PF:0.98, f:50.00, U0:0.14, Ua:10.40,Ub:10.40,Uc:10.40, Ia:88, Ib:86, Ic:90 },
+    {id:'#20',name:'4#馈线保护',  loc:'10kV 配电室', model:'P3U30',s:STATUS.ALARM,  P:1.80,PF:0.94, f:50.05, U0:1.85, Ua:10.40,Ub:10.40,Uc:10.40, Ia:380,Ib:120,Ic:108},
+    {id:'#21',name:'5#馈线保护',  loc:'10kV 配电室', model:'P3U30',s:STATUS.NORMAL, P:1.10,PF:0.98, f:50.00, U0:0.11, Ua:10.40,Ub:10.40,Uc:10.40, Ia:66, Ib:64, Ic:68 },
+    {id:'#22',name:'6#馈线保护',  loc:'10kV 配电室', model:'P3U30',s:STATUS.NORMAL, P:0.80,PF:0.97, f:50.00, U0:0.09, Ua:10.40,Ub:10.40,Uc:10.40, Ia:48, Ib:46, Ic:50 },
+    {id:'#23',name:'1#联络保护',  loc:'联络开关室', model:'P3U30',s:STATUS.NORMAL, P:0,   PF:0,    f:50.00, U0:0.07, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0  },
+    {id:'#24',name:'2#联络保护',  loc:'联络开关室', model:'P3U30',s:STATUS.NORMAL, P:0,   PF:0,    f:50.00, U0:0.06, Ua:10.40,Ub:10.40,Uc:10.40, Ia:0,  Ib:0,  Ic:0  },
+    {id:'#25',name:'1#所用变保护',loc:'所用电室',   model:'P3T32',s:STATUS.NORMAL, P:0.18,PF:0.92, f:50.00, U0:0.05, Ua:0.40, Ub:0.40, Uc:0.40, Ia:11, Ib:10, Ic:12 },
+    {id:'#26',name:'2#所用变保护',loc:'所用电室',   model:'P3T32',s:STATUS.OFFLINE,P:0,   PF:0,    f:0,     U0:0,    Ua:0,   Ub:0,   Uc:0,    Ia:0,  Ib:0,  Ic:0 },
+  ],
+  S2:[], S3:[], S4:[], S5:[]
+};
+
+/* 告警事件 - 严格按点表"事件代码含义列表(部分）" */
+const EVENT_CODES = {
+  66:{act:'I>跳闸',type:'prot'},68:{act:'I>返回',type:'ok'},
+  130:{act:'I>>跳闸',type:'prot'},132:{act:'I>>返回',type:'ok'},
+  194:{act:'I>>>跳闸',type:'prot'},196:{act:'I>>>返回',type:'ok'},
+  1282:{act:'IO>跳闸',type:'prot'},1284:{act:'IO>返回',type:'ok'},
+  1346:{act:'IO>>跳闸',type:'prot'},1348:{act:'IO>>返回',type:'ok'},
+  1922:{act:'U>跳闸',type:'prot'},1924:{act:'U>返回',type:'ok'},
+  2050:{act:'U<跳闸',type:'prot'},2052:{act:'U<返回',type:'ok'},
+  2306:{act:'Uo>跳闸',type:'prot'},2308:{act:'Uo>返回',type:'ok'},
+};
+
+const alarms = [
+  {ec:130, dev:'#20', ts:'2026-08-28 12:08:21', level:'crit'},
+  {ec:66,  dev:'#04', ts:'2026-08-28 11:52:04', level:'crit'},
+  {ec:2306,dev:'#08', ts:'2026-08-28 11:30:18', level:'warn'},
+  {ec:68,  dev:'#11', ts:'2026-08-28 10:42:55', level:'ok'},
+  {ec:68,  dev:'#02', ts:'2026-08-28 10:15:30', level:'ok'},
+  {ec:68,  dev:'#01', ts:'2026-08-28 09:48:12', level:'ok'},
+];
+
+const $ = (s,p=document)=>p.querySelector(s);
+const grid = $('#devGrid');
+
+let curStation = 'S1';
+let curFilter = 'all';
+let sortOrder = null;  // 用户排序后保存
+
+/* 柱条高度：从下往上，按值归一化，最大 34px */
+function barHeight(v, max, maxH=34){
+  if(!max || max < 1) return 4;
+  return Math.max(3, Math.round((v / max) * maxH));
+}
+
+function statusPill(d){
+  const m = {normal:['在线',''], warn:['告警','warn'], alarm:['严重','alarm'], offline:['离线','offline']};
+  const [t, c] = m[d.s];
+  return `<span class="pill ${c}" data-tip="${d.id}"><span class="pdot"></span>${t}</span>`;
+}
+
+function getSortedDevs(){
+  const list = devsByStation[curStation] || [];
+  if(!sortOrder || sortOrder.length !== list.length) return list;
+  const map = new Map(list.map(d => [d.id, d]));
+  return sortOrder.map(id => map.get(id)).filter(Boolean);
+}
+
+function renderDevices(){
+  const list = getSortedDevs();
+  const filtered = curFilter === 'all' ? list : list.filter(d => d.s === curFilter);
+  grid.innerHTML = '';
+  if(!filtered.length){
+    grid.innerHTML = `<div style="grid-column:1/-1;display:grid;place-items:center;color:var(--txt-2);font-size:13px">该电站暂无设备 / 当前筛选无匹配</div>`;
+    return;
+  }
+  filtered.forEach(d=>{
+    const off = d.s==='offline';
+    const iMax = Math.max(d.Ia, d.Ib, d.Ic, 1);
+    const vMax = Math.max(d.Ua, d.Ub, d.Uc, 1);
+    const pCls = d.s==='alarm'?'alarm':'';
+    const fCls = d.s==='warn'?'warn':'';
+    const u0Cls = d.s==='alarm'?'alarm':'';
+    const card = document.createElement('div');
+    card.className = 'dev';
+    card.dataset.s = d.s;
+    card.innerHTML = `
+      <div class="r1">
+        <div class="name">${d.name}</div>
+        ${statusPill(d)}
+      </div>
+      <div class="r2">
+        <span class="model">${d.model}</span>
+        <span class="loc">· ${d.loc}</span>
+      </div>
+      <div class="r3">
+        <div class="item"><div class="v ${pCls}">${off?'--':(d.P*1000).toFixed(0)}<span class="u">kW</span></div><div class="k">有功 P</div></div>
+        <div class="item"><div class="v">${off?'--':d.PF.toFixed(2)}</div><div class="k">功率因数</div></div>
+        <div class="item"><div class="v ${fCls}">${off?'--':d.f.toFixed(2)}<span class="u">Hz</span></div><div class="k">频率 f</div></div>
+        <div class="item"><div class="v ${u0Cls}">${off?'--':(d.U0*1000).toFixed(0)}<span class="u">V</span></div><div class="k">零序电压 U0</div></div>
+      </div>
+      <div class="phase-row">
+        ${['Ia','Ib','Ic'].map((k,i)=>`
+          <div class="phase i">
+            <div class="col">
+              <div class="v ${d.s==='alarm'&&k==='Ia'?'alarm':''}">${off?'--':d[k]}<span class="u">A</span></div>
+              <div class="k">${k}</div>
+            </div>
+            <div class="bar ${off?'off':''}" style="height:${barHeight(d[k], iMax)}px"></div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="phase-row">
+        ${['Ua','Ub','Uc'].map((k,i)=>`
+          <div class="phase v">
+            <div class="col">
+              <div class="v">${off?'--':(d[k]*1000).toFixed(0)}<span class="u">V</span></div>
+              <div class="k">${k}</div>
+            </div>
+            <div class="bar ${off?'off':''}" style="height:${barHeight(d[k], vMax)}px"></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.pill')) return;
+      openDevice(d);
+    });
+    const pill = card.querySelector('.pill');
+    if(pill){
+      pill.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(d.s === STATUS.NORMAL) return;
+        showAlarmTip(d, pill);
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+/* 状态点击浮窗 */
+const tip = $('#alarmTip');
+let tipHideTimer = null;
+function showAlarmTip(d, anchor){
+  if(d.s === STATUS.NORMAL) return;
+  const list = alarms.filter(a => a.dev === d.id);
+  const isOffline = d.s === STATUS.OFFLINE;
+  const isWarn = d.s === STATUS.WARN;
+  const lvl = isOffline ? 'offline' : isWarn ? 'warn' : '';
+  tip.className = 'alarm-tip show ' + lvl;
+  const headTitle = isOffline ? '设备离线' : (list[0] ? EVENT_CODES[list[0].ec]?.act || '异常' : '异常告警');
+  let eventBlock = '';
+  if(!isOffline && list.length){
+    const a = list[0];
+    const e = EVENT_CODES[a.ec] || {act:'未知'};
+    const lvlText = a.level==='ok' ? '返回' : (a.level==='crit' ? '严重' : '一般');
+    eventBlock = `
+      <div class="event">
+        <span class="ec">事件 ${a.ec}</span>
+        ${e.act}
+        <span class="lvl ${a.level==='ok'?'ok':a.level==='crit'?'crit':'warn'}" style="font-size:10px;padding:1px 5px;border-radius:7px;background:rgba(${a.level==='ok'?'34,197,94':a.level==='crit'?'239,68,68':'245,158,11'},.18);color:var(--${a.level==='ok'?'green':a.level==='crit'?'red':'amber'});font-weight:600;margin-left:4px">${lvlText}</span>
+      </div>
+    `;
+  }
+  let body = '';
+  if(isOffline){
+    body = `
+      <div class="row"><span class="k">设备</span><span class="v">${d.id} ${d.name}</span></div>
+      <div class="row"><span class="k">位置</span><span class="v">${d.loc}</span></div>
+      <div class="row"><span class="k">状态</span><span class="v" style="color:var(--gray)">通讯中断</span></div>
+    `;
+  } else {
+    body = `
+      <div class="row"><span class="k">设备</span><span class="v">${d.id} ${d.name}</span></div>
+      <div class="row"><span class="k">位置</span><span class="v">${d.loc}</span></div>
+    `;
+  }
+  tip.innerHTML = `
+    <div class="h"><div class="ind"></div><div class="t">${headTitle}</div></div>
+    ${eventBlock}
+    <div class="body">${body}</div>
+    <div class="foot">
+      <span>${isOffline ? '需现场检查' : (list[0]?.ts || '--')}</span>
+      <a onclick="window.open('relay-detail.html?dev=${encodeURIComponent(d.id)}&station=${encodeURIComponent(curStation)}', '_blank')">查看详情 →</a>
+    </div>
+  `;
+  const r = anchor.getBoundingClientRect();
+  const tipW = 280;
+  let left = r.right + 8;
+  if(left + tipW > window.innerWidth - 10) left = r.left - tipW - 8;
+  if(left < 10) left = 10;
+  let top = r.top - 10;
+  if(top + 220 > window.innerHeight) top = window.innerHeight - 240;
+  if(top < 10) top = 10;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+  tip.classList.add('show');
+  clearTimeout(tipHideTimer);
+  tipHideTimer = setTimeout(()=>tip.classList.remove('show'), 5000);
+}
+document.addEventListener('click', (e)=>{
+  if(!tip.contains(e.target) && !e.target.closest('.pill')) tip.classList.remove('show');
+});
+
+/* 告警轮播 - 单条切换（设备信息优先，靠右显示） */
+let alarmIdx = 0;
+let alarmTimer = null;
+function renderAlarmScroll(){
+  const keyAlarms = alarms.filter(a => a.level === 'crit' || a.level === 'warn');
+  const bar = $('#alarmScroll');
+  const cnt = $('#alarmCnt');
+  if(cnt) cnt.textContent = keyAlarms.length;
+  if(!keyAlarms.length){
+    bar.innerHTML = `<div class="empty">当前无活跃告警</div>`;
+    return;
+  }
+  if(alarmTimer) clearInterval(alarmTimer);
+  bar.innerHTML = '';
+  const first = makeAlarmSlide(keyAlarms[0]);
+  bar.appendChild(first);
+  requestAnimationFrame(()=>{
+    first.classList.remove('in');
+    first.classList.add('show');
+    fitAlarmBarWidth(bar, first);
+  });
+  alarmIdx = 1;
+  alarmTimer = setInterval(()=>{
+    const a = keyAlarms[alarmIdx % keyAlarms.length];
+    const next = makeAlarmSlide(a);
+    bar.appendChild(next);
+    const old = bar.querySelector('.slide.show');
+    requestAnimationFrame(()=>{
+      if(old){ old.classList.remove('show'); old.classList.add('out'); }
+      next.classList.remove('in');
+      next.classList.add('show');
+      fitAlarmBarWidth(bar, next);
+      setTimeout(()=>old && old.remove(), 500);
+    });
+    alarmIdx = (alarmIdx + 1) % keyAlarms.length;
+  }, 3000);
+}
+function fitAlarmBarWidth(bar, slide){
+  // 容器宽度 = 一条告警的实际宽度 + 26px 左侧图标 + 10px 右侧 padding
+  const w = slide.scrollWidth;
+  bar.style.width = (w + 40) + 'px';
+}
+function makeAlarmSlide(a){
+  const el = document.createElement('div');
+  el.className = 'slide in';
+  const d = devsByStation.S1.find(x => x.id === a.dev);
+  const devName = d ? d.name : a.dev;
+  const e = EVENT_CODES[a.ec] || {act:'未知'};
+  const lvlName = a.level==='crit'?'严重':'一般';
+  el.innerHTML = `
+    <div class="ind ${a.level}"></div>
+    <div class="lvl ${a.level}">${lvlName}</div>
+    <div class="dev"><span class="id">${a.dev}</span>${devName}</div>
+    <div class="event"><span class="ec">事件 ${a.ec}</span>${e.act}</div>
+    <div class="ts">${a.ts.split(' ')[1] || a.ts}</div>
+    <button class="view">查看全部 ▾</button>
+  `;
+  el.addEventListener('click', (e)=>{
+    if(e.target.classList.contains('view')){ showAlertList(); return; }
+    const d2 = devsByStation.S1.find(x => x.id === a.dev);
+    if(d2) openDevice(d2);
+  });
+  return el;
+}
+function showAlertList(){
+  const keyAlarms = alarms.filter(a => a.level === 'crit' || a.level === 'warn');
+  // 顺序：设备信息（最突出）→ 事件信息 → 状态
+  const body = $('#alertListBody');
+  body.innerHTML = keyAlarms.map(a => {
+    const d = devsByStation.S1.find(x => x.id === a.dev);
+    const e = EVENT_CODES[a.ec] || {act:'未知'};
+    const lvlText = a.level==='ok' ? '返回' : (a.level==='crit' ? '严重动作' : '一般动作');
+    return `
+    <div class="alarm-item" data-dev="${a.dev}">
+      <div class="ind ${a.level}"></div>
+      <div class="body">
+        <div class="dev">
+          <span class="id">${a.dev}</span>
+          <span class="nm">${d?d.name:a.dev}</span>
+          <span class="loc">${d?d.loc:'未知位置'}</span>
+        </div>
+        <div class="event">
+          <span class="lvl ${a.level}">${lvlText}</span>
+          <span class="ec">事件 ${a.ec}</span>
+          ${e.act}
+        </div>
+        <div class="status"><span class="lab">状态：</span>${a.level==='ok'?'已返回':'动作中'}</div>
+      </div>
+      <div class="ts">${a.ts}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#alertListBody .alarm-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const d = devsByStation.S1.find(x => x.id === el.dataset.dev);
+      if(d) openDevice(d);
+    });
+  });
+  $('#alertListModal').classList.add('open');
+}
+
+/* 打开单台 */
+function openDevice(d){
+  window.open(`relay-detail.html?dev=${encodeURIComponent(d.id)}&station=${encodeURIComponent(curStation)}`, '_blank');
+}
+
+/* 5 状态汇总 */
+function updateStat(){
+  const list = devsByStation[curStation] || [];
+  const online = list.filter(d => d.s !== STATUS.OFFLINE).length;
+  const offline = list.filter(d => d.s === STATUS.OFFLINE).length;
+  const warn = list.filter(d => d.s === STATUS.WARN).length;
+  const alarm = list.filter(d => d.s === STATUS.ALARM).length;
+  $('#sAll').innerHTML = list.length + '<span class="u">台</span>';
+  $('#sOnline').innerHTML = online + '<span class="u">台</span>';
+  $('#sWarn').innerHTML = warn + '<span class="u">台</span>';
+  $('#sAlarm').innerHTML = alarm + '<span class="u">台</span>';
+  $('#sOffline').innerHTML = offline + '<span class="u">台</span>';
+}
+
+/* 电站下拉 + 模糊搜索 */
+const stationTrigger = $('#stationTrigger');
+const stationMenu = $('#stationMenu');
+const stationSearch = $('#stationSearch');
+const stationList = $('#stationList');
+const stationVal = $('#stationVal');
+
+function renderStationList(filter){
+  const f = (filter || '').trim().toLowerCase();
+  const matched = stations.filter(s => !f || s.name.toLowerCase().includes(f) || s.id.toLowerCase().includes(f));
+  if(!matched.length){
+    stationList.innerHTML = `<li class="empty">未找到匹配的电站</li>`;
+    return;
+  }
+  stationList.innerHTML = matched.map(s => `
+    <li data-val="${s.id}" class="${s.id===curStation?'active':''}">
+      <span>${s.name}</span>
+      <span style="float:right;font-size:10px;color:var(--txt-3)">${s.devs} 台</span>
+    </li>
+  `).join('');
+  stationList.querySelectorAll('li[data-val]').forEach(li => {
+    li.addEventListener('click', ()=>{
+      const val = li.dataset.val;
+      curStation = val;
+      const s = stations.find(x => x.id === val);
+      stationVal.textContent = s ? s.name : val;
+      stationMenu.hidden = true;
+      stationTrigger.classList.remove('open');
+      curFilter = 'all';
+      document.querySelectorAll('.stat-tile').forEach(t => t.classList.toggle('on', t.dataset.f === 'all'));
+      sortOrder = null;  // 切换电站重置排序
+      updateStat();
+      renderDevices();
+      if(curStation === 'S1') renderAlarmScroll();
+      else {
+        if(alarmTimer) clearInterval(alarmTimer);
+        $('#alarmScroll').innerHTML = `<div class="slide show"><div class="empty">📭 ${s? s.name : '该电站'}暂无告警</div></div>`;
+      }
+    });
+  });
+}
+stationTrigger.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const open = !stationMenu.hidden;
+  if(open){ stationMenu.hidden = true; stationTrigger.classList.remove('open'); }
+  else {
+    stationMenu.hidden = false;
+    stationTrigger.classList.add('open');
+    renderStationList('');
+    setTimeout(()=>stationSearch.focus(), 50);
+  }
+});
+stationSearch.addEventListener('input', (e)=> renderStationList(e.target.value));
+stationSearch.addEventListener('click', (e)=>e.stopPropagation());
+document.addEventListener('click', (e)=>{
+  if(!stationMenu.contains(e.target) && !stationTrigger.contains(e.target)){
+    stationMenu.hidden = true;
+    stationTrigger.classList.remove('open');
+  }
+});
+
+/* 5 状态筛选 */
+document.querySelectorAll('.stat-tile').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.stat-tile').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    curFilter = t.dataset.f;
+    renderDevices();
+  });
+});
+
+$('#refreshBtn').addEventListener('click', ()=>location.reload());
+
+/* ===== 排序弹窗 + 拖动 ===== */
+const sortModal = $('#sortModal');
+let sortList = [];  // 临时排序数组
+let draggingIdx = null;
+
+$('#sortBtn').addEventListener('click', ()=>{
+  // 初始化排序数组
+  sortList = getSortedDevs().map(d => d.id);
+  renderSortList();
+  sortModal.classList.add('open');
+});
+document.querySelectorAll('[data-close]').forEach(b=>{
+  b.addEventListener('click', ()=>{ $('#'+b.dataset.close).classList.remove('open'); });
+});
+$('#sortSave').addEventListener('click', ()=>{
+  sortOrder = sortList.slice();
+  try{ localStorage.setItem('relay_sort_' + curStation, JSON.stringify(sortOrder)); }catch(e){}
+  renderDevices();
+  sortModal.classList.remove('open');
+});
+$('#sortReset').addEventListener('click', ()=>{
+  sortList = (devsByStation[curStation] || []).map(d => d.id);
+  renderSortList();
+});
+
+function renderSortList(){
+  const list = sortList.map(id => devsByStation[curStation].find(d => d.id === id)).filter(Boolean);
+  const swClass = {normal:'',warn:'warn',alarm:'alarm',offline:'offline'};
+  const swText = {normal:'在线',warn:'告警',alarm:'严重',offline:'离线'};
+  $('#sortList').innerHTML = list.map((d, i) => `
+    <div class="sort-item" draggable="true" data-idx="${i}" data-id="${d.id}">
+      <div class="handle">≡</div>
+      <div class="pos">${i+1}</div>
+      <div class="id">${d.id}</div>
+      <div class="name">${d.name}</div>
+      <div class="loc">${d.loc}</div>
+      <div class="sw ${swClass[d.s]||''}">${swText[d.s]||d.s}</div>
+    </div>
+  `).join('');
+  bindSortDrag();
+}
+
+function bindSortDrag(){
+  const items = $('#sortList').querySelectorAll('.sort-item');
+  items.forEach((el) => {
+    el.addEventListener('dragstart', (e)=>{
+      draggingIdx = +el.dataset.idx;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try{ e.dataTransfer.setData('text/plain', String(draggingIdx)); }catch(_){}
+    });
+    el.addEventListener('dragend', ()=>{
+      el.classList.remove('dragging');
+      items.forEach(x => x.classList.remove('drag-over'));
+      draggingIdx = null;
+    });
+    el.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', ()=>{
+      el.classList.remove('drag-over');
+    });
+    el.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      const dropIdx = +el.dataset.idx;
+      if(draggingIdx !== null && draggingIdx !== dropIdx){
+        const item = sortList.splice(draggingIdx, 1)[0];
+        sortList.splice(dropIdx, 0, item);
+        renderSortList();
+      }
+    });
+  });
+}
+
+// 读取 localStorage 排序
+try{
+  const saved = localStorage.getItem('relay_sort_S1');
+  if(saved){ sortOrder = JSON.parse(saved); }
+}catch(e){}
+
+/* 初始化 */
+updateStat();
+renderDevices();
+renderAlarmScroll();
+
+setInterval(()=>{
+  (devsByStation[curStation]||[]).forEach(d=>{
+    if(d.s==='offline') return;
+    d.P  = Math.max(0, d.P  + (Math.random()-0.5)*0.1);
+    d.Ia = Math.max(0, d.Ia + Math.round((Math.random()-0.5)*8));
+    d.Ib = Math.max(0, d.Ib + Math.round((Math.random()-0.5)*8));
+    d.Ic = Math.max(0, d.Ic + Math.round((Math.random()-0.5)*8));
+    d.Ua = d.Ua > 30 ? 38.5 + (Math.random()-0.5)*0.1 : (d.Ua > 5 ? 10.4 + (Math.random()-0.5)*0.08 : (d.Ua > 0 ? 0.4 : 0));
+    d.Ub = d.Ua > 0 ? d.Ua - 0.04 : 0;
+    d.Uc = d.Ua > 0 ? d.Ua + 0.03 : 0;
+    d.f  = 50.00 + (Math.random()-0.5)*0.04;
+  });
+  renderDevices();
+},5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,3742 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电费交易结算管理系统 v1.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1F3A68; --primary-2: #1749D9; --primary-soft: #EEF2FA;
+    --bg: #F5F7FA; --surface: #FFFFFF; --border: #E5E7EB;
+    --text: #1F2937; --text-2: #6B7280; --text-3: #9CA3AF;
+    --green: #10B981; --orange: #F59E0B; --red: #EF4444; --yellow: #FACC15;
+    --gray: #9CA3AF; --purple: #8B5CF6; --cyan: #06B6D4;
+  }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 14px; color: var(--text); background: var(--bg); line-height: 1.6;
+  }
+  a { color: var(--primary-2); text-decoration: none; cursor: pointer; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+  .app { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 56px 1fr; min-height: 100vh; }
+  .topbar { grid-column: 1 / 3; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--primary); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); z-index: 10; }
+  .topbar .brand { font-weight: 600; font-size: 16px; }
+  .topbar .brand .ver { font-size: 12px; color: #94a3b8; margin-left: 8px; }
+  .topbar .topbar-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .topbar .topbar-right select { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); padding: 4px 10px; border-radius: 4px; font-size: 13px; }
+  .topbar .topbar-right select option { color: var(--text); }
+  .role-pill { background: rgba(255,255,255,.15); padding: 3px 10px; border-radius: 12px; font-size: 12px; white-space: nowrap; }
+
+  aside.sidebar { background: #fff; border-right: 1px solid var(--border); padding: 16px 0; overflow-y: auto; }
+  aside.sidebar .nav-group { padding: 0 12px 12px; }
+  /* 一级菜单：字号更大、加粗、深色，与二级菜单形成明显视觉层级 */
+  aside.sidebar .nav-group-title { font-size: 15px; font-weight: 700; color: var(--text); padding: 12px 12px 8px; letter-spacing: 0.5px; }
+  /* 二级菜单：字号小、缩进，颜色浅 */
+  aside.sidebar .nav-item { padding: 7px 12px 7px 28px; border-radius: 6px; color: var(--text-2); cursor: pointer; font-size: 12px; margin-bottom: 2px; }
+  aside.sidebar .nav-item:hover { background: var(--primary-soft); }
+  aside.sidebar .nav-item.active { background: var(--primary); color: #fff; }
+
+  main.content { padding: 24px; overflow-y: auto; max-width: 100%; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .page-sub { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+  .breadcrumb { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
+  .breadcrumb a { color: var(--text-2); }
+
+  .btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 4px; font-size: 13px; border: 1px solid var(--border); background: #fff; color: var(--text); transition: all .15s; }
+  .btn:hover { border-color: var(--primary-2); color: var(--primary-2); }
+  .btn-primary { background: var(--primary-2); color: #fff; border-color: var(--primary-2); }
+  .btn-primary:hover { background: #1340b8; color: #fff; }
+  .btn-danger { color: var(--red); border-color: #fecaca; }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+  .btn-sm { padding: 3px 10px; font-size: 12px; }
+  .btn-group { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .card-title .meta { font-size: 12px; color: var(--text-3); font-weight: normal; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; }
+  .stat-card .label { font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+  .stat-card .value { font-size: 24px; font-weight: 600; }
+  .stat-card .value .unit { font-size: 13px; color: var(--text-2); font-weight: normal; margin-left: 4px; }
+  .stat-card .delta { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+  .stat-card.primary { border-top: 3px solid var(--primary-2); }
+  .stat-card.success { border-top: 3px solid var(--green); }
+  .stat-card.warn { border-top: 3px solid var(--orange); }
+  .stat-card.danger { border-top: 3px solid var(--red); }
+
+  .table-wrap { background: #fff; border: 1px solid var(--border); border-radius: 6px; overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #F9FAFB; color: var(--text-2); font-weight: 500; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:hover td { background: #FAFBFC; }
+  tr:last-child td { border-bottom: none; }
+  code { background: #F3F4F6; padding: 1px 6px; border-radius: 3px; font-family: "SF Mono", Consolas, monospace; font-size: 12px; }
+
+  .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 12px; line-height: 1.5; white-space: nowrap; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .pill-green { background: #ECFDF5; color: #047857; } .pill-green .dot { background: var(--green); }
+  .pill-orange { background: #FFFBEB; color: #B45309; } .pill-orange .dot { background: var(--orange); }
+  .pill-red { background: #FEF2F2; color: #B91C1C; } .pill-red .dot { background: var(--red); }
+  .pill-gray { background: #F3F4F6; color: #4B5563; } .pill-gray .dot { background: var(--gray); }
+  .pill-blue { background: #EFF6FF; color: #1D4ED8; } .pill-blue .dot { background: var(--primary-2); }
+  .pill-cyan { background: #ECFEFF; color: #0E7490; } .pill-cyan .dot { background: var(--cyan); }
+
+  .form-row { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; margin-bottom: 14px; }
+  .form-row label { padding-top: 7px; color: var(--text-2); font-size: 13px; text-align: right; }
+  .form-row label.required::after { content: " *"; color: var(--red); }
+  .form-row .field { display: flex; flex-direction: column; gap: 4px; }
+  .form-row .hint { font-size: 12px; color: var(--text-3); }
+  /* 锁机操作页 · 余额/阈值 value 与左侧 label 起点对齐（统一从 field 左边开始） */
+  #page-lock-action .form-row .field > span { display: block; text-align: left; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 14px 18px; margin-bottom: 14px; }
+  .form-grid.cols-3 { --cols: 3; }
+  .form-grid.cols-4 { --cols: 4; }
+  .form-grid .item { display: flex; flex-direction: column; gap: 4px; }
+  .form-grid .item label { font-size: 13px; color: var(--text-2); }
+  .form-grid .item label.required::after { content: " *"; color: var(--red); }
+  .form-grid .item .hint { font-size: 12px; color: var(--text-3); }
+
+  input[type="text"], input[type="number"], input[type="password"], input[type="email"], input[type="date"], input[type="tel"], select, textarea {
+    width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 13px; color: var(--text); background: #fff;
+  }
+  input[type="password"].short, input[type="text"].short { width: 200px; background:transparent; }
+  .tree-picker-input { background:transparent !important; }
+  .rate-input { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: transparent; border: 1px solid var(--border); border-radius: 4px; }
+  .rate-input .prefix, .rate-input .suffix { color: var(--text-2); font-size: 13px; }
+  .rate-input input { flex: 1; min-width: 0; border: none; background: transparent; padding: 0; font-size: 14px; font-weight: 600; color: var(--text); text-align: center; }
+  .rate-input input:focus { outline: none; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-2); box-shadow: 0 0 0 2px rgba(23,73,217,.1); }
+  input[readonly], input:disabled, select:disabled { background: #F9FAFB; color: var(--text-2); }
+  textarea { resize: vertical; min-height: 60px; }
+  .radio-group, .check-group { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 6px; }
+  .radio-group label, .check-group label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; color: var(--text); padding: 0; text-align: left; }
+  .form-section { border-top: 1px dashed var(--border); padding-top: 14px; margin-top: 14px; }
+  .form-section-title { font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 10px; }
+
+  .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-bar .item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
+  .filter-bar select, .filter-bar input { width: auto; min-width: 140px; }
+
+  .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 32px; }
+  .detail-grid .item .label { color: var(--text-2); font-size: 12px; margin-bottom: 4px; }
+  .detail-grid .item .value { color: var(--text); font-size: 13px; word-break: break-all; }
+  .detail-grid .item .value code { font-size: 12px; }
+  .detail-section { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; }
+  .detail-section h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--primary); }
+
+  /* 中英对照 · 英文部分加大加黑（加深可读） */
+  .cn-en { display: flex; flex-direction: column; gap: 3px; }
+  .cn-en .cn { font-size: 13px; color: var(--text); font-weight: 500; }
+  .cn-en .en { font-size: 12px; color: var(--text); font-family: "SF Mono", Consolas, monospace; font-weight: 500; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; align-items: center; }
+  .tabs .tab { padding: 8px 16px; font-size: 13px; color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs .tab.active { color: var(--primary-2); border-bottom-color: var(--primary-2); font-weight: 500; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .alert { padding: 10px 14px; border-radius: 4px; font-size: 13px; margin-bottom: 12px; border-left: 3px solid; }
+  .alert-info { background: #EFF6FF; border-color: var(--primary-2); color: #1E40AF; }
+  .alert-warning { background: #FEF3C7; border-color: #D97706; color: #92400E; }
+  .alert-warn { background: #FFFBEB; border-color: var(--orange); color: #92400E; }
+  .alert-danger { background: #FEF2F2; border-color: var(--red); color: #991B1B; }
+  .alert-success { background: #ECFDF5; border-color: var(--green); color: #065F46; }
+
+  /* 模态弹窗（常规） */
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-mask.show { display: flex; }
+  .modal-mask.level-2 { z-index: 1100; }
+  .modal { background: #fff; border-radius: 6px; width: 720px; max-width: 96vw; max-height: 92vh; overflow: hidden; display: flex; flex-direction: column; }
+  .modal.wide { width: 1180px; max-width: 98vw; }
+  .modal.small { width: 420px; }
+  .modal-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-size: 15px; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; background: #F9FAFB; }
+  .modal-close { cursor: pointer; color: var(--text-3); font-size: 20px; padding: 0 4px; line-height: 1; }
+
+  /* 抽屉弹窗（从下往上滑出 · 保留黑灰遮罩） */
+  .drawer-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 1000; }
+  .drawer-mask.show { display: block; }
+  .drawer { position: fixed; left: 0; right: 0; bottom: 0; max-height: 90vh; background: #fff; display: flex; flex-direction: column; transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 1001; border-top-left-radius: 8px; border-top-right-radius: 8px; box-shadow: 0 -8px 24px rgba(0,0,0,.15); }
+  .drawer-mask.show .drawer { transform: translateY(0); }
+  .drawer-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+  .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; background: #F9FAFB; }
+
+  /* 组织树级联选择器 */
+  .tree-picker { position: relative; }
+  .tree-picker-input { cursor: pointer; }
+  .tree-picker-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.08); max-height: 320px; overflow-y: auto; z-index: 50; display: none; }
+  .tree-picker.open .tree-picker-dropdown { display: block; }
+  .tree-picker-search { padding: 8px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fff; }
+  .tree-picker-search input { width: 100%; padding: 5px 8px; font-size: 13px; }
+  .tree { list-style: none; padding: 4px 0; }
+  .tree ul { list-style: none; padding-left: 20px; }
+  .tree-node { padding: 4px 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .tree-node:hover { background: var(--primary-soft); }
+  .tree-node.selected { background: var(--primary-soft); color: var(--primary-2); font-weight: 500; }
+  .tree-node .caret { width: 12px; color: var(--text-3); display: inline-block; text-align: center; }
+  .tree-node .icon { font-size: 12px; }
+
+  /* 已选机组 · 表格列表样式 */
+  .machine-list { display: flex; flex-direction: column; gap: 6px; }
+  .machine-list-row { display: flex; align-items: center; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; background: #fff; font-size: 13px; gap: 12px; }
+  .machine-list-row .name { font-weight: 500; }
+  .machine-list-row .meta { color: var(--text-2); font-size: 12px; }
+  .machine-list-row .remove { margin-left: auto; color: var(--red); cursor: pointer; font-size: 12px; padding: 2px 6px; }
+  .excel-wrap { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    aside.sidebar { display: none; }
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .form-row label { text-align: left; }
+    .form-grid { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+
+  /* 锁机/解机操作 · 左右分块布局（左 60% 操作信息 + 已选机组表 / 右 40% 参数下发） */
+  .lock-action-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: stretch; }
+  .lock-action-grid > .card { margin-bottom: 0; }
+  @media (max-width: 1100px) { .lock-action-grid { grid-template-columns: 1fr; } }
+
+  /* mini toggle switch（参数表内使能开关） */
+  .switch-mini { position: relative; display: inline-block; width: 28px; height: 16px; vertical-align: middle; margin-right: 4px; }
+  .switch-mini input { opacity: 0; width: 0; height: 0; }
+  .switch-mini span { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #D1D5DB; border-radius: 16px; transition: 0.2s; }
+  .switch-mini span::before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s; }
+  .switch-mini input:checked + span { background: #10B981; }
+  .switch-mini input:checked + span::before { transform: translateX(12px); }
+
+  /* 锁机参数表样式 */
+  .param-table th, .param-table td { padding: 6px 8px; font-size: 12px; }
+  .param-table .addr { font-family: 'JetBrains Mono', Consolas, monospace; color: var(--text-3); text-align: center; }
+  .param-table .enable-cell { display: flex; align-items: center; gap: 2px; justify-content: center; }
+  .param-table .enable-cell code { font-size: 11px; color: var(--text-2); background: var(--bg-2); padding: 1px 4px; border-radius: 3px; }
+  .param-table .val-cell { text-align: center; color: var(--text-2); font-family: 'JetBrains Mono', Consolas, monospace; }
+  /* 设定前列宽一些，设定后列窄一些（input 收窄） */
+  .param-table input.setting-input { width: 90px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 3px; text-align: center; font-size: 12px; font-family: 'JetBrains Mono', Consolas, monospace; transition: all .15s; }
+  .param-table input.setting-input:disabled { background: var(--bg-2); color: var(--text-3); }
+  /* focus 时 placeholder 提示文字小时（淡出隐藏） */
+  .param-table input.setting-input:focus { border-color: var(--primary-2); box-shadow: 0 0 0 2px rgba(23,73,217,.12); outline: none; }
+  .param-table input.setting-input::placeholder { font-size: 12px; color: var(--text-3); opacity: 1; transition: all .2s; }
+  .param-table input.setting-input:focus::placeholder { opacity: 0; }
+  .param-table .range-tip { display: block; font-size: 11px; color: var(--text-3); margin-top: 2px; font-weight: normal; }
+
+  /* 机组选择展示区（点击打开弹窗） */
+  .machine-picker-display { padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; min-height: 38px; cursor: pointer; background: #fff; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; transition: border-color 0.15s; }
+  .machine-picker-display:hover { border-color: var(--primary); }
+  .machine-picker-display .placeholder { color: var(--text-3); }
+  .machine-picker-display .tag { background: var(--bg-2); padding: 2px 8px; border-radius: 3px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+  .machine-picker-display .tag.locked-tag { background: #FEE2E2; color: #B91C1C; }
+  .machine-picker-display .tag.unlocked-tag { background: #D1FAE5; color: #047857; }
+  .machine-picker-display .tag .x { color: var(--text-3); cursor: pointer; padding: 0 2px; }
+  .machine-picker-display .tag .x:hover { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">电费交易结算管理系统 <span class="ver">v1.0</span></div>
+    <div class="topbar-right"></div>
+  </header>
+
+  <aside class="sidebar">
+    <div class="nav-group" data-role="admin,generator,reviewer,operator,consumer">
+      <div class="nav-group-title">代币账户</div>
+      <div class="nav-item active" data-page="page-token-list" onclick="goPage('page-token-list')">账户列表</div>
+      <div class="nav-item" data-page="page-token-tx" onclick="goPage('page-token-tx')">账户交易记录</div>
+    </div>
+    <div class="nav-group" data-role="admin,generator,reviewer">
+      <div class="nav-group-title">电费账单</div>
+      <div class="nav-item" data-page="page-bill-review" onclick="goPage('page-bill-review')">账单审核</div>
+      <div class="nav-item" data-page="page-bill-pay" onclick="goPage('page-bill-pay')">账单支付</div>
+    </div>
+    <div class="nav-group" data-role="admin,generator,operator">
+      <div class="nav-group-title">调参解锁机</div>
+      <div class="nav-item" data-page="page-lock-confirm" onclick="goLockList('lock')">锁机确认</div>
+      <div class="nav-item" data-page="page-lock-unlock-confirm" onclick="goLockList('unlock')">解机确认</div>
+    </div>
+    <div class="nav-group" data-role="admin">
+      <div class="nav-group-title">规则配置</div>
+      <div class="nav-item" data-page="page-rule-bill" onclick="goPage('page-rule-bill')">账单生成规则</div>
+      <div class="nav-item" data-page="page-rule-lock-unlock" onclick="goPage('page-rule-lock-unlock')">解锁机确认规则</div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- =========================================== -->
+    <!-- 1. 代币账户列表 -->
+    <!-- =========================================== -->
+    <section class="page active" id="page-token-list">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">代币账户 / 账户列表</div>
+          <div class="page-title">代币账户管理</div>
+          <div class="page-sub">每个用电方组织对应一个代币账户，对接 Paystack 专用虚拟账户（DVA）</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="goPage('page-token-create')">+ 创建账户</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info" id="data-perm-tip">
+        <strong>数据权限：</strong><span id="perm-text">系统管理员查看全部账户。用电方登录时只查看本组织账户。</span>
+      </div>
+
+      <div class="filter-bar">
+        <div class="item"><span>账户编号/名称：</span><input type="text" placeholder="模糊查询" style="width:180px;"></div>
+        <div class="item"><span>组织：</span><select>
+          <option>全部</option>
+          <option>西非矿业集团</option>
+          <option>北部电力公司</option>
+          <option>利比亚工业园</option>
+          <option>苏丹矿业能源</option>
+        </select></div>
+        <div class="item"><span>状态：</span><select>
+          <option>全部</option>
+          <option>正常</option>
+          <option>已停用</option>
+        </select></div>
+        <button class="btn btn-sm">查询</button>
+        <button class="btn btn-sm">重置</button>
+        <div style="margin-left:auto; font-size:12px; color:var(--text-3);" id="total-count">共 12 个账户</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>账户编号</th>
+            <th>代币账户名称</th>
+            <th>用电方组织</th>
+            <th>Paystack 虚拟账户</th>
+            <th>代币余额</th>
+            <th>累计充值(NGN)</th>
+            <th>累计扣款</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td>ACC-2026-0001</td>
+              <td>西非矿业专用账户</td>
+              <td>西非矿业集团 (ORG-001)</td>
+              <td><code>9930000123</code><br><span style="font-size:11px; color:var(--text-2);">Wema Bank</span></td>
+              <td><strong style="color:var(--red);">12,500</strong> <span style="font-size:12px;color:var(--text-2)">代币</span></td>
+              <td>200,000.00</td>
+              <td>187,500</td>
+              <td><span class="pill pill-green"><span class="dot"></span>正常</span></td>
+              <td><a onclick="goPage('page-token-detail')">详情</a> · <a onclick="openTxWithAccount('ACC-2026-0001', '西非矿业专用账户')">流水</a></td>
+            </tr>
+            <tr>
+              <td>ACC-2026-0002</td>
+              <td>北部电力专用账户</td>
+              <td>北部电力公司 (ORG-002)</td>
+              <td><code>0033322211</code><br><span style="font-size:11px; color:var(--text-2);">GTBank</span></td>
+              <td><strong style="color:var(--green);">86,400</strong> <span style="font-size:12px;color:var(--text-2)">代币</span></td>
+              <td>100,000.00</td>
+              <td>13,600</td>
+              <td><span class="pill pill-green"><span class="dot"></span>正常</span></td>
+              <td><a onclick="goPage('page-token-detail')">详情</a> · <a onclick="openTxWithAccount('ACC-2026-0002', '北部电力专用账户')">流水</a></td>
+            </tr>
+            <tr>
+              <td>ACC-2026-0003</td>
+              <td>利比亚工业园账户</td>
+              <td>利比亚工业园 (ORG-003)</td>
+              <td><code>7801234567</code><br><span style="font-size:11px; color:var(--text-2);">Wema Bank</span></td>
+              <td><strong style="color:var(--orange);">28,000</strong> <span style="font-size:12px;color:var(--text-2)">代币</span></td>
+              <td>50,000.00</td>
+              <td>22,000</td>
+              <td><span class="pill pill-green"><span class="dot"></span>正常</span></td>
+              <td><a onclick="goPage('page-token-detail')">详情</a> · <a onclick="openTxWithAccount('ACC-2026-0003', '利比亚工业园账户')">流水</a></td>
+            </tr>
+            <tr>
+              <td>ACC-2026-0004</td>
+              <td>萨赫勒电信账户</td>
+              <td>萨赫勒电信基站 (ORG-004)</td>
+              <td>—</td>
+              <td><strong style="color:var(--gray);">0</strong> <span style="font-size:12px;color:var(--text-2)">代币</span></td>
+              <td>0.00</td>
+              <td>0</td>
+              <td><span class="pill pill-gray"><span class="dot"></span>已停用</span></td>
+              <td><a onclick="goPage('page-token-detail')">详情</a> · <a onclick="openTxWithAccount('ACC-2026-0004', '萨赫勒电信账户')">流水</a></td>
+            </tr>
+            <tr>
+              <td>ACC-2026-0005</td>
+              <td>苏丹矿业专用账户</td>
+              <td>苏丹矿业能源 (ORG-005)</td>
+              <td><code>9930000456</code><br><span style="font-size:11px; color:var(--text-2);">Wema Bank</span></td>
+              <td><strong style="color:var(--green);">142,800</strong> <span style="font-size:12px;color:var(--text-2)">代币</span></td>
+              <td>75,000.00</td>
+              <td>7,200</td>
+              <td><span class="pill pill-green"><span class="dot"></span>正常</span></td>
+              <td><a onclick="goPage('page-token-detail')">详情</a> · <a onclick="openTxWithAccount('ACC-2026-0005', '苏丹矿业专用账户')">流水</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 2. 创建账户：4 步 + 扣款密令（短+JS 校验一致）+ 成功直接跳转详情 -->
+    <!-- =========================================== -->
+    <section class="page" id="page-token-create">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">代币账户 / 创建账户</div>
+          <div class="page-title">创建代币账户</div>
+          <div class="page-sub">使用 Paystack Single-step account assignment 接口（POST /dedicated_account/assign）一次完成客户创建 + DVA 分配</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="goPage('page-token-list')">返回列表</button>
+        </div>
+      </div>
+
+      <!-- ① 本系统账户信息 -->
+      <div class="card">
+        <div class="card-title">① 本系统账户信息</div>
+        <div class="form-grid cols-3">
+          <div class="item">
+            <label class="required">用电方组织</label>
+            <select>
+              <option value="">请选择（来自本系统"组织管理"）</option>
+              <option>西非矿业集团 (ORG-001)</option>
+              <option>北部电力公司 (ORG-002)</option>
+              <option>利比亚工业园 (ORG-003)</option>
+              <option>苏丹矿业能源 (ORG-005)</option>
+            </select>
+          </div>
+          <div class="item">
+            <label class="required">代币账户名称</label>
+            <input type="text" placeholder="如：西非矿业专用账户" />
+          </div>
+          <div class="item">
+            <label>业务联系人</label>
+            <input type="text" placeholder="如：张三" />
+          </div>
+          <div class="item">
+            <label>联系电话</label>
+            <input type="text" placeholder="如：+86-138-0000-0000" />
+          </div>
+          <div class="item" style="grid-column: span 2;">
+            <label>备注</label>
+            <input type="text" placeholder="如：本月新签客户，初期免手续费" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ② Paystack Single-step 必填 · 不展示技术说明 -->
+      <div class="card">
+        <div class="card-title">② Paystack Single-step Account Assignment 必填信息</div>
+        <div class="form-grid cols-4">
+          <div class="item">
+            <label class="required">邮箱</label>
+            <input type="email" placeholder="如：finance@wam.com" />
+          </div>
+          <div class="item">
+            <label class="required">名</label>
+            <input type="text" placeholder="如：张三" />
+          </div>
+          <div class="item">
+            <label class="required">姓</label>
+            <input type="text" placeholder="如：西非矿业" />
+          </div>
+          <div class="item">
+            <label class="required">电话</label>
+            <input type="tel" placeholder="国际格式，如：+2348012345678" />
+          </div>
+        </div>
+        <div class="form-grid cols-4">
+          <div class="item">
+            <label>首选银行</label>
+            <select>
+              <option value="">不限（Paystack 自动分配）</option>
+              <option value="wema-bank">Wema Bank</option>
+              <option value="titan-paystack">Titan Paystack</option>
+            </select>
+          </div>
+          <div class="item">
+            <label>国家</label>
+            <input type="text" value="NG" />
+          </div>
+          <div class="item">
+            <label>BVN 银行验证码</label>
+            <input type="text" placeholder="选填，11 位" />
+          </div>
+          <div class="item">
+            <label>bank_code</label>
+            <input type="text" placeholder="选填" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 汇算关系 · 第一版样式 -->
+      <div class="card">
+        <div class="card-title">③ 汇算关系</div>
+        <div class="form-grid cols-2">
+          <div class="item">
+            <label class="required">代币与 NGN 的关系</label>
+            <div class="rate-input">
+              <span class="prefix">1 代币 =</span>
+              <input type="number" step="0.0001" value="0.5" />
+              <span class="suffix">NGN</span>
+            </div>
+          </div>
+          <div class="item">
+            <label class="required">电费与代币的关系</label>
+            <div class="rate-input">
+              <span class="prefix">1 kWh =</span>
+              <input type="number" step="0.0001" value="0.5" />
+              <span class="suffix">代币</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ 扣款密令（短 + JS 校验一致） -->
+      <div class="card">
+        <div class="card-title">④ 扣款密令</div>
+        <div class="form-row">
+          <label class="required">扣款密令</label>
+          <div class="field">
+            <input type="password" class="short" id="pwd-1" placeholder="请输入" maxlength="20" oninput="checkPwd()" />
+            <span class="hint">6-20 位，建议包含字母和数字</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="required">确认扣款密令</label>
+          <div class="field">
+            <input type="password" class="short" id="pwd-2" placeholder="请输入" maxlength="20" oninput="checkPwd()" />
+            <span class="hint" id="pwd-hint" style="color:var(--red); display:none;">两次扣款密令必须一致</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ 启用 -->
+      <div class="card">
+        <div class="card-title">⑤ 启用账户</div>
+        <div class="form-row">
+          <label>启用状态</label>
+          <div class="field">
+            <div class="radio-group">
+              <label><input type="radio" name="en" checked> 启用</label>
+              <label><input type="radio" name="en"> 暂不启用（保存为草稿）</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:24px;">
+        <button class="btn" onclick="goPage('page-token-list')">取消</button>
+        <button class="btn btn-primary" id="btn-create-confirm" onclick="onCreateAccount()">确认创建账户</button>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 3. 账户详情：加回停用/启用/修改扣款密令 -->
+    <!-- =========================================== -->
+    <section class="page" id="page-token-detail">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">代币账户 / 账户详情</div>
+          <div class="page-title">西非矿业专用账户 · 详情</div>
+          <div class="page-sub">ACC-2026-0001 · 用电方：西非矿业集团 · 创建于 2026-08-15</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="goPage('page-token-list')">返回列表</button>
+          <button class="btn btn-danger" onclick="openModal('modal-token-disable')">停用账户</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="tab-detail-info" onclick="switchTab(this, 'tab-detail-info')">基本信息</div>
+        <div class="tab" data-tab="tab-detail-paystack" onclick="switchTab(this, 'tab-detail-paystack')">Paystack 账户</div>
+        <div class="tab" data-tab="tab-detail-tx" onclick="switchTab(this, 'tab-detail-tx')">交易记录</div>
+      </div>
+
+      <div class="tab-panel active" id="tab-detail-info">
+        <div class="stat-row">
+          <div class="stat-card primary">
+            <div class="label">当前余额</div>
+            <div class="value" style="color:var(--red);">12,500<span class="unit">代币</span></div>
+            <div class="delta">低于预警阈值 (50,000)</div>
+          </div>
+          <div class="stat-card success">
+            <div class="label">累计充值</div>
+            <div class="value">100,000<span class="unit">NGN</span></div>
+            <div class="delta">≈ 200,000 代币入账</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="label">累计扣款</div>
+            <div class="value">187,500<span class="unit">代币</span></div>
+            <div class="delta">2 笔电费账单</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">账户状态</div>
+            <div class="value" style="font-size:18px; color:var(--green);">正常</div>
+            <div class="delta">2026-08-15 启用</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">账户基本信息 <button class="btn btn-sm" onclick="openModal('modal-token-edit-info')">修改基本信息</button></div>
+          <div class="detail-grid">
+            <div class="item"><div class="label">账户编号</div><div class="value">ACC-2026-0001</div></div>
+            <div class="item"><div class="label">代币账户名称</div><div class="value">西非矿业专用账户</div></div>
+            <div class="item"><div class="label">用电方组织</div><div class="value">西非矿业集团 (ORG-001)</div></div>
+            <div class="item"><div class="label">账户状态</div><div class="value"><span class="pill pill-green"><span class="dot"></span>正常</span></div></div>
+            <div class="item"><div class="label">业务联系人</div><div class="value">张三</div></div>
+            <div class="item"><div class="label">联系电话</div><div class="value">+86-138-0000-0000</div></div>
+            <div class="item">
+              <div class="label">扣款密令</div>
+              <div class="value" style="display:flex; align-items:center; gap:10px;">
+                <span class="pill pill-green"><span class="dot"></span>已设置</span>
+                <button class="btn btn-sm" onclick="openModal('modal-token-edit-pwd')">修改</button>
+              </div>
+            </div>
+            <div class="item"><div class="label">创建人</div><div class="value">李四</div></div>
+            <div class="item"><div class="label">创建时间</div><div class="value">2026-08-15 14:23:11</div></div>
+            <div class="item"><div class="label">备注</div><div class="value" style="grid-column: span 2;">西非矿业为本月新签客户，初期免手续费</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">汇算关系 <button class="btn btn-sm" onclick="openModal('modal-token-edit-rate')">修改汇算关系</button></div>
+          <div class="detail-grid">
+            <div class="item"><div class="label">代币与 NGN 的关系</div><div class="value">1 代币 = 0.5 NGN</div></div>
+            <div class="item"><div class="label">电费与代币的关系</div><div class="value">1 kWh = 0.5 代币</div></div>
+            <div class="item"><div class="label">最近更新人</div><div class="value">李四</div></div>
+            <div class="item"><div class="label">更新时间</div><div class="value">2026-09-01 10:00:00</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-detail-paystack">
+        <div class="card">
+          <div class="card-title">Paystack 客户信息</div>
+          <div class="detail-grid">
+            <div class="item">
+              <div class="label">customer_code</div>
+              <div class="value cn-en"><span class="cn">客户代码</span><span class="en">CUS_xnxdt6s1zg1f4nx</span></div>
+            </div>
+            <div class="item">
+              <div class="label">email</div>
+              <div class="value cn-en"><span class="cn">客户邮箱</span><span class="en">finance@wam.com</span></div>
+            </div>
+            <div class="item">
+              <div class="label">first_name / last_name</div>
+              <div class="value cn-en"><span class="cn">客户姓名</span><span class="en">张三 / 西非矿业</span></div>
+            </div>
+            <div class="item">
+              <div class="label">phone</div>
+              <div class="value cn-en"><span class="cn">客户电话（国际格式）</span><span class="en">+2348012345678</span></div>
+            </div>
+            <div class="item">
+              <div class="label">risk_action</div>
+              <div class="value cn-en"><span class="cn">风险策略</span><span class="en">default</span></div>
+            </div>
+            <div class="item">
+              <div class="label">created_at</div>
+              <div class="value cn-en"><span class="cn">创建时间</span><span class="en">2026-08-15 14:23:11</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Paystack 专用虚拟账户 DVA</div>
+          <div class="detail-grid">
+            <div class="item">
+              <div class="label">id</div>
+              <div class="value cn-en"><span class="cn">DVA 标识</span><span class="en">97</span></div>
+            </div>
+            <div class="item">
+              <div class="label">account_name</div>
+              <div class="value cn-en"><span class="cn">虚拟账户名</span><span class="en">PAYSTACK / 西非矿业 张三</span></div>
+            </div>
+            <div class="item">
+              <div class="label">account_number</div>
+              <div class="value cn-en"><span class="cn">10 位 NUBAN 账户号</span><span class="en">9930000123</span></div>
+            </div>
+            <div class="item">
+              <div class="label">bank.name</div>
+              <div class="value cn-en"><span class="cn">开户行</span><span class="en">Wema Bank</span></div>
+            </div>
+            <div class="item">
+              <div class="label">bank.slug</div>
+              <div class="value cn-en"><span class="cn">银行标识</span><span class="en">wema-bank</span></div>
+            </div>
+            <div class="item">
+              <div class="label">currency</div>
+              <div class="value cn-en"><span class="cn">币种</span><span class="en">NGN</span></div>
+            </div>
+            <div class="item">
+              <div class="label">assigned</div>
+              <div class="value cn-en"><span class="cn">分配状态</span><span class="en">true</span></div>
+            </div>
+            <div class="item">
+              <div class="label">active</div>
+              <div class="value cn-en"><span class="cn">激活状态</span><span class="en">true</span></div>
+            </div>
+            <div class="item">
+              <div class="label">assignment.account_type</div>
+              <div class="value cn-en"><span class="cn">分配账户类型</span><span class="en">PAY-WITH-TRANSFER-RECURRING</span></div>
+            </div>
+            <div class="item">
+              <div class="label">assignment.assigned_at</div>
+              <div class="value cn-en"><span class="cn">分配时间</span><span class="en">2026-08-15 14:23:45</span></div>
+            </div>
+            <div class="item">
+              <div class="label">created_at</div>
+              <div class="value cn-en"><span class="cn">DVA 创建时间</span><span class="en">2026-08-15 14:23:45</span></div>
+            </div>
+            <div class="item">
+              <div class="label">updated_at</div>
+              <div class="value cn-en"><span class="cn">DVA 更新时间</span><span class="en">2026-10-08 11:24:03</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-detail-tx">
+        <div class="filter-bar">
+          <div class="item"><span>类型：</span><select><option>全部</option><option>充值</option><option>扣款</option></select></div>
+          <div class="item"><span>时间：</span><input type="date" value="2026-10-01"> 至 <input type="date" value="2026-10-08"></div>
+          <button class="btn btn-sm">查询</button>
+        </div>
+        <div class="tabs" style="margin-bottom:12px;">
+          <div class="tab active" data-tab="tab-dt-charge" onclick="switchTab(this, 'tab-dt-charge')">充值记录 (2)</div>
+          <div class="tab" data-tab="tab-dt-deduct" onclick="switchTab(this, 'tab-dt-deduct')">扣款记录 (2)</div>
+        </div>
+        <div class="tab-panel active" id="tab-dt-charge">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Paystack 交易 ID</th><th>商户参考号</th>
+                <th>NGN 金额</th><th>汇算</th><th>入账代币</th>
+                <th>付款银行</th><th>付款账户</th><th>channel</th>
+                <th>支付时间</th><th>Webhook 接收</th><th>操作</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td>3725529423</td>
+                  <td><code>recharge_ACC-2026-0001_20261008_0001</code></td>
+                  <td>50,000.00</td>
+                  <td>1 代币=0.5 NGN</td>
+                  <td><strong style="color:var(--green);">+100,000</strong></td>
+                  <td>Guaranty Trust Bank</td>
+                  <td>0123 **** 4567</td>
+                  <td><span class="pill pill-blue">bank_transfer</span></td>
+                  <td>2026-10-08 11:23:55</td>
+                  <td>2026-10-08 11:24:03</td>
+                  <td><a>详情</a></td>
+                </tr>
+                <tr>
+                  <td>3725512880</td>
+                  <td><code>recharge_ACC-2026-0001_20261005_0003</code></td>
+                  <td>25,000.00</td>
+                  <td>1 代币=0.5 NGN</td>
+                  <td><strong style="color:var(--green);">+50,000</strong></td>
+                  <td>Wema Bank</td>
+                  <td>4456 **** 8901</td>
+                  <td><span class="pill pill-blue">bank_transfer</span></td>
+                  <td>2026-10-05 09:18:30</td>
+                  <td>2026-10-05 09:18:42</td>
+                  <td><a>详情</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tab-panel" id="tab-dt-deduct">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>扣款号</th><th>关联账单</th>
+                <th>发电量</th><th>汇算</th><th>扣款代币</th>
+                <th>扣款时间</th><th>操作</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>DD-2026-1007-0023</code></td>
+                  <td><a>BILL-2026-W3-0007</a></td>
+                  <td>120,000 kWh</td>
+                  <td>1 kWh = 0.5 代币</td>
+                  <td><strong style="color:var(--red);">-60,000</strong></td>
+                  <td>10/07 14:22:01</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><code>DD-2026-1006-0019</code></td>
+                  <td><a>BILL-2026-W3-0005</a></td>
+                  <td>85,000 kWh</td>
+                  <td>1 kWh = 0.5 代币</td>
+                  <td><strong style="color:var(--red);">-42,500</strong></td>
+                  <td>10/06 11:08:33</td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 4. 账户交易记录 -->
+    <!-- =========================================== -->
+    <section class="page" id="page-token-tx">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">代币账户 / 账户交易记录</div>
+          <div class="page-title">账户交易记录</div>
+          <div class="page-sub">所有账户的充值/扣款记录（充值由 Paystack Webhook charge.success 触发，扣款由账单支付自动生成）</div>
+        </div>
+        <div class="btn-group">
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="item"><span>账户：</span><select id="filter-account">
+          <option value="ALL">全部账户</option>
+          <option value="ACC-2026-0001">ACC-2026-0001 西非矿业专用账户</option>
+          <option value="ACC-2026-0002">ACC-2026-0002 北部电力专用账户</option>
+          <option value="ACC-2026-0003">ACC-2026-0003 利比亚工业园账户</option>
+          <option value="ACC-2026-0004">ACC-2026-0004 萨赫勒电信账户</option>
+          <option value="ACC-2026-0005">ACC-2026-0005 苏丹矿业专用账户</option>
+        </select></div>
+        <div class="item"><span>类型：</span><select><option>全部</option><option>充值</option><option>扣款</option></select></div>
+        <div class="item"><span>时间：</span><input type="date" value="2026-10-01"> 至 <input type="date" value="2026-10-08"></div>
+        <div class="item"><span>关键词：</span><input type="text" placeholder="Paystack 交易 ID / 商户参考号 / 账单号" style="width:240px;"></div>
+        <button class="btn btn-sm">查询</button>
+        <button class="btn btn-sm">重置</button>
+        <div style="margin-left:auto; font-size:12px; color:var(--text-3);">本月 12 笔 / 共 142 笔</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="tab-tx-charge" onclick="switchTab(this, 'tab-tx-charge')">充值记录 (6)</div>
+        <div class="tab" data-tab="tab-tx-deduct" onclick="switchTab(this, 'tab-tx-deduct')">扣款记录 (6)</div>
+      </div>
+
+      <div class="tab-panel active" id="tab-tx-charge">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Paystack 交易 ID</th>
+              <th>账户</th>
+              <th>商户参考号</th>
+              <th>NGN 金额</th>
+              <th>汇算</th>
+              <th>入账代币</th>
+              <th>付款银行</th>
+              <th>付款账户</th>
+              <th>channel</th>
+              <th>支付时间</th>
+              <th>Webhook 接收</th>
+              <th>手续费</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>3725529423</td>
+                <td>西非矿业</td>
+                <td><code style="font-size:11px;">recharge_ACC-2026-0001_20261008_0001</code></td>
+                <td>50,000.00</td>
+                <td>1 代币=0.5 NGN</td>
+                <td><strong style="color:var(--green);">+100,000</strong></td>
+                <td>Guaranty Trust Bank</td>
+                <td>0123 **** 4567</td>
+                <td><span class="pill pill-blue">bank_transfer</span></td>
+                <td>2026-10-08 11:23:55</td>
+                <td>2026-10-08 11:24:03</td>
+                <td>250.00</td>
+                <td><a>详情</a></td>
+              </tr>
+              <tr>
+                <td>3725519880</td>
+                <td>北部电力</td>
+                <td><code style="font-size:11px;">recharge_ACC-2026-0002_20261007_0008</code></td>
+                <td>25,000.00</td>
+                <td>1 代币=0.5 NGN</td>
+                <td><strong style="color:var(--green);">+50,000</strong></td>
+                <td>Wema Bank</td>
+                <td>5566 **** 7788</td>
+                <td><span class="pill pill-blue">bank_transfer</span></td>
+                <td>2026-10-07 16:42:11</td>
+                <td>2026-10-07 16:42:18</td>
+                <td>125.00</td>
+                <td><a>详情</a></td>
+              </tr>
+              <tr>
+                <td>3725488030</td>
+                <td>利比亚工业园</td>
+                <td><code style="font-size:11px;">recharge_ACC-2026-0003_20261003_0001</code></td>
+                <td>12,500.00</td>
+                <td>1 代币=0.5 NGN</td>
+                <td><strong style="color:var(--green);">+25,000</strong></td>
+                <td>Wema Bank</td>
+                <td>9988 **** 0011</td>
+                <td><span class="pill pill-blue">bank_transfer</span></td>
+                <td>2026-10-03 10:11:42</td>
+                <td>2026-10-03 10:11:50</td>
+                <td>62.50</td>
+                <td><a>详情</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-tx-deduct">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>扣款号</th>
+              <th>账户</th>
+              <th>关联账单</th>
+              <th>发电量</th>
+              <th>汇算</th>
+              <th>扣款代币</th>
+              <th>扣款时间</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>DD-2026-1007-0023</code></td>
+                <td>西非矿业</td>
+                <td><a>BILL-2026-W3-0007</a></td>
+                <td>120,000 kWh</td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong style="color:var(--red);">-60,000</strong></td>
+                <td>10/07 14:22:01</td>
+                <td><a>详情</a></td>
+              </tr>
+              <tr>
+                <td><code>DD-2026-1006-0019</code></td>
+                <td>西非矿业</td>
+                <td><a>BILL-2026-W3-0005</a></td>
+                <td>85,000 kWh</td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong style="color:var(--red);">-42,500</strong></td>
+                <td>10/06 11:08:33</td>
+                <td><a>详情</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 5. 账单审核（点击审核/详情 = drawer） -->
+    <!-- =========================================== -->
+    <section class="page" id="page-bill-review">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">电费账单 / 账单审核</div>
+          <div class="page-title">电费账单审核</div>
+          <div class="page-sub">审核员对自动/手动生成的账单进行电量/电费确认。通过 → 同时进入"已审核"和"账单支付"；作废 → 进入"已审核-作废"，作废原因 = 审核备注</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="openModal('modal-bill-manual')">+ 手动生成账单</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="tab-review-pending" onclick="switchTab(this, 'tab-review-pending')">待审核 <span style="color:var(--text-3); font-weight:normal;">(7)</span></div>
+        <div class="tab" data-tab="tab-review-approved" onclick="switchTab(this, 'tab-review-approved')">已审核 <span style="color:var(--text-3); font-weight:normal;">(28)</span></div>
+      </div>
+
+      <div class="tab-panel active" id="tab-review-pending">
+        <div class="filter-bar">
+          <div class="item"><span>账单编号：</span><input type="text" placeholder="模糊查询" style="width:160px;"></div>
+          <div class="item"><span>电站：</span><select><option>全部</option></select></div>
+          <div class="item"><span>用电方：</span><select><option>全部</option></select></div>
+          <div class="item"><span>生成时间：</span><input type="date" value="2026-10-01"> 至 <input type="date" value="2026-10-08"></div>
+          <div class="item"><span>生成方式：</span><select><option>全部</option><option>自动生成</option><option>手动生成</option></select></div>
+          <button class="btn btn-sm">查询</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>账单编号</th><th>电站</th><th>结算周期</th>
+              <th>用电方</th><th>发电量(kWh)</th><th>电费(代币)</th>
+              <th>生成方式</th><th>生成时间</th><th>等待时长</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>BILL-2026-W3-0023</code></td>
+                <td>利比亚 100MW</td>
+                <td>2026-W3 (10/01-10/07)</td>
+                <td>西非矿业</td>
+                <td>385,000</td><td>192,500</td>
+                <td><span class="pill pill-blue">自动生成</span></td>
+                <td>10/08 00:00:01</td>
+                <td>13h</td>
+                <td><a onclick="openDrawer('drawer-bill-review')">审核 →</a></td>
+              </tr>
+              <tr>
+                <td><code>BILL-2026-W3-0022</code></td>
+                <td>西非 50MW</td>
+                <td>2026-W3 (10/01-10/07)</td>
+                <td>利比亚工业园</td>
+                <td>120,000</td><td>60,000</td>
+                <td><span class="pill pill-green">手动生成</span></td>
+                <td>10/08 09:14:02</td>
+                <td>4h</td>
+                <td><a onclick="openDrawer('drawer-bill-review')">审核 →</a></td>
+              </tr>
+              <tr>
+                <td><code>BILL-2026-W3-0021</code></td>
+                <td>利比亚 100MW</td>
+                <td>2026-W3 (10/01-10/07)</td>
+                <td>北部电力</td>
+                <td>156,000</td><td>78,000</td>
+                <td><span class="pill pill-blue">自动生成</span></td>
+                <td>10/07 14:32:18</td>
+                <td>22h</td>
+                <td><a onclick="openDrawer('drawer-bill-review')">审核 →</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-review-approved">
+        <div class="filter-bar">
+          <div class="item"><span>账单编号：</span><input type="text" placeholder="模糊查询" style="width:160px;"></div>
+          <div class="item"><span>电站：</span><select><option>全部</option></select></div>
+          <div class="item"><span>用电方：</span><select><option>全部</option></select></div>
+          <div class="item"><span>审核结论：</span><select>
+            <option>全部</option>
+            <option>通过</option>
+            <option>作废</option>
+          </select></div>
+          <div class="item"><span>支付状态：</span><select>
+            <option>全部</option>
+            <option>待支付</option>
+            <option>已支付</option>
+          </select></div>
+          <button class="btn btn-sm">查询</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>账单编号</th><th>电站</th><th>结算周期</th><th>用电方</th>
+              <th>发电量(kWh)</th><th>电费(代币)</th>
+              <th>审核结论</th><th>审核员</th><th>审核时间</th>
+              <th>支付状态</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>BILL-2026-W2-0020</code></td>
+                <td>利比亚 100MW</td>
+                <td>2026-W2 (09/24-09/30)</td>
+                <td>西非矿业</td>
+                <td>402,000</td><td>201,000</td>
+                <td><span class="pill pill-green"><span class="dot"></span>通过</span></td>
+                <td>李四</td>
+                <td>10/01 10:23:11</td>
+                <td><span class="pill pill-cyan"><span class="dot"></span>已支付</span></td>
+                <td><a onclick="openDrawer('drawer-bill-view')">详情</a></td>
+              </tr>
+              <tr>
+                <td><code>BILL-2026-W2-0018</code></td>
+                <td>西非 50MW</td>
+                <td>2026-W2 (09/24-09/30)</td>
+                <td>利比亚工业园</td>
+                <td>95,000</td><td>47,500</td>
+                <td><span class="pill pill-green"><span class="dot"></span>通过</span></td>
+                <td>李四</td>
+                <td>10/01 11:02:54</td>
+                <td><span class="pill pill-orange"><span class="dot"></span>待支付</span></td>
+                <td><a onclick="openDrawer('drawer-bill-view')">详情</a></td>
+              </tr>
+              <tr style="background:#FAFBFC;">
+                <td><code>BILL-2026-W2-0019</code></td>
+                <td>西非 50MW</td>
+                <td>2026-W2 (09/24-09/30)</td>
+                <td>利比亚工业园</td>
+                <td>128,000</td><td>64,000</td>
+                <td><span class="pill pill-red"><span class="dot"></span>作废</span></td>
+                <td>王五</td>
+                <td>10/02 15:42:11</td>
+                <td>—</td>
+                <td><a onclick="openDrawer('drawer-bill-view')">详情</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 6. 账单支付：查询最新余额移至余额行 · 余额不足提示改字 · 密令框改短 -->
+    <!-- =========================================== -->
+    <section class="page" id="page-bill-pay">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">电费账单 / 账单支付</div>
+          <div class="page-title">账单支付</div>
+          <div class="page-sub">审核通过的账单进入支付列表，用电方核对电量后输入扣款密令完成扣款</div>
+        </div>
+        <div class="btn-group">
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="tab-pay-pending" onclick="switchTab(this, 'tab-pay-pending')">待支付 <span style="color:var(--text-3); font-weight:normal;">(8)</span></div>
+        <div class="tab" data-tab="tab-pay-done" onclick="switchTab(this, 'tab-pay-done')">已支付 <span style="color:var(--text-3); font-weight:normal;">(24)</span></div>
+      </div>
+
+      <div class="tab-panel active" id="tab-pay-pending">
+        <div class="filter-bar">
+          <div class="item"><span>账单编号：</span><input type="text" placeholder="模糊查询" style="width:160px;"></div>
+          <div class="item"><span>用电方：</span><select><option>全部</option></select></div>
+          <div class="item"><span>电站：</span><select><option>全部</option></select></div>
+          <button class="btn btn-sm">查询</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>账单编号</th><th>电站</th><th>结算周期</th>
+              <th>用电方</th><th>发电量(kWh)</th><th>电费(代币)</th>
+              <th>账单确认时间</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>BILL-2026-W2-0018</code></td>
+                <td>西非 50MW</td>
+                <td>2026-W2 (09/24-09/30)</td>
+                <td>利比亚工业园</td>
+                <td>95,000</td><td>47,500</td>
+                <td>2026-10-01 11:03:00</td>
+                <td><a onclick="goPage('page-bill-pay-confirm')">账单与支付</a></td>
+              </tr>
+              <tr>
+                <td><code>BILL-2026-W3-0007</code></td>
+                <td>利比亚 100MW</td>
+                <td>2026-W3 (10/01-10/07)</td>
+                <td>西非矿业</td>
+                <td>25,000</td><td>12,500</td>
+                <td>2026-10-08 09:30:00</td>
+                <td><a onclick="goPage('page-bill-pay-confirm')">账单与支付</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-pay-done">
+        <div class="filter-bar">
+          <div class="item"><span>账单编号：</span><input type="text" placeholder="模糊查询" style="width:160px;"></div>
+          <div class="item"><span>用电方：</span><select><option>全部</option></select></div>
+          <div class="item"><span>电站：</span><select><option>全部</option></select></div>
+          <div class="item"><span>支付时间：</span><input type="date" value="2026-10-01"> 至 <input type="date" value="2026-10-08"></div>
+          <button class="btn btn-sm">查询</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>账单编号</th><th>电站</th><th>结算周期</th><th>用电方</th>
+              <th>发电量(kWh)</th><th>电费(代币)</th>
+              <th>支付时间</th><th>关联扣款</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>BILL-2026-W2-0020</code></td>
+                <td>利比亚 100MW</td>
+                <td>2026-W2 (09/24-09/30)</td>
+                <td>西非矿业</td>
+                <td>402,000</td><td>201,000</td>
+                <td>10/02 14:23:11</td>
+                <td><a onclick="goPage('page-token-tx')">DD-2026-1002-0015</a></td>
+                <td><a onclick="openDrawer('drawer-bill-view')">详情</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 支付确认页：扣款账户不可选 + 余额行加"查询最新余额"按钮 + 短密令框 -->
+    <section class="page" id="page-bill-pay-confirm">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">电费账单 / 账单支付 / 确认支付</div>
+          <div class="page-title">账单支付确认 · BILL-2026-W2-0018</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="goPage('page-bill-pay')">返回列表</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">账单明细</div>
+        <div class="detail-grid">
+          <div class="item"><div class="label">账单编号</div><div class="value"><code>BILL-2026-W2-0018</code></div></div>
+          <div class="item"><div class="label">电站</div><div class="value">西非 50MW 电站</div></div>
+          <div class="item"><div class="label">结算周期</div><div class="value">2026-W2 (09/24 - 09/30)</div></div>
+          <div class="item"><div class="label">用电方</div><div class="value">利比亚工业园 (ACC-2026-0003)</div></div>
+          <div class="item"><div class="label">发电量</div><div class="value"><strong>95,000 kWh</strong></div></div>
+          <div class="item"><div class="label">电费</div><div class="value"><strong style="color:var(--primary-2); font-size:16px;">47,500 代币</strong></div></div>
+          <div class="item"><div class="label">汇算关系</div><div class="value">1 kWh = 0.5 代币</div></div>
+          <div class="item"><div class="label">审核员</div><div class="value">李四 · 10/01 11:02:54</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">电量使用明细</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>机组</th><th>撬装箱</th><th>云猫编号</th><th>额定功率</th><th>发电时长 (h)</th><th>发电量 (kWh)</th><th>占比</th></tr></thead>
+            <tbody>
+              <tr><td>5 号机组</td><td>撬装箱 5-A</td><td><code>CMH-5A-0005</code></td><td>1.5MW</td><td>168 h</td><td>45,000</td><td>47.4%</td></tr>
+              <tr><td>6 号机组</td><td>撬装箱 5-A</td><td><code>CMH-5A-0006</code></td><td>1.5MW</td><td>168 h</td><td>35,000</td><td>36.8%</td></tr>
+              <tr><td>7 号机组</td><td>撬装箱 5-A</td><td><code>CMH-5A-0007</code></td><td>1.5MW</td><td>168 h</td><td>15,000</td><td>15.8%</td></tr>
+              <tr style="background:#F0F9FF;"><td colspan="4"><strong>合计</strong></td><td>—</td><td><strong>95,000</strong></td><td>100%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">支付确认</div>
+        <div class="form-row">
+          <label>扣款账户</label>
+          <div class="field">
+            <select disabled>
+              <option>利比亚工业园 · ACC-2026-0003</option>
+            </select>
+            <span class="hint">每个用电方对应一个代币账户，扣款账户不可下拉选择</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>账户余额</label>
+          <div class="field">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="padding:6px 10px; background:transparent; border:1px solid var(--border); border-radius:4px; font-size:13px; color:var(--text); flex:1;">
+                <strong style="color:var(--orange);">28,000 代币</strong>
+                <span style="color:var(--text-3); margin-left:8px;">最后更新：2026-10-08 13:32:00</span>
+              </div>
+              <button class="btn btn-sm" onclick="onQueryBalance()">查询最新余额</button>
+            </div>
+            <span class="hint">余额不足暂无法提交，请先在 Paystack 完成充值后再支付</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="required">扣款密令</label>
+          <div class="field">
+            <input type="password" class="short" placeholder="请输入" maxlength="20" />
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:24px;">
+        <button class="btn" onclick="goPage('page-bill-pay')">取消</button>
+        <button class="btn btn-primary" id="btn-pay-confirm" onclick="onSubmitPay()">确认支付</button>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 7. 远程锁机 / 解机确认 -->
+    <!-- =========================================== -->
+    <!-- 锁机确认单（含"锁机记录" tab） -->
+    <section class="page" id="page-lock-confirm">
+      <div class="page-header">
+        <div>
+          <div class="page-title">锁机确认单</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="goLockAction('lock')">新增锁机</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <strong>确认机制：</strong>系统检测到代币余额低于阈值时自动生成锁机确认单并通知操作员。操作员可在确认单上"确认执行"或"拒绝"。未生成确认单的也可通过【新增锁机】进行锁机。
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="tab-lock-pending" onclick="switchLockListTab('lock')">待确认锁机 (3)</div>
+        <div class="tab" data-tab="tab-lock-record" onclick="switchLockListTab('record')">锁机记录 (1)</div>
+      </div>
+
+      <div class="filter-bar" style="margin-top: 12px;">
+        <div class="item"><span>单号：</span><input type="text" placeholder="模糊查询" style="width:160px;"></div>
+        <div class="item"><span>用电方/账户：</span><input type="text" placeholder="模糊查询" style="width:180px;"></div>
+        <div class="item"><span>生成时间：</span><input type="date" value="2026-10-01"> 至 <input type="date" value="2026-10-08"></div>
+        <button class="btn btn-sm">查询</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-lock-pending">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>单号</th><th>触发来源</th><th>用电方/账户</th>
+              <th>当前余额</th><th>锁机阈值</th>
+              <th>生成时间</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>LCK-2026-1008-0001</code></td>
+                <td><span class="pill pill-red">系统规则触发</span></td>
+                <td>西非矿业 (ACC-2026-0001)</td>
+                <td><strong style="color:var(--red);">12,500 代币</strong></td>
+                <td>≤ 50,000 代币</td>
+                <td>10/08 13:32:00</td>
+                <td><a onclick="goLockAction('lock', 'from-confirm', 'LCK-2026-1008-0001', 'ACC-2026-0001', '账户余额低于阈值 50,000 代币，按规则 LU-001 触发')">处理 →</a></td>
+              </tr>
+              <tr>
+                <td><code>LCK-2026-1008-0002</code></td>
+                <td><span class="pill pill-blue">操作员手动</span></td>
+                <td>— (按机组)</td>
+                <td>—</td>
+                <td>—</td>
+                <td>10/08 11:14:00</td>
+                <td><a onclick="goLockAction('lock')">处理 →</a></td>
+              </tr>
+              <tr>
+                <td><code>LCK-2026-1007-0001</code></td>
+                <td><span class="pill pill-red">系统规则触发</span></td>
+                <td>利比亚工业园 (ACC-2026-0003)</td>
+                <td><strong style="color:var(--orange);">28,000 代币</strong></td>
+                <td>≤ 30,000 代币</td>
+                <td>10/07 16:42:00</td>
+                <td><a onclick="goLockAction('lock', 'from-confirm', 'LCK-2026-1007-0001', 'ACC-2026-0003', '账户余额低于阈值 30,000 代币，按规则 LU-001 触发')">处理 →</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-lock-record">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>单号</th><th>生成时间</th><th>用电方/账户</th>
+              <th>锁机前代币余额</th><th>锁机阈值</th><th>锁机</th><th>触发来源</th>
+              <th>锁机时间</th><th>锁机人</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>LCK-2026-1007-0001</code></td>
+                <td>10/07 16:42:00</td>
+                <td>利比亚工业园 (ACC-2026-0003)</td>
+                <td><strong>28,000 代币</strong></td>
+                <td>≤ 30,000 代币</td>
+                <td style="font-size:12px; color:var(--text-2);">账户余额低于阈值 30,000 代币，按规则 LU-001 触发</td>
+                <td><span class="pill pill-red">系统规则触发</span></td>
+                <td>10/07 17:10:22</td>
+                <td>操作员甲</td>
+                <td><a onclick="openLockRecordDetail('LCK-2026-1007-0001', 'lock')">详情</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 解机确认单（含"解机记录" tab） -->
+    <section class="page" id="page-lock-unlock-confirm">
+      <div class="page-header">
+        <div>
+          <div class="page-title">解机确认单</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="goLockAction('unlock')">新增解机</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <strong>确认机制：</strong>系统检测到代币余额高于阈值且有锁定中机组时自动生成解机确认单并通知操作员。操作员可在确认单上"确认执行"或"拒绝"。未生成确认单的也可通过【新增解机】进行解机。
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="tab-unlock-pending" onclick="switchLockListTab('unlock')">待确认解机 (1)</div>
+        <div class="tab" data-tab="tab-unlock-record" onclick="switchLockListTab('unlock-record')">解机记录 (1)</div>
+      </div>
+
+      <div class="filter-bar" style="margin-top: 12px;">
+        <div class="item"><span>单号：</span><input type="text" placeholder="模糊查询" style="width:160px;"></div>
+        <div class="item"><span>用电方/账户：</span><input type="text" placeholder="模糊查询" style="width:180px;"></div>
+        <div class="item"><span>生成时间：</span><input type="date" value="2026-10-01"> 至 <input type="date" value="2026-10-08"></div>
+        <button class="btn btn-sm">查询</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-unlock-pending">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>单号</th><th>触发来源</th><th>用电方/账户</th>
+              <th>当前余额</th><th>解机阈值</th>
+              <th>生成时间</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>UNL-2026-1008-0001</code></td>
+                <td><span class="pill pill-green">系统规则触发</span></td>
+                <td>苏丹矿业能源 (ACC-2026-0005)</td>
+                <td><strong style="color:var(--green);">142,800 代币</strong></td>
+                <td>&gt; 100,000 代币</td>
+                <td>10/08 10:30:00</td>
+                <td><a onclick="goLockAction('unlock', 'from-confirm', 'UNL-2026-1008-0001', 'ACC-2026-0005', '账户余额高于阈值 100,000 代币且有锁定中机组，按规则 LU-002 触发')">处理 →</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-unlock-record">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>单号</th><th>生成时间</th><th>用电方/账户</th>
+              <th>解机前代币余额</th><th>解机阈值</th><th>解机</th><th>触发来源</th>
+              <th>解机时间</th><th>解机人</th><th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><code>UNL-2026-1006-0001</code></td>
+                <td>10/06 13:30:00</td>
+                <td>苏丹矿业能源 (ACC-2026-0005)</td>
+                <td><strong>89,500 代币</strong></td>
+                <td>&gt; 100,000 代币</td>
+                <td style="font-size:12px; color:var(--text-2);">苏丹现场已完成安全检查，可恢复供电</td>
+                <td><span class="pill pill-blue">操作员手动</span></td>
+                <td>10/06 14:18:11</td>
+                <td>操作员乙</td>
+                <td><a onclick="openLockRecordDetail('UNL-2026-1006-0001', 'unlock')">详情</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 8. 远程锁机 / 解机操作 -->
+    <!-- =========================================== -->
+    <section class="page" id="page-lock-action">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb" id="lock-action-breadcrumb">远程锁机</div>
+          <div class="page-title" id="lock-action-title">远程锁机操作</div>
+          <div class="page-sub" id="lock-action-sub">通过下发参数模拟发电机组启动失败或保护停机</div>
+        </div>
+      </div>
+
+      <div class="alert alert-warning" id="lock-action-warn" style="margin-bottom: 14px;">
+        <strong>⚠️ 安全提醒：</strong>锁机前建议联系现场进行沟通确认，并确保锁机不会造成安全问题
+      </div>
+
+      <div class="lock-action-grid">
+        <!-- 左侧：操作信息 -->
+        <div class="card">
+          <div class="card-title">操作信息</div>
+          <div class="form-row">
+            <label class="required">用电方/代币账户</label>
+            <div class="field">
+              <select id="lock-account-select" onchange="onLockAccountChange()">
+                <option value="">请选择用电方</option>
+                <option value="ACC-2026-0001">西非矿业（ACC-2026-0001）</option>
+                <option value="ACC-2026-0002">北部电力（ACC-2026-0002）</option>
+                <option value="ACC-2026-0003">利比亚工业园（ACC-2026-0003）</option>
+                <option value="ACC-2026-0004">萨赫勒电信（ACC-2026-0004）</option>
+                <option value="ACC-2026-0005">苏丹矿业能源（ACC-2026-0005）</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>代币账户余额</label>
+            <div class="field">
+              <span id="lock-account-balance" style="font-size: 14px; color: var(--text-2);">—</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <label id="lock-threshold-label">锁机阈值</label>
+            <div class="field">
+              <span id="lock-account-threshold" style="font-size: 14px; color: var(--text-2);">—</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="required">电站</label>
+            <div class="field">
+              <select id="lock-station-select" onchange="onLockStationChange()">
+                <option value="">请选择电站</option>
+                <option value="ly">利比亚 100MW 电站</option>
+                <option value="xa">西非 50MW 电站</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="required">机组</label>
+            <div class="field">
+              <button class="btn btn-default" id="btn-pick-machines" onclick="openLockMachineModal()" style="display:inline-flex; align-items:center; gap:6px;">
+                <span>📋</span><span>选择机组</span>
+              </button>
+              <div id="lock-selected-machines-wrap" style="margin-top: 10px; display: none;">
+                <div class="hint" style="margin-bottom: 6px; font-size: 12px; color: var(--text-2);">已选机组（共 <span id="lock-selected-count">0</span> 台）</div>
+                <div class="table-wrap" style="margin-bottom:0;">
+                  <table class="excel-table" id="lock-selected-machines-table">
+                    <thead>
+                      <tr>
+                        <th style="width:50px;">序号</th>
+                        <th style="width:110px;">机组</th>
+                        <th>撬装箱</th>
+                        <th>云猫编号</th>
+                        <th style="width:90px;">额定功率</th>
+                        <th style="width:70px;">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody id="lock-selected-machines-tbody">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="required">操作原因</label>
+            <div class="field">
+              <textarea id="lock-reason" rows="3" placeholder="如：西非矿业账户余额低于阈值，按规则 LU-001 触发"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：参数下发表 -->
+        <div class="card">
+          <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>参数下发</span>
+            <button class="btn btn-sm" id="btn-read-params" onclick="readMachineParams()">📥 读取参数</button>
+          </div>
+          <div class="hint" style="margin-bottom: 8px; font-size: 12px; color: var(--text-3);">设置参数前请先点击"读取参数"批量获取设备上传的最新值</div>
+          <table class="excel-table param-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">参数名</th>
+                <th style="width:140px;">设定前</th>
+                <th style="width:110px;">设定后</th>
+              </tr>
+            </thead>
+            <tbody id="lock-params-tbody">
+              <tr>
+                <td>机组有功功率调节设定<span class="range-tip">0~100% 额定功率</span></td>
+                <td class="val-cell" data-cur="0">—</td>
+                <td><input type="text" class="setting-input" data-row="0" placeholder="0~100"></td>
+              </tr>
+              <tr>
+                <td>机组功率因数调节设定<span class="range-tip">60~100（100=PF=1）</span></td>
+                <td class="val-cell" data-cur="1">—</td>
+                <td><input type="text" class="setting-input" data-row="1" placeholder="60~100"></td>
+              </tr>
+              <tr>
+                <td>机组无功功率调节设定<span class="range-tip">-100/100%（容/感）</span></td>
+                <td class="val-cell" data-cur="2">—</td>
+                <td><input type="text" class="setting-input" data-row="2" placeholder="-100~100"></td>
+              </tr>
+              <tr>
+                <td>机组频率调节设定<span class="range-tip">-100/100% → 频率 ±10%</span></td>
+                <td class="val-cell" data-cur="3">—</td>
+                <td><input type="text" class="setting-input" data-row="3" placeholder="-100~100"></td>
+              </tr>
+              <tr>
+                <td>机组电压调节设定<span class="range-tip">-100/100% → 电压 ±10%</span></td>
+                <td class="val-cell" data-cur="4">—</td>
+                <td><input type="text" class="setting-input" data-row="4" placeholder="-100~100"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin: 18px 0 24px;">
+        <button class="btn" onclick="goPage('page-lock-list')">取消</button>
+        <button class="btn btn-danger" id="btn-execute-lock" onclick="confirmExecuteLock()">执行锁机</button>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 9. 账单生成规则列表 -->
+    <!-- =========================================== -->
+    <section class="page" id="page-rule-bill">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">规则配置 / 账单生成规则</div>
+          <div class="page-title">账单生成规则配置</div>
+          <div class="page-sub">为电站配置账单结算周期、审核员、覆盖机组（自动触发生成账单）</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openRuleBill('add')">+ 新增规则</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="item"><span>规则编号：</span><input type="text" placeholder="模糊查询" style="width:120px;"></div>
+        <div class="item"><span>电站：</span><select><option>全部</option></select></div>
+        <div class="item"><span>结算周期：</span><select>
+          <option>全部</option>
+          <option>按周（7 日）</option>
+          <option>按月</option>
+          <option>自定义</option>
+        </select></div>
+        <div class="item"><span>审核员：</span><select><option>全部</option></select></div>
+        <div class="item"><span>状态：</span><select><option>全部</option><option>有效</option><option>无效</option></select></div>
+        <button class="btn btn-sm">查询</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>规则编号</th>
+            <th>电站</th>
+            <th>结算周期</th>
+            <th>入账起始日</th>
+            <th>入账天数</th>
+            <th>审核员</th>
+            <th>状态</th>
+            <th>备注</th>
+            <th>更新人</th>
+            <th>更新时间</th>
+            <th>操作</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><code>R-001</code></td>
+              <td>利比亚 100MW</td>
+              <td>按月</td>
+              <td>—</td>
+              <td>—</td>
+              <td>李四（研发部）</td>
+              <td><span class="pill pill-green"><span class="dot"></span>有效</span></td>
+              <td style="font-size:12px; color:var(--text-2);">西非客户月结账单</td>
+              <td>李四</td>
+              <td>2026-09-15 14:23</td>
+              <td>
+                <a onclick="openRuleBill('edit', 'R-001')">修改</a> ·
+                <a style="color:var(--red);" onclick="openRuleToggle('disable')">停用</a>
+              </td>
+            </tr>
+            <tr>
+              <td><code>R-002</code></td>
+              <td>利比亚 100MW</td>
+              <td>按周（周一至周日）</td>
+              <td>—</td>
+              <td>—</td>
+              <td>李四（研发部）</td>
+              <td><span class="pill pill-gray"><span class="dot"></span>无效</span></td>
+              <td style="font-size:12px; color:var(--text-2);">—</td>
+              <td>王五</td>
+              <td>2026-08-20 10:11</td>
+              <td>
+                <a onclick="openRuleBill('edit', 'R-002')">修改</a> ·
+                <a style="color:var(--green);" onclick="openRuleToggle('enable')">启用</a>
+              </td>
+            </tr>
+            <tr>
+              <td><code>R-003</code></td>
+              <td>西非 50MW</td>
+              <td>自定义</td>
+              <td>3 号</td>
+              <td>8 天</td>
+              <td>王五（运维部）</td>
+              <td><span class="pill pill-green"><span class="dot"></span>有效</span></td>
+              <td style="font-size:12px; color:var(--text-2);">西非客户短周期账单</td>
+              <td>王五</td>
+              <td>2026-09-22 16:45</td>
+              <td>
+                <a onclick="openRuleBill('edit', 'R-003')">修改</a> ·
+                <a style="color:var(--red);" onclick="openRuleToggle('disable')">停用</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =========================================== -->
+    <!-- 10. 解锁机确认规则（合并锁机+解机 · 1 分钟） -->
+    <!-- =========================================== -->
+    <section class="page" id="page-rule-lock-unlock">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb">规则配置 / 解锁机确认规则</div>
+          <div class="page-title">解锁机确认规则</div>
+          <div class="page-sub">余额 ≤ 阈值 → 锁机；余额 &gt; 阈值 → 解机</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="openRuleLockUnlock('add')">+ 新增规则</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        系统每 1 分钟检查代币账户余额。当账户余额 ≤ 阈值时自动生成锁机确认单；&gt; 阈值时自动生成解机确认单（仅当存在锁定中机组）。
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>规则编号</th>
+            <th>代币账户</th>
+            <th>用电方</th>
+            <th>账户余额</th>
+            <th>代币阈值</th>
+            <th>通知人</th>
+            <th>状态</th>
+            <th>更新人</th>
+            <th>更新时间</th>
+            <th>操作</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><code>LU-001</code></td>
+              <td>ACC-2026-0001</td>
+              <td>西非矿业</td>
+              <td><strong style="color:var(--red);">12,500 代币</strong></td>
+              <td>≤ 50,000 代币（→ 锁机）</td>
+              <td>操作员甲（运维部）</td>
+              <td><span class="pill pill-green"><span class="dot"></span>有效</span></td>
+              <td>李四</td>
+              <td>2026-09-15 14:30</td>
+              <td>
+                <a onclick="openRuleLockUnlock('edit', 'LU-001')">修改</a> ·
+                <a style="color:var(--red);" onclick="openRuleToggle('disable')">停用</a>
+              </td>
+            </tr>
+            <tr>
+              <td><code>LU-002</code></td>
+              <td>ACC-2026-0003</td>
+              <td>利比亚工业园</td>
+              <td><strong style="color:var(--orange);">28,000 代币</strong></td>
+              <td>≤ 30,000 代币（→ 锁机）</td>
+              <td>操作员甲（运维部）</td>
+              <td><span class="pill pill-green"><span class="dot"></span>有效</span></td>
+              <td>李四</td>
+              <td>2026-09-20 11:15</td>
+              <td>
+                <a onclick="openRuleLockUnlock('edit', 'LU-002')">修改</a> ·
+                <a style="color:var(--red);" onclick="openRuleToggle('disable')">停用</a>
+              </td>
+            </tr>
+            <tr>
+              <td><code>LU-003</code></td>
+              <td>ACC-2026-0002</td>
+              <td>北部电力</td>
+              <td><strong style="color:var(--green);">86,400 代币</strong></td>
+              <td>≤ 20,000 代币（→ 锁机）</td>
+              <td>操作员乙（运维部）</td>
+              <td><span class="pill pill-gray"><span class="dot"></span>无效</span></td>
+              <td>王五</td>
+              <td>2026-08-10 09:42</td>
+              <td>
+                <a onclick="openRuleLockUnlock('edit', 'LU-003')">修改</a> ·
+                <a style="color:var(--green);" onclick="openRuleToggle('enable')">启用</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================ -->
+<!-- 模态弹窗 -->
+<!-- ============================================ -->
+
+<!-- 修改基本信息 -->
+<div class="modal-mask" id="modal-token-edit-info">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>修改账户基本信息</h3>
+      <span class="modal-close" onclick="closeModal('modal-token-edit-info')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn" style="margin-bottom:14px;">
+        <strong>可编辑：</strong>代币账户名称、用电方组织、业务联系人、联系电话、备注<br>
+        <strong>不可编辑：</strong>账户编号、Paystack 接口字段、创建人/时间
+      </div>
+      <div class="form-grid cols-2">
+        <div class="item">
+          <label>账户编号</label>
+          <input type="text" value="ACC-2026-0001" readonly />
+        </div>
+        <div class="item">
+          <label class="required">代币账户名称</label>
+          <input type="text" value="西非矿业专用账户" />
+        </div>
+        <div class="item">
+          <label>用电方组织</label>
+          <select>
+            <option>西非矿业集团 (ORG-001)</option>
+            <option>北部电力公司 (ORG-002)</option>
+          </select>
+        </div>
+        <div class="item">
+          <label>账户状态</label>
+          <select disabled>
+            <option>正常</option>
+            <option>已停用</option>
+          </select>
+        </div>
+        <div class="item">
+          <label>业务联系人</label>
+          <input type="text" value="张三" />
+        </div>
+        <div class="item">
+          <label>联系电话</label>
+          <input type="text" value="+86-138-0000-0000" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>备注</label>
+        <div class="field">
+          <textarea>西非矿业为本月新签客户，初期免手续费</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-token-edit-info')">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改扣款密令 -->
+<div class="modal-mask" id="modal-token-edit-pwd">
+  <div class="modal small">
+    <div class="modal-header">
+      <h3>修改扣款密令</h3>
+      <span class="modal-close" onclick="closeModal('modal-token-edit-pwd')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="required">新扣款密令</label>
+        <div class="field">
+          <input type="password" class="short" id="ep-pwd-1" placeholder="请输入" maxlength="20" oninput="checkEditPwd()" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="required">确认扣款密令</label>
+        <div class="field">
+          <input type="password" class="short" id="ep-pwd-2" placeholder="请输入" maxlength="20" oninput="checkEditPwd()" />
+          <span class="hint" id="ep-pwd-hint" style="color:var(--red); display:none;">两次扣款密令必须一致</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-token-edit-pwd')">取消</button>
+      <button class="btn btn-primary" id="ep-save" onclick="closeModal('modal-token-edit-pwd')">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改汇算关系 -->
+<div class="modal-mask" id="modal-token-edit-rate">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>修改汇算关系</h3>
+      <span class="modal-close" onclick="closeModal('modal-token-edit-rate')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid cols-2">
+        <div class="item">
+          <label class="required">代币与 NGN 的关系</label>
+          <div class="rate-input">
+            <span class="prefix">1 代币 =</span>
+            <input type="number" step="0.0001" value="0.5" />
+            <span class="suffix">NGN</span>
+          </div>
+        </div>
+        <div class="item">
+          <label class="required">电费与代币的关系</label>
+          <div class="rate-input">
+            <span class="prefix">1 kWh =</span>
+            <input type="number" step="0.0001" value="0.5" />
+            <span class="suffix">代币</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-token-edit-rate')">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 停用账户 -->
+<div class="modal-mask" id="modal-token-disable">
+  <div class="modal small">
+    <div class="modal-header">
+      <h3>停用账户</h3>
+      <span class="modal-close" onclick="closeModal('modal-token-disable')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn">
+        停用 <strong>西非矿业专用账户 (ACC-2026-0001)</strong> 后，账户将不可用于电费支付。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-token-disable')">取消</button>
+      <button class="btn btn-danger" onclick="closeModal('modal-token-disable')">确认停用</button>
+    </div>
+  </div>
+</div>
+
+<!-- 启用账户 -->
+<div class="modal-mask" id="modal-token-enable">
+  <div class="modal small">
+    <div class="modal-header">
+      <h3>启用账户</h3>
+      <span class="modal-close" onclick="closeModal('modal-token-enable')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info">
+        启用 <strong>萨赫勒电信账户 (ACC-2026-0004)</strong> 后，账户恢复用于电费支付。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-token-enable')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-token-enable')">确认启用</button>
+    </div>
+  </div>
+</div>
+
+<!-- 选机组弹窗（Excel 表格 + 模糊搜索 + 全选） -->
+<div class="modal-mask level-2" id="modal-pick-machines">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3>选择机组</h3>
+      <span class="modal-close" onclick="closeModal('modal-pick-machines')">×</span>
+    </div>
+    <div class="modal-body" style="padding: 0;">
+      <div style="padding:14px 20px; border-bottom: 1px solid var(--border); display:flex; gap:10px; align-items:center;">
+        <input type="text" id="pick-machines-search" placeholder="搜索：机组名称 / 撬装箱 / 云猫编号 / 额定功率" oninput="filterMachines()" style="flex:1;" />
+        <span style="font-size:12px; color:var(--text-3);">已选 <strong id="pick-count">0</strong> / 共 6</span>
+      </div>
+      <div style="max-height: 60vh; overflow:auto;">
+        <table class="excel-table">
+          <thead>
+            <tr>
+              <th style="width:40px;"><input type="checkbox" id="pick-all" onchange="pickAll(this.checked)" /></th>
+              <th>机组名称</th>
+              <th>所属撬装箱</th>
+              <th>云猫编号</th>
+              <th>额定功率</th>
+              <th>运行状态</th>
+            </tr>
+          </thead>
+          <tbody id="pick-tbody">
+            <tr data-key="7号机组 撬装箱 7-A CMH-7A-0007 1.5MW"><td><input type="checkbox" onchange="updatePickCount()" /></td><td>7 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0007</code></td><td>1.5MW</td><td><span class="pill pill-green">运行中</span></td></tr>
+            <tr data-key="8号机组 撬装箱 7-A CMH-7A-0008 1.5MW"><td><input type="checkbox" onchange="updatePickCount()" /></td><td>8 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0008</code></td><td>1.5MW</td><td><span class="pill pill-green">运行中</span></td></tr>
+            <tr data-key="9号机组 撬装箱 7-A CMH-7A-0009 1.5MW"><td><input type="checkbox" onchange="updatePickCount()" /></td><td>9 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0009</code></td><td>1.5MW</td><td><span class="pill pill-orange">维护中</span></td></tr>
+            <tr data-key="10号机组 撬装箱 7-B CMH-7B-0010 1.5MW"><td><input type="checkbox" onchange="updatePickCount()" /></td><td>10 号机组</td><td>撬装箱 7-B</td><td><code>CMH-7B-0010</code></td><td>1.5MW</td><td><span class="pill pill-green">运行中</span></td></tr>
+            <tr data-key="11号机组 撬装箱 7-B CMH-7B-0011 1.5MW"><td><input type="checkbox" onchange="updatePickCount()" /></td><td>11 号机组</td><td>撬装箱 7-B</td><td><code>CMH-7B-0011</code></td><td>1.5MW</td><td><span class="pill pill-red">锁定中</span></td></tr>
+            <tr data-key="12号机组 撬装箱 7-C CMH-7C-0012 1.5MW"><td><input type="checkbox" onchange="updatePickCount()" /></td><td>12 号机组</td><td>撬装箱 7-C</td><td><code>CMH-7C-0012</code></td><td>1.5MW</td><td><span class="pill pill-green">运行中</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pick-machines')">取消</button>
+      <button class="btn" onclick="closeModal('modal-pick-machines')">清空选择</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-pick-machines')">确认选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- 锁机/解机操作 · 选择机组（按 mode 过滤） -->
+<div class="modal-mask level-2" id="modal-lock-pick-machines">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3 id="lock-pick-title">选择锁机机组</h3>
+      <span class="modal-close" onclick="closeModal('modal-lock-pick-machines')">×</span>
+    </div>
+    <div class="modal-body" style="padding: 0;">
+      <div style="padding:14px 20px; border-bottom: 1px solid var(--border); display:flex; gap:10px; align-items:center;">
+        <input type="text" id="lock-pick-search" placeholder="搜索：机组名称 / 撬装箱 / 云猫编号" oninput="filterLockMachines()" style="flex:1;" />
+        <span style="font-size:12px; color:var(--text-3);">已选 <strong id="lock-pick-count">0</strong> / <span id="lock-pick-total">0</span></span>
+      </div>
+      <div style="max-height: 60vh; overflow:auto;">
+        <table class="excel-table">
+          <thead>
+            <tr>
+              <th style="width:40px;"><input type="checkbox" id="lock-pick-all" onchange="lockPickAll(this.checked)" /></th>
+              <th>机组名称</th>
+              <th>所属撬装箱</th>
+              <th>云猫编号</th>
+              <th>额定功率</th>
+              <th>运行状态</th>
+              <th>所属电站</th>
+            </tr>
+          </thead>
+          <tbody id="lock-pick-tbody">
+            <!-- 由 JS 根据 mode 渲染 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-lock-pick-machines')">取消</button>
+      <button class="btn" onclick="clearLockPick()">清空选择</button>
+      <button class="btn btn-primary" onclick="confirmLockPick()">确认选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- 锁机/解机操作 · 执行前二次确认弹窗（不关弹窗，按钮变"刷新"→"完成"） -->
+<div class="modal-mask" id="modal-confirm-lock">
+  <div class="modal" style="width: 720px;">
+    <div class="modal-header">
+      <h3 id="modal-confirm-lock-title">确认锁机</h3>
+      <span class="modal-close" onclick="cancelConfirmLock()">×</span>
+    </div>
+    <div class="modal-body">
+      <div id="modal-confirm-lock-body" style="font-size: 13px; line-height: 1.7;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btn-cancel-confirm" onclick="cancelConfirmLock()">取消</button>
+      <button class="btn btn-danger" id="btn-confirm-execute" data-execute-state="pending" onclick="onConfirmExecuteClick()">确认锁机</button>
+    </div>
+  </div>
+</div>
+
+<!-- 机组电量明细（加回历史调整记录） -->
+<div class="modal-mask level-2" id="modal-machine-detail">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3>机组电量明细 · 7 号机组</h3>
+      <span class="modal-close" onclick="closeModal('modal-machine-detail')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>结算周期</label>
+        <div class="field">
+          <div style="padding: 6px 10px; background: #F9FAFB; border-radius: 4px; color: var(--text); font-size: 13px;">
+            2026-09-01 ~ 2026-09-30（不可修改）
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">机组信息</div>
+        <div class="form-grid cols-2">
+          <div class="item">
+            <label>机组名称</label>
+            <input type="text" value="7 号机组" readonly />
+          </div>
+          <div class="item">
+            <label>所属撬装箱</label>
+            <input type="text" value="撬装箱 7-A" readonly />
+          </div>
+          <div class="item">
+            <label>额定功率</label>
+            <input type="text" value="1.5MW" readonly />
+          </div>
+          <div class="item">
+            <label>云猫编号</label>
+            <input type="text" value="CMH-7A-0007" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">系统采集（不可调整）</div>
+        <div class="form-grid cols-2">
+          <div class="item">
+            <label>系统采集运行时长</label>
+            <input type="text" value="720 小时" readonly />
+          </div>
+          <div class="item">
+            <label>系统采集电量</label>
+            <input type="text" value="120,000 kWh" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">人工调整（可改）</div>
+        <div class="form-grid cols-2">
+          <div class="item">
+            <label class="required">调整后运行时长 (小时)</label>
+            <input type="text" value="720" />
+          </div>
+          <div class="item">
+            <label class="required">调整后发电量 (kWh)</label>
+            <input type="text" value="120,000" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="required">调整原因</label>
+          <div class="field">
+            <textarea placeholder="如：7 号机组 9/15 因计划性检修停机一天，时长扣减 24 小时，电量扣减 8,000 kWh"></textarea>
+            <span class="hint">原因记录到该台机组</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">该机组历史调整记录</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>调整时间</th><th>操作人</th><th>原始运行时长</th><th>调整后运行时长</th><th>原始电量</th><th>调整后</th><th>原因</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>2026-08-12 14:23</td><td>操作员甲</td><td>168 h</td><td>158 h</td><td>95,000</td><td>88,000</td><td>暴雨致通讯中断 10 小时</td></tr>
+              <tr><td>2026-07-08 09:11</td><td>操作员乙</td><td>180 h</td><td>180 h</td><td>102,000</td><td>102,000</td><td>未调整（核对一致）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-machine-detail')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-machine-detail')">保存调整</button>
+    </div>
+  </div>
+</div>
+
+<!-- 手动生成账单（选择机组在右侧按钮 + 已选用 list + 删暂未选择提示） -->
+<div class="modal-mask" id="modal-bill-manual">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3>手动生成电费账单</h3>
+      <span class="modal-close" onclick="closeModal('modal-bill-manual')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label class="required">用电方</label>
+        <div class="field">
+          <select onchange="onConsumerChange(this.value)">
+            <option value="">请先选用电方</option>
+            <option value="west-africa">西非矿业集团 (ACC-2026-0001)</option>
+            <option value="north">北部电力公司 (ACC-2026-0002)</option>
+            <option value="libya">利比亚工业园 (ACC-2026-0003)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="required">电站</label>
+        <div class="field">
+          <select id="modal-station-select" disabled>
+            <option>请先选用电方</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="required">结算周期</label>
+        <div class="field">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="date" value="2026-09-01" />
+            <span>至</span>
+            <input type="date" value="2026-09-30" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>已选机组</span>
+          <button class="btn btn-sm" onclick="openModal('modal-pick-machines')">选择机组 →</button>
+        </div>
+        <div class="excel-wrap" id="selected-machines-list">
+          <table class="excel-table">
+            <thead><tr>
+              <th style="width:80px;">机组</th>
+              <th>撬装箱</th>
+              <th>云猫编号</th>
+              <th style="width:90px;">额定功率</th>
+              <th style="width:80px;">操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>7 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0007</code></td><td>1.5MW</td>
+                <td><a style="color:var(--red);" onclick="removeMachineRow(this)">移除</a></td>
+              </tr>
+              <tr>
+                <td>8 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0008</code></td><td>1.5MW</td>
+                <td><a style="color:var(--red);" onclick="removeMachineRow(this)">移除</a></td>
+              </tr>
+              <tr>
+                <td>10 号机组</td><td>撬装箱 7-B</td><td><code>CMH-7B-0010</code></td><td>1.5MW</td>
+                <td><a style="color:var(--red);" onclick="removeMachineRow(this)">移除</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">电量汇总（点击"明细"按机组调整）</div>
+        <div class="table-wrap" style="margin-bottom:12px;">
+          <table>
+            <thead><tr>
+              <th>机组</th>
+              <th>所属撬装箱</th>
+              <th>额定功率</th>
+              <th>云猫编号</th>
+              <th>系统采集电量 (kWh)</th>
+              <th>调整后电量 (kWh)</th>
+              <th>汇算</th>
+              <th>电费 (代币)</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>7 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0007</code></td>
+                <td>120,000</td>
+                <td><strong>120,000</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>60,000</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr>
+                <td>8 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0008</code></td>
+                <td>108,500</td>
+                <td><strong>108,500</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>54,250</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr>
+                <td>10 号机组</td>
+                <td>撬装箱 7-B</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7B-0010</code></td>
+                <td>112,000</td>
+                <td><strong>112,000</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>56,000</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr style="background:#F0F9FF;">
+                <td colspan="4"><strong>合计</strong></td>
+                <td><strong style="color:var(--primary-2);">340,500 kWh</strong></td>
+                <td>—</td>
+                <td><strong style="color:var(--primary-2); font-size:15px;">170,250 代币</strong></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-bill-manual')">取消</button>
+      <button class="btn btn-primary">确认生成账单</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- 抽屉：账单审核详情（从下往上 · 保留黑灰遮罩） -->
+<!-- ============================================ -->
+<div class="drawer-mask" id="drawer-bill-review">
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <h3 style="font-size:16px;">账单审核详情 · BILL-2026-W3-0023</h3>
+        <div style="font-size:12px; color:var(--text-3); margin-top:4px;">待审核 · 自动生成于 10/08 00:00:01 · 结算周期 2026-W3 (10/01-10/07) · 不可修改</div>
+      </div>
+      <span class="modal-close" onclick="closeDrawer('drawer-bill-review')">×</span>
+    </div>
+    <div class="drawer-body">
+      <div class="card">
+        <div class="card-title">账单基本信息</div>
+        <div class="detail-grid">
+          <div class="item"><div class="label">账单编号</div><div class="value"><code>BILL-2026-W3-0023</code></div></div>
+          <div class="item"><div class="label">电站</div><div class="value">利比亚 100MW 电站</div></div>
+          <div class="item"><div class="label">结算周期</div><div class="value">2026-W3 (10/01 - 10/07)</div></div>
+          <div class="item"><div class="label">用电方</div><div class="value">西非矿业集团 (ACC-2026-0001)</div></div>
+          <div class="item"><div class="label">代币账户余额</div><div class="value" style="color:var(--red);">12,500 代币</div></div>
+          <div class="item"><div class="label">生成方式</div><div class="value"><span class="pill pill-blue">自动生成</span></div></div>
+          <div class="item"><div class="label">当前状态</div><div class="value"><span class="pill pill-orange"><span class="dot"></span>待审核</span></div></div>
+          <div class="item"><div class="label">审核员</div><div class="value">规则 #R-001 · 李四</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">电量明细（点击"明细"按机组调整）</div>
+        <div class="table-wrap" style="margin-bottom:0;">
+          <table>
+            <thead><tr>
+              <th>机组</th>
+              <th>所属撬装箱</th>
+              <th>额定功率</th>
+              <th>云猫编号</th>
+              <th>系统采集运行时长</th>
+              <th>调整后运行时长</th>
+              <th>系统采集电量 (kWh)</th>
+              <th>调整后电量 (kWh)</th>
+              <th>汇算</th>
+              <th>电费 (代币)</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>7 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0007</code></td>
+                <td>720 h</td>
+                <td>720 h</td>
+                <td>120,000</td>
+                <td><strong>120,000</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>60,000</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr>
+                <td>8 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0008</code></td>
+                <td>720 h</td>
+                <td>720 h</td>
+                <td>108,500</td>
+                <td><strong>108,500</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>54,250</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr>
+                <td>9 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0009</code></td>
+                <td>0 h (维护)</td>
+                <td>0 h</td>
+                <td>0</td>
+                <td><strong>0</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>0</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr>
+                <td>10 号机组</td>
+                <td>撬装箱 7-B</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7B-0010</code></td>
+                <td>720 h</td>
+                <td>720 h</td>
+                <td>112,000</td>
+                <td><strong>112,000</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>56,000</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr>
+                <td>12 号机组</td>
+                <td>撬装箱 7-C</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7C-0012</code></td>
+                <td>480 h</td>
+                <td>480 h</td>
+                <td>44,500</td>
+                <td><strong>44,500</strong></td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>22,250</strong></td>
+                <td><button type="button" class="btn btn-sm" onclick="openModal('modal-machine-detail')">明细</button></td>
+              </tr>
+              <tr style="background:#F0F9FF;">
+                <td colspan="4"><strong>合计</strong></td>
+                <td></td>
+                <td></td>
+                <td><strong style="color:var(--primary-2);">385,000</strong></td>
+                <td>—</td>
+                <td></td>
+                <td><strong style="color:var(--primary-2); font-size:15px;">192,500 代币</strong></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">审核意见</div>
+        <div class="form-row">
+          <label class="required">审核结果</label>
+          <div class="field">
+            <div class="radio-group">
+              <label><input type="radio" name="review-result" checked onchange="onReviewResultChange()"> <span style="color:var(--green);">通过</span>（账单进入"账单支付"菜单）</label>
+              <label><input type="radio" name="review-result" onchange="onReviewResultChange()"> <span style="color:var(--red);">作废</span>（账单进入"已审核-作废"状态）</label>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-danger" id="review-invalid-tip" style="display:none;">
+          <strong>作废后用电方将不会收到该账单，您可以通过手动生成账单功能重新生成账单。</strong>
+        </div>
+        <div class="form-row">
+          <label>审核备注</label>
+          <div class="field">
+            <textarea placeholder="选填，记录审核过程中的关键决策（作废时请填写作废原因）"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn" onclick="closeDrawer('drawer-bill-review')">取消</button>
+      <button class="btn btn-primary">提交审核</button>
+    </div>
+  </div>
+</div>
+
+<!-- 抽屉：已审核账单（标题去"只读" · 内容与审核详情一致） -->
+<div class="drawer-mask" id="drawer-bill-view">
+  <div class="drawer">
+    <div class="drawer-header">
+      <div>
+        <h3 style="font-size:16px;">账单详情 · BILL-2026-W2-0020</h3>
+        <div style="font-size:12px; color:var(--text-3); margin-top:4px;">已审核 · 2026-10-01 10:23:11 · 李四 · 审核通过</div>
+      </div>
+      <span class="modal-close" onclick="closeDrawer('drawer-bill-view')">×</span>
+    </div>
+    <div class="drawer-body">
+      <div class="card">
+        <div class="card-title">账单基本信息</div>
+        <div class="detail-grid">
+          <div class="item"><div class="label">账单编号</div><div class="value"><code>BILL-2026-W2-0020</code></div></div>
+          <div class="item"><div class="label">电站</div><div class="value">利比亚 100MW 电站</div></div>
+          <div class="item"><div class="label">结算周期</div><div class="value">2026-W2 (09/24 - 09/30)</div></div>
+          <div class="item"><div class="label">用电方</div><div class="value">西非矿业集团 (ACC-2026-0001)</div></div>
+          <div class="item"><div class="label">代币账户余额</div><div class="value">12,500 代币</div></div>
+          <div class="item"><div class="label">生成方式</div><div class="value"><span class="pill pill-blue">自动生成</span></div></div>
+          <div class="item"><div class="label">当前状态</div><div class="value"><span class="pill pill-cyan"><span class="dot"></span>已支付</span></div></div>
+          <div class="item"><div class="label">审核员</div><div class="value">规则 #R-001 · 李四</div></div>
+          <div class="item"><div class="label">审核结论</div><div class="value"><span class="pill pill-green"><span class="dot"></span>通过</span></div></div>
+          <div class="item"><div class="label">审核备注</div><div class="value">—</div></div>
+          <div class="item"><div class="label">关联扣款</div><div class="value"><a onclick="goPage('page-token-tx')">DD-2026-1002-0015</a></div></div>
+          <div class="item"><div class="label">关联支付</div><div class="value">2026-10-02 14:23:11</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">电量明细</div>
+        <div class="table-wrap" style="margin-bottom:0;">
+          <table>
+            <thead><tr>
+              <th>机组</th>
+              <th>所属撬装箱</th>
+              <th>额定功率</th>
+              <th>云猫编号</th>
+              <th>系统采集运行时长</th>
+              <th>调整后运行时长</th>
+              <th>系统采集电量 (kWh)</th>
+              <th>调整后电量 (kWh)</th>
+              <th>汇算</th>
+              <th>电费 (代币)</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>7 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0007</code></td>
+                <td>720 h</td>
+                <td>720 h</td>
+                <td>160,000</td>
+                <td>160,000</td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>80,000</strong></td>
+              </tr>
+              <tr>
+                <td>8 号机组</td>
+                <td>撬装箱 7-A</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7A-0008</code></td>
+                <td>720 h</td>
+                <td>720 h</td>
+                <td>132,000</td>
+                <td>132,000</td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>66,000</strong></td>
+              </tr>
+              <tr>
+                <td>10 号机组</td>
+                <td>撬装箱 7-B</td>
+                <td>1.5MW</td>
+                <td><code>CMH-7B-0010</code></td>
+                <td>720 h</td>
+                <td>720 h</td>
+                <td>110,000</td>
+                <td>110,000</td>
+                <td>1 kWh = 0.5 代币</td>
+                <td><strong>55,000</strong></td>
+              </tr>
+              <tr style="background:#F0F9FF;">
+                <td colspan="6"><strong>合计</strong></td>
+                <td><strong style="color:var(--primary-2);">402,000</strong></td>
+                <td>—</td>
+                <td><strong style="color:var(--primary-2); font-size:15px;">201,000 代币</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn btn-primary" onclick="closeDrawer('drawer-bill-view')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 锁机/解机记录详情抽屉（只读，样式与锁机确认单一致） -->
+<div class="drawer-mask" id="drawer-lock-record">
+  <div class="drawer wide">
+    <div class="drawer-header">
+      <h3 id="drawer-lock-record-title">锁机记录</h3>
+      <span class="drawer-close" onclick="closeDrawer('drawer-lock-record')">×</span>
+    </div>
+    <div class="drawer-body" id="drawer-lock-record-body">
+      <!-- 由 openLockRecordDetail 动态填充 -->
+    </div>
+    <div class="drawer-footer">
+      <button class="btn btn-primary" onclick="closeDrawer('drawer-lock-record')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- 规则配置 弹窗 -->
+<!-- ============================================ -->
+
+<!-- 账单生成规则 新增/修改（覆盖机组放在结算周期之前 · 删技术 alert） -->
+<div class="modal-mask" id="modal-rule-bill">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3 id="modal-rule-bill-title">新增账单生成规则</h3>
+      <span class="modal-close" onclick="closeModal('modal-rule-bill')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="card">
+        <div class="card-title">基本信息</div>
+        <div class="form-grid cols-2">
+          <div class="item">
+            <label class="required">电站</label>
+            <select>
+              <option>利比亚 100MW 电站</option>
+              <option>西非 50MW 电站</option>
+            </select>
+          </div>
+          <div class="item">
+            <label>规则备注</label>
+            <input type="text" placeholder="如：西非客户周结账单" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 覆盖机组 独立信息栏（在结算周期之前） -->
+      <div class="card">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>覆盖机组</span>
+          <button class="btn btn-sm" onclick="openModal('modal-pick-machines')">选择机组 →</button>
+        </div>
+        <div class="excel-wrap" id="rule-selected-machines">
+          <table class="excel-table">
+            <thead><tr>
+              <th style="width:80px;">机组</th>
+              <th>撬装箱</th>
+              <th>云猫编号</th>
+              <th style="width:90px;">额定功率</th>
+              <th style="width:80px;">操作</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>7 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0007</code></td><td>1.5MW</td>
+                <td><a style="color:var(--red);" onclick="removeMachineRow(this)">移除</a></td>
+              </tr>
+              <tr>
+                <td>8 号机组</td><td>撬装箱 7-A</td><td><code>CMH-7A-0008</code></td><td>1.5MW</td>
+                <td><a style="color:var(--red);" onclick="removeMachineRow(this)">移除</a></td>
+              </tr>
+              <tr>
+                <td>10 号机组</td><td>撬装箱 7-B</td><td><code>CMH-7B-0010</code></td><td>1.5MW</td>
+                <td><a style="color:var(--red);" onclick="removeMachineRow(this)">移除</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 结算周期 -->
+      <div class="card">
+        <div class="card-title">结算周期</div>
+        <div class="form-grid cols-3" id="cycle-grid">
+          <div class="item">
+            <label class="required">周期类型</label>
+            <select onchange="onCycleChange(this.value)">
+              <option value="week">按周（周一至周日）</option>
+              <option value="half-month">按半月（15 日）</option>
+              <option value="month">按月</option>
+              <option value="custom">自定义</option>
+            </select>
+          </div>
+          <div class="item" id="cycle-startday" style="display:none;">
+            <label class="required">入账起始日</label>
+            <select>
+              <option value="">请选择（1-31 号）</option>
+              <option>1 号</option><option>2 号</option><option>3 号</option>
+              <option>5 号</option><option>10 号</option><option>15 号</option>
+              <option>20 号</option><option>25 号</option><option>28 号</option>
+              <option>30 号</option><option>31 号</option>
+            </select>
+          </div>
+          <div class="item" id="cycle-days" style="display:none;">
+            <label class="required">入账天数</label>
+            <input type="number" min="1" value="8" />
+          </div>
+        </div>
+        <div class="alert alert-info" style="margin-top:10px;">
+          <strong>结算周期示例：</strong>
+          <div style="margin-top:4px;">• 按周（周一至周日）：每周一 0:00 起至本周日 24:00 止为一个结算周期（如 09/29 周一 - 10/05 周日）</div>
+          <div>• 按半月（15 日）：每 15 天为一个结算周期（如 10/01-10/15）</div>
+          <div>• 按月：以自然月为结算周期（如 10/01-10/31）</div>
+          <div>• 自定义：如起始日 5 号 + 入账天数 8 天 → 10/05-10/12 为一个周期</div>
+        </div>
+      </div>
+
+      <!-- 审核员（组织树级联选择器） -->
+      <div class="card">
+        <div class="card-title">审核员</div>
+        <div class="form-row">
+          <label class="required">审核员</label>
+          <div class="field">
+            <div class="tree-picker" id="picker-reviewer" onclick="toggleTreePicker('picker-reviewer')">
+              <input type="text" class="tree-picker-input" placeholder="请选择" readonly value="" />
+              <div class="tree-picker-dropdown">
+                <div class="tree-picker-search"><input type="text" placeholder="搜索姓名/部门" oninput="filterTree(this.value, 'tree-reviewer')" onclick="event.stopPropagation()" /></div>
+                <ul class="tree" id="tree-reviewer">
+                  <li>
+                    <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">🏢</span> 孚创信息科技（成都）</div>
+                    <ul>
+                      <li>
+                        <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">📁</span> 研发部</div>
+                        <ul>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '李四', this)"><span class="caret"></span><span class="icon">👤</span> 李四</div></li>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '汪瑞国', this)"><span class="caret"></span><span class="icon">👤</span> 汪瑞国</div></li>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '纪后运', this)"><span class="caret"></span><span class="icon">👤</span> 纪后运</div></li>
+                        </ul>
+                      </li>
+                      <li>
+                        <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">📁</span> 运维部</div>
+                        <ul>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '王五', this)"><span class="caret"></span><span class="icon">👤</span> 王五</div></li>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '纪建强', this)"><span class="caret"></span><span class="icon">👤</span> 纪建强</div></li>
+                        </ul>
+                      </li>
+                      <li>
+                        <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">📁</span> 市场部</div>
+                        <ul>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '施文怡', this)"><span class="caret"></span><span class="icon">👤</span> 施文怡</div></li>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '林鹏程', this)"><span class="caret"></span><span class="icon">👤</span> 林鹏程</div></li>
+                        </ul>
+                      </li>
+                      <li>
+                        <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">📁</span> 销售部</div>
+                        <ul>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '季宽华', this)"><span class="caret"></span><span class="icon">👤</span> 季宽华</div></li>
+                          <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-reviewer', '高永丰', this)"><span class="caret"></span><span class="icon">👤</span> 高永丰</div></li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">启用状态</div>
+        <div class="form-row">
+          <label>状态</label>
+          <div class="field">
+            <div class="radio-group">
+              <label><input type="radio" name="rule-bill-en" checked> 有效</label>
+              <label><input type="radio" name="rule-bill-en"> 无效（保存为草稿）</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-rule-bill')">取消</button>
+      <button class="btn btn-primary">保存规则</button>
+    </div>
+  </div>
+</div>
+
+<!-- 规则 停用/启用 二次确认（无原因 textarea） -->
+<div class="modal-mask" id="modal-rule-toggle">
+  <div class="modal small">
+    <div class="modal-header">
+      <h3 id="rule-toggle-title">停用规则</h3>
+      <span class="modal-close" onclick="closeModal('modal-rule-toggle')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn" id="rule-toggle-body">
+        停用后该规则不再触发自动生成账单。已生成的账单不受影响。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-rule-toggle')">取消</button>
+      <button class="btn btn-primary" id="rule-toggle-confirm">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 解锁机确认规则（合并锁机+解机 · 1 分钟 · 通知人 hint 删） -->
+<div class="modal-mask" id="modal-rule-lock-unlock">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3 id="modal-rule-lock-unlock-title">新增解锁机确认规则</h3>
+      <span class="modal-close" onclick="closeModal('modal-rule-lock-unlock')">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:14px;">
+        余额 ≤ 阈值 → 锁机；余额 &gt; 阈值 → 解机。
+      </div>
+      <div class="form-row">
+        <label class="required">代币账户</label>
+        <div class="field">
+          <select>
+            <option>ACC-2026-0001 西非矿业（余额 12,500 代币）</option>
+            <option>ACC-2026-0002 北部电力（余额 86,400 代币）</option>
+            <option>ACC-2026-0003 利比亚工业园（余额 28,000 代币）</option>
+            <option>ACC-2026-0005 苏丹矿业能源（余额 142,800 代币）</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="required">代币余额阈值</label>
+        <div class="field">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="text" value="50000" style="width:120px; background:transparent; border:1px solid var(--border); padding:6px 10px; border-radius:4px;" />
+            <span>代币</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="required">通知人</label>
+        <div class="field">
+          <div class="tree-picker" id="picker-notifier" onclick="toggleTreePicker('picker-notifier')">
+            <input type="text" class="tree-picker-input" placeholder="请选择" readonly value="" />
+            <div class="tree-picker-dropdown">
+              <div class="tree-picker-search"><input type="text" placeholder="搜索姓名/部门" oninput="filterTree(this.value, 'tree-notifier')" onclick="event.stopPropagation()" /></div>
+              <ul class="tree" id="tree-notifier">
+                <li>
+                  <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">🏢</span> 孚创信息科技（成都）</div>
+                  <ul>
+                    <li>
+                      <div class="tree-node" onclick="event.stopPropagation()"><span class="caret">▾</span><span class="icon">📁</span> 运维部</div>
+                      <ul>
+                        <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-notifier', '操作员甲', this)"><span class="caret"></span><span class="icon">👤</span> 操作员甲</div></li>
+                        <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-notifier', '操作员乙', this)"><span class="caret"></span><span class="icon">👤</span> 操作员乙</div></li>
+                        <li><div class="tree-node" onclick="event.stopPropagation(); selectTreeNode('picker-notifier', '操作员丙', this)"><span class="caret"></span><span class="icon">👤</span> 操作员丙</div></li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>启用状态</label>
+        <div class="field">
+          <div class="radio-group">
+            <label><input type="radio" name="rule-lu-en" checked> 有效</label>
+            <label><input type="radio" name="rule-lu-en"> 无效</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-rule-lock-unlock')">取消</button>
+      <button class="btn btn-primary">保存规则</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 选机组 Excel 表格样式 */
+  .excel-table { border-collapse: collapse; font-size: 13px; width: 100%; }
+  .excel-table th { background: #F9FAFB; padding: 8px 12px; border: 1px solid var(--border); font-weight: 500; color: var(--text-2); position: sticky; top: 0; z-index: 1; }
+  .excel-table td { padding: 8px 12px; border: 1px solid var(--border); }
+  .excel-table tr:hover td { background: #FAFBFC; }
+  .excel-table tr.selected td { background: var(--primary-soft); }
+  .excel-table tr.hidden { display: none; }
+</style>
+
+<script>
+  // 角色切换
+  const roleConfig = {
+    admin:     { name: '管理员视图' },
+    generator: { name: '发电方视图' },
+    consumer:  { name: '用电方视图' },
+    reviewer:  { name: '审核员视图' },
+    operator:  { name: '操作员视图' }
+  };
+  function switchRole(role) {
+    document.getElementById('rolePill').textContent = roleConfig[role].name;
+    const permText = document.getElementById('perm-text');
+    const total = document.getElementById('total-count');
+    if (role === 'consumer') {
+      permText.textContent = '当前以【用电方】身份登录，只查看本组织账户。';
+      total.textContent = '共 1 个账户（当前组织）';
+    } else {
+      permText.textContent = '系统管理员/其他角色查看全部账户。用电方登录时只查看本组织账户。';
+      total.textContent = '共 12 个账户';
+    }
+    document.querySelectorAll('[data-role]').forEach(g => {
+      const allow = g.getAttribute('data-role').split(',');
+      g.style.display = allow.includes(role) ? '' : 'none';
+    });
+    const visiblePages = Array.from(document.querySelectorAll('[data-role]'))
+      .filter(g => g.style.display !== 'none')
+      .flatMap(g => Array.from(g.querySelectorAll('[data-page]')).map(n => n.getAttribute('data-page')));
+    if (!visiblePages.includes('page-token-list')) visiblePages.push('page-token-list');
+    const current = document.querySelector('.page.active');
+    if (current && !visiblePages.includes(current.id)) goPage('page-token-list');
+  }
+
+  // 页面切换
+  function goPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(pageId);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if (navItem) navItem.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  // 从账户列表打开交易记录
+  function openTxWithAccount(accId, accName) {
+    const sel = document.getElementById('filter-account');
+    if (sel) {
+      const opt = Array.from(sel.options).find(o => o.value === accId);
+      if (opt) {
+        sel.value = accId;
+        sel.disabled = true;
+      }
+    }
+    goPage('page-token-tx');
+  }
+
+  // Tab 切换
+  function switchTab(el, panelId) {
+    const tabsContainer = el.parentElement;
+    tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    const panelWrap = tabsContainer.parentElement;
+    panelWrap.querySelectorAll(':scope > .tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  // 按 tabId 激活 tab（无 el）
+  function activateTabById(panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const tabsContainer = panel.parentElement;
+    tabsContainer.querySelectorAll('.tab').forEach(t => {
+      if (t.getAttribute('data-tab') === panelId) t.classList.add('active');
+      else t.classList.remove('active');
+    });
+    tabsContainer.querySelectorAll(':scope > .tab-panel').forEach(p => p.classList.remove('active'));
+    panel.classList.add('active');
+  }
+
+  // 模态弹窗
+  function openModal(id) {
+    document.getElementById(id).classList.add('show');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    if (id === 'modal-rule-bill') document.getElementById('modal-rule-bill-title').textContent = '新增账单生成规则';
+    if (id === 'modal-rule-lock-unlock') document.getElementById('modal-rule-lock-unlock-title').textContent = '新增解锁机确认规则';
+  }
+  function openDrawer(id) {
+    document.getElementById(id).classList.add('show');
+  }
+  function closeDrawer(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+  document.querySelectorAll('.modal-mask').forEach(mask => {
+    mask.addEventListener('click', e => { if (e.target === mask) mask.classList.remove('show'); });
+  });
+  document.querySelectorAll('.drawer-mask').forEach(mask => {
+    mask.addEventListener('click', e => { if (e.target === mask) mask.classList.remove('show'); });
+  });
+
+  // 创建账户 → 直接跳转详情（不显示成功块）
+  function onCreateAccount() {
+    const p1 = document.getElementById('pwd-1').value;
+    const p2 = document.getElementById('pwd-2').value;
+    if (!p1 || !p2) { showCreateTip('请输入扣款密令', 'error'); return; }
+    if (p1 !== p2) { showCreateTip('两次扣款密令必须一致', 'error'); return; }
+    showCreateTip('正在创建账户，请耐心等待…', 'loading');
+    const btn = document.getElementById('btn-create-confirm');
+    if (btn) btn.disabled = true;
+    // 模拟 Paystack 单步分配 DVA：1.2s loading → 0.4s 成功 → 跳转详情
+    setTimeout(() => {
+      showCreateTip('账户创建成功，正在跳转…', 'success');
+      setTimeout(() => { goPage('page-token-detail'); }, 600);
+    }, 1200);
+  }
+  // 创建账户 页面内提示（不用系统弹窗）
+  function showCreateTip(text, type) {
+    let tip = document.getElementById('create-account-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'create-account-tip';
+      tip.style.cssText = 'margin: 12px 0; padding: 10px 14px; border-radius: 4px; font-size: 13px; display:flex; align-items:center; gap:8px;';
+      const btn = document.getElementById('btn-create-confirm');
+      btn.parentElement.parentElement.insertBefore(tip, btn.parentElement);
+    }
+    const colors = { loading: { bg:'#EFF6FF', color:'#1749D9', icon:'⏳' }, error: { bg:'#FEF2F2', color:'#EF4444', icon:'⚠️' }, success: { bg:'#F0FDF4', color:'#10B981', icon:'✓' } };
+    const s = colors[type] || colors.loading;
+    tip.style.background = s.bg;
+    tip.style.color = s.color;
+    tip.innerHTML = '<span style="font-size:16px;">' + s.icon + '</span><span>' + text + '</span>';
+    if (type === 'error' || type === 'success') {
+      setTimeout(() => { tip.style.display = 'none'; }, 3000);
+    }
+  }
+
+  // 确认支付：页面内提示 + 成功跳账单详情 / 失败停留
+  function onSubmitPay() {
+    const pwd = document.querySelector('#page-bill-pay-confirm input[type="password"]');
+    if (!pwd || !pwd.value) { showPayTip('请输入扣款密令', 'error'); return; }
+    showPayTip('正在支付…', 'loading');
+    const btn = document.getElementById('btn-pay-confirm');
+    if (btn) btn.disabled = true;
+    // 模拟 1.5s 后处理：90% 成功
+    setTimeout(() => {
+      const ok = Math.random() < 0.9;
+      if (ok) {
+        showPayTip('支付成功', 'success');
+        setTimeout(() => { goPage('page-bill-pay'); }, 1200);
+      } else {
+        showPayTip('支付失败：账户余额不足，请先在 Paystack 完成充值后再支付', 'error');
+        if (btn) btn.disabled = false;
+      }
+    }, 1500);
+  }
+  function showPayTip(text, type) {
+    let tip = document.getElementById('pay-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'pay-tip';
+      tip.style.cssText = 'margin: 12px 0; padding: 10px 14px; border-radius: 4px; font-size: 13px; display:flex; align-items:center; gap:8px;';
+      const btn = document.getElementById('btn-pay-confirm');
+      btn.parentElement.parentElement.insertBefore(tip, btn.parentElement);
+    }
+    const colors = { loading: { bg:'#EFF6FF', color:'#1749D9', icon:'⏳' }, error: { bg:'#FEF2F2', color:'#EF4444', icon:'⚠️' }, success: { bg:'#F0FDF4', color:'#10B981', icon:'✓' } };
+    const s = colors[type] || colors.loading;
+    tip.style.background = s.bg;
+    tip.style.color = s.color;
+    tip.innerHTML = '<span style="font-size:16px;">' + s.icon + '</span><span>' + text + '</span>';
+    if (type === 'success') {
+      setTimeout(() => { tip.style.display = 'none'; }, 1200);
+    } else if (type === 'error') {
+      setTimeout(() => { tip.style.display = 'none'; }, 5000);
+    }
+  }
+
+  // 扣款密令校验一致
+  function checkPwd() {
+    const p1 = document.getElementById('pwd-1').value;
+    const p2 = document.getElementById('pwd-2').value;
+    const hint = document.getElementById('pwd-hint');
+    if (p2 && p1 !== p2) { hint.style.display = ''; }
+    else { hint.style.display = 'none'; }
+  }
+  function checkEditPwd() {
+    const p1 = document.getElementById('ep-pwd-1').value;
+    const p2 = document.getElementById('ep-pwd-2').value;
+    const hint = document.getElementById('ep-pwd-hint');
+    const btn = document.getElementById('ep-save');
+    if (p2 && p1 !== p2) { hint.style.display = ''; btn.disabled = true; }
+    else { hint.style.display = 'none'; btn.disabled = false; }
+  }
+
+  // 审核结果切换
+  function onReviewResultChange() {
+    const result = document.querySelector('input[name="review-result"]:checked');
+    const tip = document.getElementById('review-invalid-tip');
+    if (result && result.parentNode.textContent.includes('作废')) {
+      tip.style.display = '';
+    } else {
+      tip.style.display = 'none';
+    }
+  }
+
+  // 用电方联动电站
+  function onConsumerChange(consumer) {
+    const stationSel = document.getElementById('modal-station-select');
+    if (consumer === 'west-africa') {
+      stationSel.disabled = false;
+      stationSel.innerHTML = '<option>利比亚 100MW 电站（西非矿业绑定）</option>';
+    } else if (consumer === 'north') {
+      stationSel.disabled = false;
+      stationSel.innerHTML = '<option>利比亚 100MW 电站（北部电力绑定）</option>';
+    } else if (consumer === 'libya') {
+      stationSel.disabled = false;
+      stationSel.innerHTML = '<option>西非 50MW 电站（利比亚工业园绑定）</option>';
+    } else {
+      stationSel.disabled = true;
+      stationSel.innerHTML = '<option>请先选用电方</option>';
+    }
+  }
+
+  // 选机组弹窗：搜索过滤
+  function filterMachines() {
+    const q = document.getElementById('pick-machines-search').value.toLowerCase();
+    document.querySelectorAll('#pick-tbody tr').forEach(r => {
+      const key = r.getAttribute('data-key').toLowerCase();
+      r.classList.toggle('hidden', q && !key.includes(q));
+    });
+  }
+  function pickAll(checked) {
+    document.querySelectorAll('#pick-tbody tr:not(.hidden) input[type=checkbox]').forEach(c => c.checked = checked);
+    updatePickCount();
+  }
+  function updatePickCount() {
+    const checked = document.querySelectorAll('#pick-tbody input[type=checkbox]:checked').length;
+    document.getElementById('pick-count').textContent = checked;
+  }
+
+  // 移除已选机组
+  function removeMachineRow(el) {
+    el.parentElement.remove();
+  }
+
+  // ============================================
+  // 锁机/解机操作 · 模式切换 / 选电站 / 选机组 / 读取参数
+  // ============================================
+  // 模拟全站机组数据（按电站分组）
+  const LOCK_MACHINES = [
+    { id: 'm7',  name: '7 号机组',  pkg: '撬装箱 7-A', cmh: 'CMH-7A-0007', power: '1.5MW', rpm: '1500', status: '运行中',   locked: false, station: 'ly' },
+    { id: 'm8',  name: '8 号机组',  pkg: '撬装箱 7-A', cmh: 'CMH-7A-0008', power: '1.5MW', rpm: '1500', status: '运行中',   locked: false, station: 'ly' },
+    { id: 'm9',  name: '9 号机组',  pkg: '撬装箱 7-A', cmh: 'CMH-7A-0009', power: '1.5MW', rpm: '0',    status: '维护中',   locked: false, station: 'ly' },
+    { id: 'm10', name: '10 号机组', pkg: '撬装箱 7-B', cmh: 'CMH-7B-0010', power: '1.5MW', rpm: '1500', status: '运行中',   locked: false, station: 'ly' },
+    { id: 'm11', name: '11 号机组', pkg: '撬装箱 7-B', cmh: 'CMH-7B-0011', power: '1.5MW', rpm: '1500', status: '锁定中',   locked: true,  station: 'ly' },
+    { id: 'm12', name: '12 号机组', pkg: '撬装箱 7-C', cmh: 'CMH-7C-0012', power: '1.5MW', rpm: '1500', status: '运行中',   locked: false, station: 'ly' },
+    { id: 'm13', name: '13 号机组', pkg: '撬装箱 7-C', cmh: 'CMH-7C-0013', power: '1.5MW', rpm: '1500', status: '运行中',   locked: false, station: 'ly' },
+    { id: 'm14', name: '14 号机组', pkg: '撬装箱 8-A', cmh: 'CMH-8A-0014', power: '2.0MW', rpm: '1800', status: '运行中',   locked: false, station: 'xa' },
+    { id: 'm15', name: '15 号机组', pkg: '撬装箱 8-A', cmh: 'CMH-8A-0015', power: '2.0MW', rpm: '1800', status: '运行中',   locked: false, station: 'xa' },
+    { id: 'm16', name: '16 号机组', pkg: '撬装箱 8-B', cmh: 'CMH-8B-0016', power: '2.0MW', rpm: '1800', status: '锁定中',   locked: true,  station: 'xa' }
+  ];
+
+  // 模拟账户数据（balance / 锁机阈值 / 解机阈值）
+  const LOCK_ACCOUNTS = {
+    'ACC-2026-0001': { name: '西非矿业',     balance: 12500,  lockThreshold: 50000,  unlockThreshold: 80000  },
+    'ACC-2026-0002': { name: '北部电力',     balance: 86400,  lockThreshold: 100000, unlockThreshold: 150000 },
+    'ACC-2026-0003': { name: '利比亚工业园', balance: 28000,  lockThreshold: 30000,  unlockThreshold: 50000  },
+    'ACC-2026-0004': { name: '萨赫勒电信',   balance: 0,      lockThreshold: 0,      unlockThreshold: 0      },
+    'ACC-2026-0005': { name: '苏丹矿业能源', balance: 142800, lockThreshold: 100000, unlockThreshold: 120000 }
+  };
+
+  // 选账户时联动显示余额 + 阈值（余额颜色按账户列表页规则：低红/中橙/高绿）
+  function onLockAccountChange() {
+    const accId = document.getElementById('lock-account-select').value;
+    const balanceEl = document.getElementById('lock-account-balance');
+    const threshEl = document.getElementById('lock-account-threshold');
+    const acc = LOCK_ACCOUNTS[accId];
+    if (!acc) {
+      balanceEl.textContent = '—';
+      threshEl.textContent = '—';
+      return;
+    }
+    const mode = getLockMode();
+    const bal = acc.balance;
+    // 余额颜色与代币账户列表对齐：<30k 红 / 30k~100k 橙 / >100k 绿 / 0 灰
+    let balColor = 'var(--gray)';
+    if (bal > 0 && bal < 30000) balColor = 'var(--red)';
+    else if (bal >= 30000 && bal < 100000) balColor = 'var(--orange)';
+    else if (bal >= 100000) balColor = 'var(--green)';
+    balanceEl.innerHTML = '<strong style="color:' + balColor + '; font-size: 16px;">' + bal.toLocaleString() + ' 代币</strong>';
+    // 阈值：label 已经在 DOM 上（"锁机阈值"/"解机阈值"），value 只显示阈值数字，避免重复
+    if (mode === 'unlock') {
+      threshEl.innerHTML = '<strong style="color: var(--text);">> ' + acc.unlockThreshold.toLocaleString() + ' 代币</strong>';
+    } else {
+      threshEl.innerHTML = '<strong style="color: var(--text);">≤ ' + acc.lockThreshold.toLocaleString() + ' 代币</strong>';
+    }
+  }
+  // 当前选中的机组 id 列表
+  let lockSelectedMachines = [];
+  // 当前操作模式：'lock' | 'unlock'（由 nav 决定，不可切换）
+  let currentLockMode = 'lock';
+  // 来源：'new' = 新增锁机/解机 / 'from-confirm' = 从确认单"处理"进入（账户只读回显）
+  let lockSource = 'new';
+  // 关联的确认单号（from-confirm 模式使用）
+  let lockFromOrderId = null;
+  function getLockMode() { return currentLockMode; }
+
+  // 从 nav 进入锁机/解机操作页（根据 mode 渲染页面）
+  // 用法：goLockAction('lock')                  — 新增锁机
+  //      goLockAction('lock', 'from-confirm', 'LCK-2026-1008-0001', 'ACC-2026-0001', '原因...')  — 从确认单进入
+  function goLockAction(mode, source, orderId, accountId, reason) {
+    currentLockMode = mode === 'unlock' ? 'unlock' : 'lock';
+    lockSource = source === 'from-confirm' ? 'from-confirm' : 'new';
+    lockFromOrderId = lockSource === 'from-confirm' ? orderId : null;
+    // 第一步：先把所有 input 重置为默认值（避免 renderLockActionHeader 用旧值触发联动）
+    lockSelectedMachines = [];
+    const st = document.getElementById('lock-station-select');
+    if (st) st.value = '';
+    const acc = document.getElementById('lock-account-select');
+    if (acc) { acc.value = ''; acc.disabled = false; }
+    const reasonEl = document.getElementById('lock-reason');
+    if (reasonEl) { reasonEl.value = ''; reasonEl.readOnly = false; }
+    // 第二步：渲染页头（label/title/alert + 此时 select 已是空，余额/阈值会显示 —）
+    renderLockActionHeader();
+    // 第三步：from-confirm 模式：账户只读 + 回显余额阈值；操作原因回显（但允许编辑）
+    if (lockSource === 'from-confirm' && accountId) {
+      if (acc) { acc.value = accountId; acc.disabled = true; }
+      if (reasonEl && reason) { reasonEl.value = reason; reasonEl.readOnly = false; }
+      onLockAccountChange();
+    }
+    renderLockMachineDisplay();
+    resetParamTable();
+    goPage('page-lock-action');
+  }
+
+  // 根据 mode 渲染页头、按钮、状态
+  function renderLockActionHeader() {
+    const mode = currentLockMode;
+    const breadcrumb = document.getElementById('lock-action-breadcrumb');
+    const title = document.getElementById('lock-action-title');
+    const sub = document.getElementById('lock-action-sub');
+    const btn = document.getElementById('btn-execute-lock');
+    const warnAlert = document.getElementById('lock-action-warn');
+    const threshLabel = document.getElementById('lock-threshold-label');
+    if (mode === 'unlock') {
+      if (breadcrumb) breadcrumb.textContent = '远程解机';
+      title.textContent = '远程解机操作';
+      sub.textContent = '通过下发参数将已锁定的机组恢复正常运行（解机）';
+      btn.textContent = '执行解机';
+      btn.classList.remove('btn-danger');
+      btn.classList.add('btn-primary');
+      if (warnAlert) warnAlert.innerHTML = '<strong>⚠️ 安全提醒：</strong>解机前建议联系现场进行沟通确认，并确保解机不会造成安全问题';
+      if (threshLabel) threshLabel.textContent = '解机阈值';
+    } else {
+      if (breadcrumb) breadcrumb.textContent = '远程锁机';
+      title.textContent = '远程锁机操作';
+      sub.textContent = '通过下发参数模拟发电机组启动失败或保护停机';
+      btn.textContent = '执行锁机';
+      btn.classList.add('btn-danger');
+      btn.classList.remove('btn-primary');
+      if (warnAlert) warnAlert.innerHTML = '<strong>⚠️ 安全提醒：</strong>锁机前建议联系现场进行沟通确认，并确保锁机不会造成安全问题';
+      if (threshLabel) threshLabel.textContent = '锁机阈值';
+    }
+    // 重新触发一次联动（确保 label 改变后余额/阈值也刷新）
+    onLockAccountChange();
+  }
+
+  // 锁机确认 / 解机确认 nav 入口：跳到独立页面 + 主动设侧栏 active
+  function goLockList(tab) {
+    currentLockListTab = tab === 'unlock' ? 'unlock' : 'lock';
+    const pageId = currentLockListTab === 'unlock' ? 'page-lock-unlock-confirm' : 'page-lock-confirm';
+    // 主动设置侧栏 active
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector('.nav-item[data-page="' + pageId + '"]');
+    if (navItem) navItem.classList.add('active');
+    goPage(pageId);
+  }
+  let currentLockListTab = 'lock';
+
+  // 锁机确认/解机确认页内 tab 切换（待确认 / 记录）
+  function switchLockListTab(tab) {
+    // tab: 'lock' 待确认锁机 | 'record' 锁机记录 | 'unlock' 待确认解机 | 'unlock-record' 解机记录
+    let panelId, tabSelector;
+    if (tab === 'record') { panelId = 'tab-lock-record'; tabSelector = 'tab-lock-record'; }
+    else if (tab === 'unlock') { panelId = 'tab-unlock-pending'; tabSelector = 'tab-unlock-pending'; }
+    else if (tab === 'unlock-record') { panelId = 'tab-unlock-record'; tabSelector = 'tab-unlock-record'; }
+    else { panelId = 'tab-lock-pending'; tabSelector = 'tab-lock-pending'; }
+    const pageId = (tab === 'unlock' || tab === 'unlock-record') ? 'page-lock-unlock-confirm' : 'page-lock-confirm';
+    const page = document.getElementById(pageId);
+    if (!page) return;
+    page.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tabEl = page.querySelector('.tab[data-tab="' + tabSelector + '"]');
+    if (tabEl) tabEl.classList.add('active');
+    page.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+  }
+
+  // 锁机/解机记录详情（只读，与锁机确认单样式一致 · 显示锁机时间+锁机人+参数下发+锁机机组独立列表）
+  function openLockRecordDetail(recordId, mode) {
+    const records = {
+      'LCK-2026-1007-0001': {
+        type: 'lock', name: '锁机单 ' + recordId,
+        account: '利比亚工业园 (ACC-2026-0003)', balance: 28000, threshold: '≤ 30,000 代币',
+        generateTime: '10/07 16:42:00',
+        executeTime:  '10/07 17:10:22',
+        operator: '操作员甲', trigger: '系统规则触发',
+        station: '利比亚 100MW 电站',
+        machines: [
+          { name: '7 号机组',  pkg: '撬装箱 7-A', cmh: 'CMH-7A-0007', power: '1.5MW', status: '锁定中' },
+          { name: '8 号机组',  pkg: '撬装箱 7-A', cmh: 'CMH-7A-0008', power: '1.5MW', status: '锁定中' }
+        ],
+        reason: '账户余额低于阈值 30,000 代币，按规则 LU-001 触发',
+        params: [
+          { name: '机组有功功率调节设定', before: '85',  after: '0'   },
+          { name: '机组功率因数调节设定', before: '92',  after: '60'  },
+          { name: '机组无功功率调节设定', before: '15',  after: '0'   },
+          { name: '机组频率调节设定',     before: '0',   after: '0'   },
+          { name: '机组电压调节设定',     before: '220V', after: '0V' }
+        ]
+      },
+      'UNL-2026-1006-0001': {
+        type: 'unlock', name: '解机单 ' + recordId,
+        account: '苏丹矿业能源 (ACC-2026-0005)', balance: 89500, threshold: '> 100,000 代币',
+        generateTime: '10/06 13:30:00',
+        executeTime:  '10/06 14:18:11',
+        operator: '操作员乙', trigger: '操作员手动',
+        station: '利比亚 100MW 电站',
+        machines: [
+          { name: '11 号机组', pkg: '撬装箱 7-B', cmh: 'CMH-7B-0011', power: '1.5MW', status: '运行中' },
+          { name: '16 号机组', pkg: '撬装箱 8-B', cmh: 'CMH-8B-0016', power: '2.0MW', status: '运行中' }
+        ],
+        reason: '苏丹现场已完成安全检查，可恢复供电',
+        params: [
+          { name: '机组有功功率调节设定', before: '0',   after: '85'  },
+          { name: '机组功率因数调节设定', before: '60',  after: '92'  },
+          { name: '机组无功功率调节设定', before: '0',   after: '15'  },
+          { name: '机组频率调节设定',     before: '0',   after: '0'   },
+          { name: '机组电压调节设定',     before: '0V',  after: '220V'}
+        ]
+      }
+    };
+    const r = records[recordId];
+    if (!r) { showLockTip('未找到该记录', 'error'); return; }
+    const action = r.type === 'lock' ? '锁机' : '解机';
+    const machineNoun = r.type === 'lock' ? '锁机机组' : '解机机组';
+    const pillCls = r.type === 'lock' ? 'pill-red' : 'pill-green';
+    const statusPillCls = r.type === 'lock' ? 'pill-red' : 'pill-green';
+    document.getElementById('drawer-lock-record-title').textContent = r.name;
+
+    // 单据基本信息（去掉"机组数量"和"影响机组"合并字段，单独卡片展示）
+    const baseHtml = '<div class="card"><div class="card-title">单据基本信息</div><div class="detail-grid">'
+      + '<div class="item"><div class="label">单号</div><div class="value"><code>' + recordId + '</code></div></div>'
+      + '<div class="item"><div class="label">操作类型</div><div class="value"><span class="pill ' + pillCls + '">' + action + '</span></div></div>'
+      + '<div class="item"><div class="label">生成时间</div><div class="value">' + r.generateTime + '</div></div>'
+      + '<div class="item"><div class="label">触发来源</div><div class="value"><span class="pill ' + (r.trigger.indexOf('系统') >= 0 ? 'pill-red' : 'pill-blue') + '">' + r.trigger + '</span></div></div>'
+      + '<div class="item"><div class="label">' + action + '时间</div><div class="value">' + r.executeTime + '</div></div>'
+      + '<div class="item"><div class="label">' + action + '人</div><div class="value">' + r.operator + '</div></div>'
+      + '<div class="item"><div class="label">电站</div><div class="value">' + r.station + '</div></div>'
+      + '<div class="item"><div class="label">用电方/账户</div><div class="value">' + r.account + '</div></div>'
+      + '<div class="item"><div class="label">' + action + '前代币余额</div><div class="value"><strong style="color:var(--text);">' + r.balance.toLocaleString() + ' 代币</strong></div></div>'
+      + '<div class="item"><div class="label">阈值</div><div class="value">' + r.threshold + '</div></div>'
+      + '</div></div>';
+
+    // 锁机机组 / 解机机组 独立列表（加序号列 / 删当前状态列）
+    const machinesHtml = '<div class="card">'
+      + '<div class="card-title">' + machineNoun + '（共 ' + r.machines.length + ' 台）</div>'
+      + '<div class="table-wrap" style="border:none;">'
+      + '<table class="excel-table">'
+      + '<thead><tr><th style="width:50px;">序号</th><th style="width:100px;">机组</th><th>撬装箱</th><th>云猫编号</th><th style="width:90px;">额定功率</th></tr></thead>'
+      + '<tbody>'
+      + r.machines.map((m, idx) =>
+          '<tr><td style="text-align:center; color:var(--text-3);">' + (idx + 1) + '</td><td>' + m.name + '</td><td>' + m.pkg + '</td><td><code>' + m.cmh + '</code></td><td>' + m.power + '</td></tr>'
+        ).join('')
+      + '</tbody></table></div></div>';
+
+    // 参数下发表格（只读）— drawer 视图，列宽：参数名宽/设定前宽/设定后窄
+    const paramsHtml = '<div class="card">'
+      + '<div class="card-title">参数下发（只读）</div>'
+      + '<table class="excel-table param-table">'
+      + '<thead><tr><th style="text-align:left; min-width:220px;">参数名</th><th style="width:160px;">设定前</th><th style="width:120px;">设定后</th></tr></thead>'
+      + '<tbody>'
+      + r.params.map(p =>
+          '<tr><td>' + p.name + '</td><td class="val-cell">' + p.before + '</td><td><strong style="color:' + (r.type === 'lock' ? '#B91C1C' : '#047857') + ';">' + p.after + '</strong></td></tr>'
+        ).join('')
+      + '</tbody></table></div>';
+
+    // 原因
+    const reasonHtml = '<div class="card"><div class="card-title">' + action + '原因</div>'
+      + '<div style="font-size:13px; line-height:1.7; color:var(--text);">' + r.reason + '</div></div>';
+
+    document.getElementById('drawer-lock-record-body').innerHTML = baseHtml + machinesHtml + paramsHtml + reasonHtml;
+    openDrawer('drawer-lock-record');
+  }
+
+  // 选电站后触发（解机模式自动查已锁定）
+  function onLockStationChange() {
+    const st = document.getElementById('lock-station-select').value;
+    if (!st) { lockSelectedMachines = []; renderLockMachineDisplay(); return; }
+    const mode = getLockMode();
+    if (mode === 'unlock') {
+      // 解机模式：自动查已锁定机组
+      const locked = LOCK_MACHINES.filter(m => m.station === st && m.locked);
+      lockSelectedMachines = locked.map(m => m.id);
+      const stationName = document.getElementById('lock-station-select').options[document.getElementById('lock-station-select').selectedIndex].text;
+      if (locked.length === 0) {
+        showPayTip(stationName + ' 下无已锁定机组，请先执行锁机操作', 'error');
+      } else {
+        showPayTip('已自动选中 ' + locked.length + ' 台已锁定机组（' + locked.map(m=>m.name).join('、') + '）', 'success');
+      }
+    } else {
+      // 锁机模式：清空
+      lockSelectedMachines = [];
+    }
+    renderLockMachineDisplay();
+    resetParamTable();
+  }
+
+  // 渲染已选机组列表（以 table 形式）
+  function renderLockMachineDisplay() {
+    const wrap = document.getElementById('lock-selected-machines-wrap');
+    const tbody = document.getElementById('lock-selected-machines-tbody');
+    const countEl = document.getElementById('lock-selected-count');
+    if (!wrap || !tbody) return;
+    if (!lockSelectedMachines.length) {
+      wrap.style.display = 'none';
+      tbody.innerHTML = '';
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+    wrap.style.display = '';
+    if (countEl) countEl.textContent = lockSelectedMachines.length;
+    tbody.innerHTML = lockSelectedMachines.map((id, idx) => {
+      const m = LOCK_MACHINES.find(x => x.id === id);
+      if (!m) return '';
+      return '<tr data-id="' + id + '">' +
+        '<td style="text-align:center; color:var(--text-3);">' + (idx + 1) + '</td>' +
+        '<td>' + m.name + '</td>' +
+        '<td>' + m.pkg + '</td>' +
+        '<td><code>' + m.cmh + '</code></td>' +
+        '<td>' + m.power + '</td>' +
+        '<td><a style="color:var(--red); cursor:pointer;" onclick="removeLockPick(\'' + id + '\')">移除</a></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function removeLockPick(id) {
+    lockSelectedMachines = lockSelectedMachines.filter(x => x !== id);
+    renderLockMachineDisplay();
+  }
+
+  // 打开选择机组弹窗（始终显示所有电站的机组，弹窗内表格带"电站"列；选完自动回填电站下拉）
+  function openLockMachineModal() {
+    const mode = getLockMode();
+    const title = document.getElementById('lock-pick-title');
+    title.textContent = mode === 'unlock' ? '选择解机机组（仅显示已锁定）' : '选择锁机机组';
+    const tbody = document.getElementById('lock-pick-tbody');
+    // 不按电站过滤，弹窗内显示所有电站的机组（带电站列）
+    let list = LOCK_MACHINES.slice();
+    if (mode === 'unlock') {
+      list = list.filter(m => m.locked);
+    } else {
+      list = list.filter(m => !m.locked && m.status !== '维护中');
+    }
+    document.getElementById('lock-pick-total').textContent = list.length;
+    document.getElementById('lock-pick-search').value = '';
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-3); padding: 20px;">' + (mode==='unlock' ? '当前无已锁定机组' : '当前无可锁定的运行机组') + '</td></tr>';
+    } else {
+      tbody.innerHTML = list.map(m => {
+        const checked = lockSelectedMachines.indexOf(m.id) >= 0 ? 'checked' : '';
+        const pillCls = m.locked ? 'pill-red' : 'pill-green';
+        const stationName = m.station === 'ly' ? '利比亚 100MW 电站' : (m.station === 'xa' ? '西非 50MW 电站' : m.station);
+        return '<tr data-key="' + m.name + ' ' + m.pkg + ' ' + m.cmh + ' ' + stationName + '">' +
+          '<td><input type="checkbox" data-id="' + m.id + '" ' + checked + ' onchange="updateLockPickCount()" /></td>' +
+          '<td>' + m.name + '</td>' +
+          '<td>' + m.pkg + '</td>' +
+          '<td><code>' + m.cmh + '</code></td>' +
+          '<td>' + m.power + '</td>' +
+          '<td><span class="pill ' + pillCls + '">' + m.status + '</span></td>' +
+          '<td>' + stationName + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+    updateLockPickCount();
+    openModal('modal-lock-pick-machines');
+  }
+
+  function filterLockMachines() {
+    const kw = document.getElementById('lock-pick-search').value.trim().toLowerCase();
+    const rows = document.querySelectorAll('#lock-pick-tbody tr');
+    rows.forEach(r => {
+      const k = (r.getAttribute('data-key') || '').toLowerCase();
+      r.style.display = !kw || k.indexOf(kw) >= 0 ? '' : 'none';
+    });
+  }
+
+  function updateLockPickCount() {
+    const cbs = document.querySelectorAll('#lock-pick-tbody input[type="checkbox"]');
+    let cnt = 0;
+    cbs.forEach(c => { if (c.checked) cnt++; });
+    document.getElementById('lock-pick-count').textContent = cnt;
+  }
+
+  function lockPickAll(checked) {
+    const cbs = document.querySelectorAll('#lock-pick-tbody input[type="checkbox"]');
+    cbs.forEach(c => { c.checked = checked; });
+    updateLockPickCount();
+  }
+
+  function clearLockPick() {
+    const cbs = document.querySelectorAll('#lock-pick-tbody input[type="checkbox"]');
+    cbs.forEach(c => { c.checked = false; });
+    updateLockPickCount();
+  }
+
+  function confirmLockPick() {
+    const cbs = document.querySelectorAll('#lock-pick-tbody input[type="checkbox"]');
+    const ids = [];
+    cbs.forEach(c => { if (c.checked) ids.push(c.getAttribute('data-id')); });
+    lockSelectedMachines = ids;
+    // 自动回填电站下拉：取第一个选中机组的电站
+    if (ids.length > 0) {
+      const first = LOCK_MACHINES.find(m => m.id === ids[0]);
+      if (first) {
+        const sel = document.getElementById('lock-station-select');
+        if (sel) sel.value = first.station;
+      }
+    }
+    renderLockMachineDisplay();
+    closeModal('modal-lock-pick-machines');
+  }
+
+  // 锁机页面顶部 toast（不依赖其他 DOM）
+  function showLockTip(text, type) {
+    let tip = document.getElementById('lock-action-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'lock-action-tip';
+      tip.style.cssText = 'margin: 10px 0; padding: 10px 14px; border-radius: 4px; font-size: 13px; display:flex; align-items:center; gap:8px; border-left: 3px solid;';
+      // 插在 alert-warning 下面
+      const anchor = document.querySelector('#page-lock-action .alert.alert-warning');
+      if (anchor && anchor.nextSibling) {
+        anchor.parentNode.insertBefore(tip, anchor.nextSibling);
+      } else {
+        const cardGrid = document.querySelector('#page-lock-action .lock-action-grid');
+        if (cardGrid) cardGrid.parentNode.insertBefore(tip, cardGrid);
+      }
+    }
+    const colors = {
+      loading: { bg:'#EFF6FF', color:'#1749D9', border:'#1749D9', icon:'⏳' },
+      error:   { bg:'#FEF2F2', color:'#B91C1C', border:'#EF4444', icon:'⚠️' },
+      success: { bg:'#F0FDF4', color:'#047857', border:'#10B981', icon:'✓' }
+    };
+    const s = colors[type] || colors.loading;
+    tip.style.background = s.bg;
+    tip.style.color = s.color;
+    tip.style.borderLeftColor = s.border;
+    tip.innerHTML = '<span style="font-size:16px;">' + s.icon + '</span><span>' + text + '</span>';
+    if (type === 'success') {
+      setTimeout(() => { tip.style.display = 'none'; }, 1500);
+    } else if (type === 'error') {
+      setTimeout(() => { tip.style.display = 'none'; }, 5000);
+    }
+  }
+
+  // 读取参数（点击后：按钮变"刷新"，当前值列显示"正在读取……"，顶部 toast 提示"正在读取参数…"，读完后恢复；input 默认可输入）
+  function readMachineParams() {
+    if (!lockSelectedMachines.length) {
+      showLockTip('请先选择机组', 'error');
+      return;
+    }
+    const btn = document.getElementById('btn-read-params');
+    const cells = document.querySelectorAll('#lock-params-tbody td.val-cell');
+    btn.disabled = true;
+    btn.textContent = '刷新';
+    cells.forEach(c => {
+      c.textContent = '正在读取……';
+      c.style.color = 'var(--text-3)';
+    });
+    showLockTip('正在读取 ' + lockSelectedMachines.length + ' 台机组的最新参数…', 'loading');
+    setTimeout(() => {
+      const mockVals = {
+        '0': '85', '1': '92', '2': '15', '3': '0', '4': '0'
+      };
+      cells.forEach(c => {
+        const r = c.getAttribute('data-cur');
+        c.textContent = mockVals[r] !== undefined ? mockVals[r] : '—';
+        c.style.color = 'var(--text)';
+      });
+      btn.textContent = '📥 读取参数';
+      btn.disabled = false;
+      showLockTip('已读取 ' + lockSelectedMachines.length + ' 台机组的最新参数', 'success');
+    }, 800);
+  }
+
+  // 执行锁机/解机：二次确认弹窗（含机组明细表 · 实时功率与转数）
+  function confirmExecuteLock() {
+    if (!lockSelectedMachines.length) {
+      showPayTip('请先选择机组', 'error');
+      return;
+    }
+    const reasonEl = document.getElementById('lock-reason');
+    const reasonVal = reasonEl ? reasonEl.value.trim() : '';
+    if (!reasonVal) {
+      showPayTip('请填写操作原因（必填）', 'error');
+      if (reasonEl) reasonEl.focus();
+      return;
+    }
+    const mode = getLockMode();
+    const stationName = document.getElementById('lock-station-select').options[document.getElementById('lock-station-select').selectedIndex].text;
+    const action = mode === 'unlock' ? '解机' : '锁机';
+    const actionColor = mode === 'unlock' ? '#047857' : '#B91C1C';
+    const titleEl = document.getElementById('modal-confirm-lock-title');
+    const bodyEl = document.getElementById('modal-confirm-lock-body');
+    const btnEl = document.getElementById('btn-confirm-execute');
+    titleEl.textContent = '确认' + action;
+
+    // 机组明细表（实时功率与转数 2 项，不显示状态 pill — 状态从功率/转数推断）
+    const machinesRows = lockSelectedMachines.map((id, idx) => {
+      const m = LOCK_MACHINES.find(x => x.id === id);
+      if (!m) return '';
+      const isLocked = m.status === '锁定中';
+      const power = isLocked ? '0' : m.power;
+      const rpm = isLocked ? '0' : (m.rpm || '1500');
+      return '<tr data-row-id="' + m.id + '">'
+        + '<td style="text-align:center; color:var(--text-3);">' + (idx + 1) + '</td>'
+        + '<td>' + m.name + '</td>'
+        + '<td>' + m.pkg + '</td>'
+        + '<td><code style="font-size:11px;">' + m.cmh + '</code></td>'
+        + '<td class="ops-data-cell">'
+        +   '<span data-field="power" style="color:var(--text-2); font-size:12px;">' + power + '</span>　'
+        +   '<span data-field="rpm" style="color:var(--text-2); font-size:12px;">' + rpm + ' RPM</span>'
+        + '</td>'
+        + '</tr>';
+    }).join('');
+
+    bodyEl.innerHTML = '<div style="line-height:1.8; margin-bottom: 12px;">'
+      + '即将对以下机组执行<strong style="color:' + actionColor + ';">' + action + '</strong>操作：<br>'
+      + '· 电站：<strong>' + stationName + '</strong>　· 机组数：<strong>' + lockSelectedMachines.length + ' 台</strong><br>'
+      + '· 操作原因：<strong>' + reasonVal + '</strong>'
+      + '</div>'
+      + '<div class="table-wrap" style="border: 1px solid var(--border); margin-bottom: 10px;">'
+      + '<table class="excel-table">'
+      + '<thead><tr><th style="width:50px;">序号</th><th style="width:90px;">机组</th><th>撬装箱</th><th>云猫编号</th><th style="min-width:180px;">实时功率与转数</th></tr></thead>'
+      + '<tbody>' + machinesRows + '</tbody>'
+      + '</table></div>'
+      + '<div id="modal-confirm-lock-msg" style="display:none; padding: 8px 12px; background: #EFF6FF; border-left: 3px solid #1749D9; border-radius: 4px; color: #1749D9; font-size: 12px; margin-bottom: 10px;">⏳ 正在下发参数，请观察运行数据验证' + action + '结果</div>'
+      + '<div style="padding: 8px 12px; background: #FEF3C7; border-radius: 4px; color: #92400E; font-size: 12px;">⚠️ ' + (mode==='unlock' ? '解机操作将恢复机组供电，请确认安全条件已具备' : '锁机操作将切断机组供电，请确认现场已做好安全准备') + '</div>';
+
+    // 按钮统一叫"确认"（颜色区分 lock/unlock）
+    btnEl.textContent = '确认';
+    btnEl.className = mode === 'unlock' ? 'btn btn-primary' : 'btn btn-danger';
+    btnEl.setAttribute('data-mode', mode);
+    btnEl.disabled = false;
+    btnEl.style.display = '';
+    openModal('modal-confirm-lock');
+  }
+
+  // 二次确认弹窗"确认"按钮 → 不关闭弹窗，按钮变"刷新"，底部显示"正在下发参数..."
+  // 模拟 1.2s 完成：更新每台机组的运维数据（功率/转数 → 0 或恢复）+ 解机结果=成功
+  // 按钮再变"完成"，用户点"完成"才关闭弹窗并跳转到对应记录 tab
+  let pendingExecuteJump = null;
+
+  function doExecuteLock() {
+    const mode = getLockMode();
+    const btn = document.getElementById('btn-confirm-execute');
+    const msg = document.getElementById('modal-confirm-lock-msg');
+    const action = mode === 'unlock' ? '解机' : '锁机';
+    const actionColor = mode === 'unlock' ? '#047857' : '#B91C1C';
+    const stationName = document.getElementById('lock-station-select').options[document.getElementById('lock-station-select').selectedIndex].text;
+
+    // 锁机操作按钮：变"刷新" + disabled
+    btn.disabled = true;
+    btn.textContent = '刷新';
+    btn.setAttribute('data-execute-state', 'refreshing');
+    if (msg) msg.style.display = '';
+
+    // 同时把锁机操作页"执行锁机/解机"按钮变"锁机中..."
+    const pageBtn = document.getElementById('btn-execute-lock');
+    if (pageBtn) { pageBtn.disabled = true; pageBtn.textContent = mode === 'unlock' ? '解机中…' : '锁机中…'; }
+
+    setTimeout(() => {
+      // 模拟执行完成：更新每台机组的实时功率与转数
+      const results = [];
+      lockSelectedMachines.forEach(id => {
+        const m = LOCK_MACHINES.find(x => x.id === id);
+        if (!m) return;
+        const before = m.status;
+        // 锁机模式：运行中 → 锁定中；解机模式：锁定中 → 运行中
+        const after = mode === 'unlock' ? '运行中' : '锁定中';
+        m.status = after;
+        m.locked = !m.locked;
+        // 同步更新弹窗里的行：只更新功率/转数
+        const row = document.querySelector('tr[data-row-id="' + id + '"]');
+        if (row) {
+          const powerEl = row.querySelector('[data-field="power"]');
+          const rpmEl = row.querySelector('[data-field="rpm"]');
+          if (powerEl) powerEl.textContent = (after === '锁定中' ? '0' : m.power);
+          if (rpmEl) rpmEl.textContent = (after === '锁定中' ? '0 RPM' : (m.rpm || '1500') + ' RPM');
+        }
+        results.push({ id, before, after });
+      });
+
+      // 按钮变"完成" + enable
+      btn.disabled = false;
+      btn.textContent = '完成';
+      btn.setAttribute('data-execute-state', 'done');
+      btn.className = 'btn btn-primary';
+
+      // 提示文字改成完成态
+      if (msg) {
+        msg.innerHTML = '✓ <strong>执行完成：</strong>共 ' + action + ' <strong style="color:' + actionColor + ';">' + results.length + '</strong> 台。请确认运行数据是否与预期一致。';
+        msg.style.background = '#F0FDF4';
+        msg.style.borderLeftColor = '#10B981';
+        msg.style.color = '#047857';
+      }
+
+      // 记录跳转目标，等用户点"完成"才跳
+      pendingExecuteJump = mode === 'unlock' ? 'unlock-record' : 'record';
+
+      // 同步页面上"执行锁机/解机"按钮的状态（恢复）
+      if (pageBtn) {
+        pageBtn.disabled = false;
+        pageBtn.textContent = mode === 'unlock' ? '执行解机' : '执行锁机';
+      }
+    }, 1200);
+  }
+
+  // 弹窗上"完成"按钮：关闭弹窗 + 跳转到对应记录 tab
+  function confirmCompleteAndJump() {
+    closeModal('modal-confirm-lock');
+    if (pendingExecuteJump === 'unlock-record') {
+      goLockList('unlock');
+      setTimeout(() => switchLockListTab('unlock-record'), 50);
+    } else if (pendingExecuteJump === 'record') {
+      goLockList('lock');
+      setTimeout(() => switchLockListTab('record'), 50);
+    }
+    pendingExecuteJump = null;
+  }
+
+  // 弹窗上"取消"按钮：直接关闭
+  function cancelConfirmLock() {
+    closeModal('modal-confirm-lock');
+    pendingExecuteJump = null;
+  }
+
+  // 弹窗主按钮路由（pending → doExecuteLock / done → confirmCompleteAndJump）
+  function onConfirmExecuteClick() {
+    const btn = document.getElementById('btn-confirm-execute');
+    const state = btn.getAttribute('data-execute-state');
+    if (state === 'done') {
+      confirmCompleteAndJump();
+    } else {
+      doExecuteLock();
+    }
+  }
+
+  // 重置参数表（切换电站/模式时调用）—— input 默认可输入，只清空值和设定前
+  function resetParamTable() {
+    const cells = document.querySelectorAll('#lock-params-tbody td.val-cell');
+    cells.forEach(c => { c.textContent = '—'; c.style.color = 'var(--text-2)'; });
+    const inputs = document.querySelectorAll('#lock-params-tbody input.setting-input');
+    inputs.forEach(i => { i.value = ''; });
+  }
+
+  // 规则周期类型切换
+  function onCycleChange(v) {
+    document.getElementById('cycle-startday').style.display = v === 'custom' ? '' : 'none';
+    document.getElementById('cycle-days').style.display = v === 'custom' ? '' : 'none';
+  }
+
+  // 打开规则弹窗（区分新增/修改）
+  function openRuleBill(mode, ruleName) {
+    const title = document.getElementById('modal-rule-bill-title');
+    if (mode === 'edit') title.textContent = '修改账单生成规则' + (ruleName ? ' · ' + ruleName : '');
+    else title.textContent = '新增账单生成规则';
+    openModal('modal-rule-bill');
+  }
+  function openRuleLockUnlock(mode, ruleName) {
+    const title = document.getElementById('modal-rule-lock-unlock-title');
+    if (mode === 'edit') title.textContent = '修改解锁机确认规则' + (ruleName ? ' · ' + ruleName : '');
+    else title.textContent = '新增解锁机确认规则';
+    openModal('modal-rule-lock-unlock');
+  }
+  function openRuleToggle(action) {
+    const title = document.getElementById('rule-toggle-title');
+    const body = document.getElementById('rule-toggle-body');
+    const btn = document.getElementById('rule-toggle-confirm');
+    if (action === 'enable') {
+      title.textContent = '启用规则';
+      body.textContent = '启用后该规则将重新生效。';
+      btn.textContent = '确认启用';
+    } else {
+      title.textContent = '停用规则';
+      body.textContent = '停用后该规则不再触发。已生成的账单不受影响。';
+      btn.textContent = '确认停用';
+    }
+    openModal('modal-rule-toggle');
+  }
+
+  // 组织树级联选择器
+  function toggleTreePicker(id) {
+    document.querySelectorAll('.tree-picker.open').forEach(p => {
+      if (p.id !== id) p.classList.remove('open');
+    });
+    const p = document.getElementById(id);
+    p.classList.toggle('open');
+  }
+  function selectTreeNode(pickerId, name, node) {
+    const picker = document.getElementById(pickerId);
+    const input = picker.querySelector('.tree-picker-input');
+    let path = name;
+    let parent = node.parentElement;
+    while (parent && parent.id === undefined) {
+      const parentNode = parent.querySelector(':scope > .tree-node');
+      if (parentNode) {
+        const t = parentNode.textContent.trim();
+        if (t && !t.includes('👤')) path = t + ' / ' + path;
+      }
+      parent = parent.parentElement;
+    }
+    input.value = path;
+    picker.classList.remove('open');
+  }
+  function filterTree(q, treeId) {
+    q = q.toLowerCase();
+    document.querySelectorAll('#' + treeId + ' .tree-node').forEach(n => {
+      const text = n.textContent.toLowerCase();
+      n.parentElement.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.tree-picker')) {
+      document.querySelectorAll('.tree-picker.open').forEach(p => p.classList.remove('open'));
+    }
+  });
+
+  // 初始化
+  document.addEventListener('DOMContentLoaded', () => {
+    switchRole('admin');
+    renderLockActionHeader();
+  });
+</script>
+</body>
+</html>

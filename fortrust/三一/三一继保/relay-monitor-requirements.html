@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>继电保护集中监控页面 · 需求开发文档 | Easergy P3</title>
+<style>
+  :root{
+    --bg-0:#070b18;
+    --bg-1:#0c1326;
+    --bg-2:#111a36;
+    --bg-3:#16234a;
+    --line:rgba(120,170,255,.10);
+    --line-2:rgba(120,170,255,.22);
+    --line-3:rgba(120,170,255,.35);
+    --txt:#dbe5ff;
+    --txt-2:#a8b8e0;
+    --txt-3:#7a8bb0;
+    --txt-4:#5d6c8a;
+    --cyan:#22d3ee;
+    --cyan-2:#67e8f9;
+    --blue:#3b82f6;
+    --blue-2:#60a5fa;
+    --green:#22c55e;
+    --green-2:#4ade80;
+    --amber:#f59e0b;
+    --amber-2:#fbbf24;
+    --red:#ef4444;
+    --red-2:#f87171;
+    --gray:#64748b;
+    --violet:#a78bfa;
+    --shadow:0 4px 24px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","HarmonyOS Sans SC",system-ui,sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(ellipse 1400px 700px at 20% -10%, rgba(59,130,246,.14), transparent 60%),
+      radial-gradient(ellipse 1000px 500px at 100% 0%, rgba(34,211,238,.06), transparent 60%),
+      linear-gradient(180deg, #050913 0%, #0a1024 50%, #050913 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    font-size:14px;
+    line-height:1.7;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;
+    background-image:
+      linear-gradient(rgba(120,170,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,170,255,.04) 1px, transparent 1px);
+    background-size:48px 48px;pointer-events:none;
+  }
+  .wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+
+  /* ===== Hero ===== */
+  .hero{
+    background:linear-gradient(135deg, rgba(34,211,238,.10) 0%, rgba(59,130,246,.05) 50%, rgba(167,139,250,.05) 100%);
+    border:1px solid var(--line-2);border-radius:14px;padding:32px 36px;
+    margin-bottom:20px;position:relative;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg, var(--cyan), var(--blue), var(--violet));
+  }
+  .hero .tag{
+    display:inline-block;font-size:11px;color:var(--cyan);font-family:monospace;
+    background:rgba(34,211,238,.10);padding:3px 10px;border-radius:11px;
+    border:1px solid rgba(34,211,238,.3);margin-bottom:14px;letter-spacing:1.5px;
+  }
+  .hero h1{
+    font-size:32px;font-weight:700;color:#fff;margin-bottom:12px;
+    line-height:1.2;letter-spacing:.5px;
+  }
+  .hero h1 .hl{color:var(--cyan)}
+  .hero .sub{font-size:15px;color:var(--txt-2);margin-bottom:20px;line-height:1.6}
+  .hero .meta{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+    padding-top:20px;border-top:1px dashed var(--line-2);
+  }
+  .hero .meta .item{
+    background:rgba(15,23,48,.5);border:1px solid var(--line);border-radius:8px;
+    padding:10px 14px;
+  }
+  .hero .meta .item .k{font-size:10px;color:var(--txt-3);letter-spacing:1.5px;margin-bottom:4px;text-transform:uppercase}
+  .hero .meta .item .v{font-size:13px;color:#fff;font-weight:600;font-family:"DIN Alternate",monospace}
+
+  /* ===== TOC ===== */
+  .toc{
+    background:linear-gradient(180deg, rgba(17,26,54,.7), rgba(11,16,36,.7));
+    border:1px solid var(--line);border-radius:12px;padding:18px 24px;margin-bottom:24px;
+  }
+  .toc h2{
+    font-size:14px;color:var(--cyan);font-weight:600;letter-spacing:2px;
+    margin-bottom:12px;display:flex;align-items:center;gap:8px;
+  }
+  .toc h2::before{content:"";width:3px;height:14px;background:var(--cyan);border-radius:2px}
+  .toc-grid{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:6px 24px;
+    font-size:13px;
+  }
+  .toc a{
+    color:var(--txt-2);text-decoration:none;padding:5px 0;
+    display:flex;align-items:center;gap:8px;transition:color .15s;
+  }
+  .toc a:hover{color:var(--cyan)}
+  .toc a .num{color:var(--cyan-2);font-family:monospace;font-size:11px;min-width:24px}
+  .toc a .name{flex:1}
+
+  /* ===== Layout ===== */
+  .layout{display:grid;grid-template-columns:1fr;gap:20px}
+  .chapter{
+    background:linear-gradient(180deg, rgba(17,26,54,.55), rgba(11,16,36,.55));
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    scroll-margin-top:20px;
+  }
+  .chapter-hd{
+    display:flex;align-items:center;gap:12px;padding:16px 22px;
+    background:linear-gradient(90deg, rgba(34,211,238,.06), transparent);
+    border-bottom:1px solid var(--line-2);
+  }
+  .chapter-hd .num{
+    font-size:18px;color:var(--cyan);font-family:"DIN Alternate",monospace;
+    font-weight:700;background:rgba(34,211,238,.10);
+    padding:4px 10px;border-radius:6px;border:1px solid rgba(34,211,238,.3);
+    letter-spacing:1px;
+  }
+  .chapter-hd h2{
+    font-size:20px;font-weight:600;color:#fff;letter-spacing:.5px;
+  }
+  .chapter-bd{padding:20px 24px 24px}
+
+  .chapter h3{
+    font-size:16px;font-weight:600;color:#fff;
+    margin:22px 0 12px;padding:10px 14px;
+    background:linear-gradient(90deg, rgba(34,211,238,.08), transparent);
+    border-left:3px solid var(--cyan);border-radius:0 6px 6px 0;
+  }
+  .chapter h4{
+    font-size:14px;font-weight:600;color:var(--cyan-2);
+    margin:18px 0 10px;letter-spacing:.5px;
+  }
+  .chapter p{margin-bottom:12px;color:var(--txt-2);text-align:justify}
+  .chapter ul,.chapter ol{margin:8px 0 12px 20px;color:var(--txt-2)}
+  .chapter li{margin-bottom:6px;padding-left:4px}
+  .chapter li::marker{color:var(--cyan)}
+  .chapter strong{color:#fff;font-weight:600}
+  .chapter em{color:var(--amber-2);font-style:normal}
+  .chapter code{
+    font-family:"Consolas",monospace;font-size:12.5px;
+    color:var(--cyan-2);background:rgba(15,23,48,.8);
+    padding:1px 6px;border-radius:3px;border:1px solid var(--line);
+  }
+
+  /* 引用块 */
+  .chapter blockquote{
+    background:linear-gradient(90deg, rgba(34,211,238,.05), rgba(34,211,238,.02));
+    border-left:3px solid var(--cyan);padding:12px 16px;margin:12px 0;
+    border-radius:0 6px 6px 0;color:var(--txt);
+  }
+  .chapter blockquote p{margin-bottom:6px}
+  .chapter blockquote p:last-child{margin-bottom:0}
+
+  /* 表格 */
+  .table-wrap{overflow-x:auto;margin:12px 0 16px;border-radius:8px;border:1px solid var(--line)}
+  table{
+    width:100%;border-collapse:collapse;font-size:12.5px;background:rgba(15,23,48,.5);
+  }
+  th{
+    text-align:left;padding:10px 12px;background:linear-gradient(180deg, rgba(34,211,238,.10), rgba(34,211,238,.04));
+    color:#fff;font-weight:600;font-size:12px;letter-spacing:.5px;
+    border-bottom:1px solid var(--line-2);white-space:nowrap;
+  }
+  td{
+    padding:8px 12px;border-bottom:1px dashed var(--line);color:var(--txt-2);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  tr:last-child td{border-bottom:0}
+  tr:hover td{background:rgba(34,211,238,.04);color:var(--txt)}
+  td:first-child{color:var(--cyan-2);font-family:"DIN Alternate",monospace;font-weight:600}
+  td code{font-size:11.5px}
+
+  /* callout */
+  .callout{
+    background:linear-gradient(90deg, rgba(245,158,11,.08), rgba(245,158,11,.02));
+    border:1px solid rgba(245,158,11,.3);border-left:3px solid var(--amber);
+    padding:10px 14px;border-radius:0 6px 6px 0;margin:12px 0;
+    color:var(--txt);font-size:13px;
+  }
+  .callout::before{content:"⚠ ";color:var(--amber);font-weight:700}
+  .callout.ok{
+    background:linear-gradient(90deg, rgba(34,197,94,.08), rgba(34,197,94,.02));
+    border-color:rgba(34,197,94,.3);border-left-color:var(--green);
+  }
+  .callout.ok::before{content:"✓ ";color:var(--green)}
+  .callout.err{
+    background:linear-gradient(90deg, rgba(239,68,68,.08), rgba(239,68,68,.02));
+    border-color:rgba(239,68,68,.3);border-left-color:var(--red);
+  }
+  .callout.err::before{content:"✕ ";color:var(--red)}
+
+  /* 设备清单卡片 */
+  .dev-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 14px;
+  }
+  .dev-card{
+    background:rgba(15,23,48,.5);border:1px solid var(--line);border-radius:6px;
+    padding:10px 12px;display:flex;align-items:center;gap:8px;
+  }
+  .dev-card .sw{font-family:"DIN Alternate",monospace;font-weight:700;color:var(--cyan);min-width:34px}
+  .dev-card .nm{flex:1;font-size:12px;color:var(--txt)}
+  .dev-card .ct{font-size:11px;color:var(--txt-3);font-family:monospace}
+  .dev-card.g{background:linear-gradient(90deg, rgba(34,197,94,.10), rgba(15,23,48,.5))}
+  .dev-card.t{background:linear-gradient(90deg, rgba(34,211,238,.10), rgba(15,23,48,.5))}
+  .dev-card.b{background:linear-gradient(90deg, rgba(59,130,246,.10), rgba(15,23,48,.5))}
+
+  /* 状态色样例 */
+  .swatch{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600;margin-right:4px}
+  .sw-online{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+  .sw-warn{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+  .sw-alarm{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.4)}
+  .sw-offline{background:rgba(100,116,139,.18);color:var(--gray);border:1px solid rgba(100,116,139,.4)}
+
+  /* 分隔线 */
+  hr{border:0;border-top:1px dashed var(--line);margin:20px 0}
+
+  /* footer */
+  .foot{
+    text-align:center;padding:24px 0 0;color:var(--txt-4);font-size:12px;
+  }
+  .foot .ver{color:var(--cyan);font-family:monospace}
+
+  @media (max-width:900px){
+    .hero .meta{grid-template-columns:repeat(2,1fr)}
+    .toc-grid{grid-template-columns:1fr}
+    .dev-grid{grid-template-columns:1fr 1fr}
+    .hero h1{font-size:24px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Hero -->
+  <div class="hero">
+    <span class="tag">V4.5 · 2026-08-31</span>
+    <h1>继电保护集中监控页面 <span class="hl">· 需求开发文档</span></h1>
+    <p class="sub">孚创信息科技（成都）有限公司 · 信息化运维业务线<br>发电机组物联网监控系统 · Easergy MiCOM P3 系列继保装置监控</p>
+    <div class="meta">
+      <div class="item"><div class="k">PROJ</div><div class="v">继电保护集中监控</div></div>
+      <div class="item"><div class="k">SCOPE</div><div class="v">26 台 P3 装置</div></div>
+      <div class="item"><div class="k">AUTHOR</div><div class="v">Mavis</div></div>
+      <div class="item"><div class="k">VERSION</div><div class="v">V4.5</div></div>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <div class="toc">
+    <h2>目 录</h2>
+    <div class="toc-grid">
+      <a href="#ch1"><span class="num">01</span><span class="name">项目背景</span></a>
+      <a href="#ch2"><span class="num">02</span><span class="name">术语与缩略语</span></a>
+      <a href="#ch3"><span class="num">03</span><span class="name">数据规范（点表）</span></a>
+      <a href="#ch4"><span class="num">04</span><span class="name">功能需求</span></a>
+      <a href="#ch5"><span class="num">05</span><span class="name">UI 设计规范</span></a>
+      <a href="#ch6"><span class="num">06</span><span class="name">交互规则</span></a>
+      <a href="#ch7"><span class="num">07</span><span class="name">技术方案</span></a>
+      <a href="#ch8"><span class="num">08</span><span class="name">数据流</span></a>
+      <a href="#ch9"><span class="num">09</span><span class="name">验收标准</span></a>
+      <a href="#ch10"><span class="num">10</span><span class="name">后续迭代规划</span></a>
+      <a href="#ch11"><span class="num">11</span><span class="name">附录</span></a>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- 1 -->
+    <div class="chapter" id="ch1">
+      <div class="chapter-hd"><span class="num">01</span><h2>项目背景</h2></div>
+      <div class="chapter-bd">
+
+        <h3>1.1 业务背景</h3>
+        <p>公司作为独立 BU 承接集团配套业务，核心产品包括：</p>
+        <ul>
+          <li><strong>发电机组物联网监控系统</strong>：采集发电机组实时遥测、告警、状态</li>
+          <li><strong>云平台</strong>：数据汇聚、远程监控、运维管理</li>
+          <li><strong>运维服务</strong>：现场巡检、远程支持</li>
+        </ul>
+        <p>1#主电站本期共部署 <strong>26 台 Easergy MiCOM P3 系列继电保护装置</strong>，覆盖：</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>设备类型</th><th>数量</th><th>装置型号</th><th>典型功能</th></tr></thead>
+          <tbody>
+            <tr><td>发电机保护</td><td>8</td><td>P3G30</td><td>50/51、50N/51N、27、59、49、81U</td></tr>
+            <tr><td>主变保护</td><td>2</td><td>P3T32</td><td>87T 差动、50/51、27、49、81U</td></tr>
+            <tr><td>母联保护</td><td>2</td><td>P3U30</td><td>50/51、50N/51N、79、49、27、86</td></tr>
+            <tr><td>进线保护</td><td>4</td><td>P3L30</td><td>50/51、50N/51N、67、79、49、27</td></tr>
+            <tr><td>馈线保护</td><td>6</td><td>P3U30</td><td>50/51、50N/51N、79、49、27、86</td></tr>
+            <tr><td>联络保护</td><td>2</td><td>P3U30</td><td>50/51、50N/51N、79、49、27、86</td></tr>
+            <tr><td>所用变保护</td><td>2</td><td>P3T32</td><td>87T 差动、50/51、27、49、81U</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>1.2 痛点</h3>
+        <p>作为发电厂强电磁干扰场景下的关键监控页面，业务部门反馈的痛点：</p>
+        <ol>
+          <li><strong>信息密度低</strong>：原有 V1 风格主页无法在一屏内展示 26 台设备</li>
+          <li><strong>告警淹没</strong>：告警信息没有轮播和分类，重要告警容易被忽略</li>
+          <li><strong>数据不准</strong>：点表里没有的字段（如温度 T、谐波 THD、序分量 I1/I2、3U0）被错误展示</li>
+          <li><strong>操作风险</strong>：遥控操作无二次确认，存在误操作风险</li>
+          <li><strong>时间筛选不灵活</strong>：固定时段（24H/7D）不能满足事故追溯需要</li>
+        </ol>
+
+        <h3>1.3 目标</h3>
+        <ul>
+          <li>26 台继保<strong>一屏完整展示</strong>，不需要滚动</li>
+          <li>单台详情页<strong>信息层次清晰</strong>：路径 → 主体信息 → 遥测 → 遥信 → 遥控 → 告警</li>
+          <li>严格按点表数据展示，<strong>不自由发挥添加字段</strong></li>
+          <li>工业级深色科技感，<strong>适合强电磁干扰环境</strong></li>
+        </ul>
+
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="chapter" id="ch2">
+      <div class="chapter-hd"><span class="num">02</span><h2>术语与缩略语</h2></div>
+      <div class="chapter-bd">
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>术语</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td>P3</td><td>Easergy MiCOM P3 系列继电保护装置（施耐德）</td></tr>
+            <tr><td>遥测</td><td>实时采集的模拟量（电压、电流、功率等）</td></tr>
+            <tr><td>遥信</td><td>状态量输入（开入/开出）</td></tr>
+            <tr><td>遥控</td><td>控制命令输出（分闸/合闸）</td></tr>
+            <tr><td>事件记录</td><td>保护动作、告警等带时标的事件</td></tr>
+            <tr><td>点表</td><td>通讯点表（Modbus 寄存器地址映射）</td></tr>
+            <tr><td>SOE</td><td>Sequence of Events，事件顺序记录</td></tr>
+            <tr><td>PF</td><td>功率因数（Power Factor）</td></tr>
+            <tr><td>U0</td><td>零序电压</td></tr>
+            <tr><td>Io</td><td>零序电流</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="chapter" id="ch3">
+      <div class="chapter-hd"><span class="num">03</span><h2>数据规范（点表）</h2></div>
+      <div class="chapter-bd">
+
+        <h3>3.1 数据源（权威）</h3>
+        <div class="callout"><strong>唯一数据源：</strong><code>point_table.xls</code>（通讯点表）。能采集到数据永远以点表为准，不要自己加数据。</div>
+
+        <h3>3.2 遥测数据（17 项，寄存器 402009-402025）</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>序号</th><th>点名</th><th>寄存器</th><th>单位</th><th>主页显示</th><th>详情显示</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Ia</td><td>402009</td><td>A</td><td>A</td><td>A</td></tr>
+            <tr><td>2</td><td>Ib</td><td>402010</td><td>A</td><td>A</td><td>A</td></tr>
+            <tr><td>3</td><td>Ic</td><td>402011</td><td>A</td><td>A</td><td>A</td></tr>
+            <tr><td>4</td><td>Io1</td><td>402012</td><td>A</td><td>--</td><td>A</td></tr>
+            <tr><td>5</td><td>Io2</td><td>402013</td><td>A</td><td>--</td><td>A</td></tr>
+            <tr><td>6</td><td>Uab</td><td>402014</td><td>V</td><td>--</td><td>V</td></tr>
+            <tr><td>7</td><td>Ubc</td><td>402015</td><td>V</td><td>--</td><td>V</td></tr>
+            <tr><td>8</td><td>Uca</td><td>402016</td><td>V</td><td>--</td><td>V</td></tr>
+            <tr><td>9</td><td>Ua</td><td>402017</td><td>V</td><td>V</td><td>V</td></tr>
+            <tr><td>10</td><td>Ub</td><td>402018</td><td>V</td><td>V</td><td>V</td></tr>
+            <tr><td>11</td><td>Uc</td><td>402019</td><td>V</td><td>V</td><td>V</td></tr>
+            <tr><td>12</td><td>U0</td><td>402020</td><td>V</td><td>V</td><td>V</td></tr>
+            <tr><td>13</td><td>f</td><td>402021</td><td>Hz</td><td>Hz</td><td>Hz</td></tr>
+            <tr><td>14</td><td>P</td><td>402022</td><td>kW</td><td>kW</td><td>kW</td></tr>
+            <tr><td>15</td><td>Q</td><td>402023</td><td>kvar</td><td>kvar</td><td>kvar</td></tr>
+            <tr><td>16</td><td>S</td><td>402024</td><td>kVA</td><td>kVA</td><td>kVA</td></tr>
+            <tr><td>17</td><td>PF</td><td>402025</td><td>--</td><td>--</td><td>--</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="callout err"><strong>禁止添加</strong>（点表无）：温度 T、谐波 THD、序分量 I1/I2、3U0</div>
+
+        <h3>3.3 遥信数据</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>类型</th><th>寄存器</th><th>位宽</th><th>数量</th></tr></thead>
+          <tbody>
+            <tr><td>开入 1-16</td><td>402007</td><td>16 bit</td><td>16 路</td></tr>
+            <tr><td>开入 17-32</td><td>402008</td><td>16 bit</td><td>16 路</td></tr>
+            <tr><td>开出 1-16</td><td>402049</td><td>16 bit</td><td>16 路</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>3.4 遥控对象（6 个 × 3 命令）</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>对象</th><th>选择</th><th>分闸/合闸</th><th>执行</th></tr></thead>
+          <tbody>
+            <tr><td>Obj1 断路器</td><td>402508</td><td>402509</td><td>402510</td></tr>
+            <tr><td>Obj2</td><td>402512</td><td>402513</td><td>402514</td></tr>
+            <tr><td>Obj3</td><td>402517</td><td>402518</td><td>402519</td></tr>
+            <tr><td>Obj4</td><td>402521</td><td>402522</td><td>402523</td></tr>
+            <tr><td>Obj5</td><td>402527</td><td>402528</td><td>402529</td></tr>
+            <tr><td>Obj6</td><td>402531</td><td>402532</td><td>402533</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="callout"><strong>强约束</strong>：只暴露通讯接口有点的按钮。不显示「信号复归」「远方/就地」「保护投退」等点表未暴露的按钮。</div>
+
+        <h3>3.5 事件记录（寄存器 402101-402105）</h3>
+        <p>事件代码含义表（部分）：</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>事件代码</th><th>含义</th><th>等级类型</th></tr></thead>
+          <tbody>
+            <tr><td>66</td><td>I> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>68</td><td>I> 返回</td><td>保护返回</td></tr>
+            <tr><td>130</td><td>I>> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>132</td><td>I>> 返回</td><td>保护返回</td></tr>
+            <tr><td>194</td><td>I>>> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>196</td><td>I>>> 返回</td><td>保护返回</td></tr>
+            <tr><td>1282</td><td>IO> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>1284</td><td>IO> 返回</td><td>保护返回</td></tr>
+            <tr><td>1346</td><td>IO>> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>1348</td><td>IO>> 返回</td><td>保护返回</td></tr>
+            <tr><td>1922</td><td>U> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>1924</td><td>U> 返回</td><td>保护返回</td></tr>
+            <tr><td>2050</td><td>U< 跳闸</td><td>保护动作</td></tr>
+            <tr><td>2052</td><td>U< 返回</td><td>保护返回</td></tr>
+            <tr><td>2306</td><td>Uo> 跳闸</td><td>保护动作</td></tr>
+            <tr><td>2308</td><td>Uo> 返回</td><td>保护返回</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="callout"><strong>告警字段</strong>：只有事件代码 + 时标。<strong>不显示 msg 描述字段</strong>（点表无此字段）。</div>
+
+        <h3>3.6 时间同步（寄存器 402504-402507）</h3>
+        <p>用于装置时钟校准，前端通过事件时标统一显示。</p>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="chapter" id="ch4">
+      <div class="chapter-hd"><span class="num">04</span><h2>功能需求</h2></div>
+      <div class="chapter-bd">
+
+        <h3>4.1 主页（26 台集中监控页面）</h3>
+        <h4>4.1.1 顶部栏（功能区）</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>元素</th><th>行为</th></tr></thead>
+          <tbody>
+            <tr><td>电站下拉</td><td>自定义下拉 + 模糊搜索；本期 5 个电站（1#主电站 26 台，其余 4 个 0 台占位）</td></tr>
+            <tr><td>5 状态统计</td><td>全部 / 在线 / 告警 / 严重 / 离线，点击切换筛选</td></tr>
+            <tr><td>告警轮播</td><td>顶栏内右侧，单条 3 秒向上滑出 + 下方滑入；宽 1 条告警实际宽度</td></tr>
+            <tr><td>刷新图标</td><td>整页 reload</td></tr>
+            <tr><td>排序图标</td><td>弹窗拖动调整 26 台顺序，保存到 localStorage</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4>4.1.2 设备网格</h4>
+        <ul>
+          <li>6 列自适应，gap 6px</li>
+          <li><strong>5 行卡片</strong>，每张卡片铺满容器（不固定高度）</li>
+          <li>26 台一屏完整显示</li>
+        </ul>
+
+        <h4>4.1.3 卡片 5 行内容</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>行</th><th>内容</th><th>关键尺寸</th></tr></thead>
+          <tbody>
+            <tr><td>r1</td><td>设备名 + 当前状态 pill</td><td>高度 22px</td></tr>
+            <tr><td>r2</td><td>型号 tag + 安装位置</td><td>高度 16px</td></tr>
+            <tr><td>r3</td><td>P（kW）/ PF / f（Hz）/ U0（V）</td><td>高度 42px，4 列，v 14px</td></tr>
+            <tr><td>r4</td><td>Ia / Ib / Ic（A）</td><td>高度 28px，3 列，v 11px，柱条从下往上</td></tr>
+            <tr><td>r5</td><td>Ua / Ub / Uc（V）</td><td>高度 28px，3 列，v 11px，柱条从下往上</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h4>4.1.4 告警轮播（顶栏内右）</h4>
+        <ul>
+          <li>设备信息：#编号 + 设备名（不重复显示位置）</li>
+          <li>事件代码 + 含义（同行排列）</li>
+          <li>时间</li>
+          <li>「查看全部」按钮 → 弹出活跃告警列表</li>
+          <li>单击条目跳转单台详情</li>
+        </ul>
+
+        <h3>4.2 单台继保详情页</h3>
+        <h4>4.2.1 路径条</h4>
+        <blockquote><p>集中监控 / 1#主电站 / #01 1#发电机保护 [P3G30] &nbsp; [返回] [关闭]</p></blockquote>
+
+        <h4>4.2.2 主体信息（4 列）</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>设备名称</th><th>安装位置</th><th>所属电站</th><th>当前状态</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>#01 + 1#发电机保护 + P3G30</td>
+              <td>主厂房 A 段</td>
+              <td>1#主电站</td>
+              <td><span class="swatch sw-online">在线</span> / <span class="swatch sw-warn">告警</span> / <span class="swatch sw-alarm">严重</span> / <span class="swatch sw-offline">离线</span></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="callout">当前状态保持显示状态色徽章（不删除状态信息）</div>
+
+        <h4>4.2.3 ① 遥测数据</h4>
+        <ul>
+          <li><strong>第 1 行（6 列 P-block）</strong>：P（kW，priority）/ Q（kvar）/ S（kVA）/ PF / f（Hz）/ U0（V）
+            <ul>
+              <li>v 上 k 下布局</li>
+              <li>单位字号 = 值字号（一致）</li>
+              <li>priority 字号 26px，其余 22px</li>
+            </ul>
+          </li>
+          <li><strong>第 2 行（6 列 phase）</strong>：三相电压（Ua Ub Uc，V）+ 三相电流（Ia Ib Ic，A）
+            <ul>
+              <li>「三相电压」标题在 Ua 正上方</li>
+              <li>「三相电流」标题在 Ia 正上方</li>
+              <li>柱条从下往上，按值归一化</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h4>4.2.4 ② 遥信状态</h4>
+        <ul>
+          <li>开入 1-16（寄存器 402007）8 列网格</li>
+          <li>开入 17-32（寄存器 402008）8 列网格</li>
+          <li>开出 1-16（寄存器 402049）8 列网格</li>
+          <li>每项：左侧 DI/DO 编号 + 圆点状态，右侧 0/1 值</li>
+          <li>文字字号 13px，字重 600（明显）</li>
+        </ul>
+
+        <h4>4.2.5 ③ 遥控 + 实时告警（同行）</h4>
+        <p><strong>左：遥控操作</strong></p>
+        <ul>
+          <li>6 个 Obj 卡片，3 列布局</li>
+          <li>每 Obj 卡片：分闸/合闸两个按钮</li>
+          <li>点击 → 弹出防误操作二次确认弹窗</li>
+          <li>标题栏右侧放「控制记录」按钮</li>
+        </ul>
+        <p><strong>右：实时告警事件</strong></p>
+        <ul>
+          <li>单行紧凑（ind + 设备信息 + 等级 chip + 事件代码 + 含义 + 时间）</li>
+          <li>标题栏右侧放「历史事件」按钮</li>
+          <li>max-height 自适应，超出滚动</li>
+        </ul>
+
+        <h4>4.2.6 弹窗统一规范</h4>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>弹窗</th><th>内容</th><th>时间选择器</th></tr></thead>
+          <tbody>
+            <tr><td>历史事件</td><td>设备基础信息 + 时间筛选 + 类型筛选 + 事件列表</td><td>起止时间 + 预设（近 1H/24H/7D/30D/全部）+ 查询按钮</td></tr>
+            <tr><td>历史曲线</td><td>设备基础信息 + 参数 chips + 时间筛选 + ECharts 曲线</td><td>起止时间 + 预设 + 查询按钮</td></tr>
+            <tr><td>控制记录</td><td>设备基础信息 + 时间筛选 + 对象筛选 + 记录列表</td><td>起止时间 + 预设 + 查询按钮</td></tr>
+            <tr><td>防误操作</td><td>设备 + 操作 + 寄存器 + 当前状态 + 复选框 + 确认/取消</td><td>--</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="callout"><strong>弹窗样式</strong>：浏览器<strong>居中显示</strong>，遮罩 <code>rgba(2,6,18,.5)</code>，<strong>不模糊</strong>（<code>backdrop-filter: blur</code> 不使用）。设备基础信息固定在弹窗头部下方。</div>
+
+        <h4>4.2.7 控制记录</h4>
+        <ul>
+          <li>表头：<strong>时间 / 操作人 / 对象 / 操作</strong>（4 列）</li>
+          <li><strong>删除「结果」列</strong>（点表无此字段）</li>
+          <li><strong>删除「寄存器详情」列</strong>（点表无此字段）</li>
+          <li>操作人字段用当前登录用户占位（点表无此字段）</li>
+        </ul>
+
+        <h4>4.2.8 历史曲线</h4>
+        <ul>
+          <li>ECharts 5.4.3</li>
+          <li>参数 chips：<strong>中文显示</strong>（有功 P / 无功 Q / A 相电压 Ua / A 相电流 Ia / 零序电压 U0 / 频率 f ...）</li>
+          <li>图例、tooltip、表头都用中文</li>
+          <li>自适应采样间隔：</li>
+        </ul>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>时段</th><th>采样间隔</th></tr></thead>
+          <tbody>
+            <tr><td>1H 内</td><td>1 min</td></tr>
+            <tr><td>6H</td><td>5 min</td></tr>
+            <tr><td>24H</td><td>10 min</td></tr>
+            <tr><td>1D - 3D</td><td>30 min</td></tr>
+            <tr><td>3D - 7D</td><td>1 h</td></tr>
+            <tr><td>7D - 30D</td><td>6 h</td></tr>
+            <tr><td>&gt; 30D</td><td>1 day</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="chapter" id="ch5">
+      <div class="chapter-hd"><span class="num">05</span><h2>UI 设计规范</h2></div>
+      <div class="chapter-bd">
+
+        <h3>5.1 配色（深色科技感）</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>变量</th><th>色值</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>--bg-0</td><td>#070b18</td><td>页面背景</td></tr>
+            <tr><td>--bg-1</td><td>#0c1326</td><td>一级容器</td></tr>
+            <tr><td>--bg-2</td><td>#111a36</td><td>二级容器</td></tr>
+            <tr><td>--bg-3</td><td>#16234a</td><td>激活容器</td></tr>
+            <tr><td>--cyan</td><td>#22d3ee</td><td>主色调（遥测、参数）</td></tr>
+            <tr><td>--blue</td><td>#3b82f6</td><td>三相电流</td></tr>
+            <tr><td>--green</td><td>#22c55e</td><td>在线/正常</td></tr>
+            <tr><td>--green-2</td><td>#4ade80</td><td>三相电压</td></tr>
+            <tr><td>--amber</td><td>#f59e0b</td><td>告警/警告</td></tr>
+            <tr><td>--amber-2</td><td>#fbbf24</td><td>单位</td></tr>
+            <tr><td>--red</td><td>#ef4444</td><td>严重</td></tr>
+            <tr><td>--gray</td><td>#64748b</td><td>离线</td></tr>
+            <tr><td>--violet</td><td>#a78bfa</td><td>三相 B 相</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>5.2 状态色映射</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>状态</th><th>颜色</th><th>背景</th><th>边框</th></tr></thead>
+          <tbody>
+            <tr><td><span class="swatch sw-online">在线</span></td><td>green</td><td>rgba(34,197,94,.12)</td><td>rgba(34,197,94,.3)</td></tr>
+            <tr><td><span class="swatch sw-warn">告警</span></td><td>amber</td><td>rgba(245,158,11,.12)</td><td>rgba(245,158,11,.3)</td></tr>
+            <tr><td><span class="swatch sw-alarm">严重</span></td><td>red</td><td>rgba(239,68,68,.12)</td><td>rgba(239,68,68,.4)</td></tr>
+            <tr><td><span class="swatch sw-offline">离线</span></td><td>gray</td><td>rgba(100,116,139,.18)</td><td>rgba(100,116,139,.4)</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>5.3 字号规范</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>元素</th><th>字号</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>设备名（r1）</td><td>13px</td><td>主页卡片</td></tr>
+            <tr><td>路径条</td><td>13-14px</td><td>详情页</td></tr>
+            <tr><td>主体信息 v</td><td>15-16px</td><td>详情页</td></tr>
+            <tr><td>9 参数 v</td><td>22-26px</td><td>详情页 P-block</td></tr>
+            <tr><td>三相 v</td><td>18px</td><td>详情页 phase</td></tr>
+            <tr><td>主页 r3 v</td><td>14px</td><td>主页 P-block</td></tr>
+            <tr><td>主页 r4/r5 v</td><td>11px</td><td>主页三相</td></tr>
+            <tr><td>单位</td><td>= 值的字号</td><td>视觉一致</td></tr>
+            <tr><td>遥信文字</td><td>12-13px / 600</td><td>详情页</td></tr>
+            <tr><td>弹窗标题</td><td>15px</td><td>弹窗</td></tr>
+            <tr><td>按钮文字</td><td>11-13px</td><td>控件</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>5.4 间距规范</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>位置</th><th>间距</th></tr></thead>
+          <tbody>
+            <tr><td>页面内边距</td><td>6-10px</td></tr>
+            <tr><td>卡片内边距</td><td>4-8px</td></tr>
+            <tr><td>卡片行间距</td><td>2-3px</td></tr>
+            <tr><td>panel padding</td><td>10-14px</td></tr>
+            <tr><td>弹窗圆角</td><td>12px</td></tr>
+            <tr><td>卡片圆角</td><td>4-7px</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>5.5 布局规范</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>设备</th><th>规格</th></tr></thead>
+          <tbody>
+            <tr><td>主页设备卡片</td><td>6 列网格 / 26 台一屏</td></tr>
+            <tr><td>详情页 9 参数</td><td>6 列网格（repeat(6, 1fr)）</td></tr>
+            <tr><td>详情页三相</td><td>6 列网格（repeat(6, 1fr)）</td></tr>
+            <tr><td>详情页遥信</td><td>8 列网格 / 1280px 以下 6 列</td></tr>
+            <tr><td>详情页遥控</td><td>3 列网格</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>5.6 柱条规范</h3>
+        <ul>
+          <li>从下往上（<code>align-self: flex-end</code>）</li>
+          <li>按值归一化，主页 max 34px，详情页 max 44px</li>
+          <li>电流柱条：蓝色渐变（<code>--blue-2</code> → <code>--blue</code>）</li>
+          <li>电压柱条：绿色渐变（<code>--green-2</code> → <code>--green</code>）</li>
+          <li>离线柱条：灰色</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="chapter" id="ch6">
+      <div class="chapter-hd"><span class="num">06</span><h2>交互规则</h2></div>
+      <div class="chapter-bd">
+
+        <h3>6.1 状态判定</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>状态</th><th>值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>NORMAL</td><td>'normal'</td><td>通讯正常 + 无告警</td></tr>
+            <tr><td>WARN</td><td>'warn'</td><td>一般告警</td></tr>
+            <tr><td>ALARM</td><td>'alarm'</td><td>严重告警</td></tr>
+            <tr><td>OFFLINE</td><td>'offline'</td><td>通讯中断</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>6.2 告警等级</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>等级</th><th>颜色</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>crit</td><td>red</td><td>保护动作、严重跳闸</td></tr>
+            <tr><td>warn</td><td>amber</td><td>越限告警</td></tr>
+            <tr><td>ok</td><td>green</td><td>保护返回</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>6.3 操作确认（防误操作）</h3>
+        <ul>
+          <li>遥控按钮点击后<strong>必须</strong>弹窗二次确认</li>
+          <li>弹窗包含：设备信息、操作、寄存器、当前状态、操作时间</li>
+          <li>必须勾选「我已核对设备状态、远动条件和现场安全，确认执行此操作」才能执行</li>
+          <li><strong>不强制</strong>输入账号密码二次确认（避免登录态切走）</li>
+        </ul>
+
+        <h3>6.4 排序与筛选</h3>
+        <ul>
+          <li>主页排序：localStorage 持久化（key: <code>relay_sort_${stationId}</code>）</li>
+          <li>5 状态筛选：单选互斥</li>
+          <li>电站切换：重置排序为默认</li>
+        </ul>
+
+        <h3>6.5 告警轮播</h3>
+        <ul>
+          <li>3 秒切换一条</li>
+          <li>单条告警宽度自适应（<code>scrollWidth + 40px</code>）</li>
+          <li>单击条目跳转单台详情</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="chapter" id="ch7">
+      <div class="chapter-hd"><span class="num">07</span><h2>技术方案</h2></div>
+      <div class="chapter-bd">
+
+        <h3>7.1 技术选型</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>项</th><th>选型</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>页面</td><td>单 HTML 离线</td><td>不依赖后端，方便内网部署</td></tr>
+            <tr><td>图表</td><td>ECharts 5.4.3</td><td>CDN 引入</td></tr>
+            <tr><td>状态管理</td><td>原生 JS</td><td>避免引入框架</td></tr>
+            <tr><td>持久化</td><td>localStorage</td><td>排序偏好</td></tr>
+            <tr><td>拖拽</td><td>HTML5 drag and drop</td><td>排序弹窗</td></tr>
+            <tr><td>模态弹窗</td><td>原生实现</td><td>居中无模糊</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>7.2 文件结构</h3>
+        <pre><code>workspace/
+├── relay-monitor.html          # 主页（26 台集中监控）
+├── relay-detail.html           # 单台继保详情页
+├── point_table.xls             # 通讯点表（权威数据源）
+├── relay-monitor-requirements.html  # 本文档
+├── 继电保护监控需求开发文档.md
+└── 继电保护监控需求开发文档.docx</code></pre>
+
+        <h3>7.3 性能指标</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>指标</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td>首屏加载</td><td>&lt; 2s</td></tr>
+            <tr><td>卡片刷新</td><td>5s 轮询（可配置）</td></tr>
+            <tr><td>告警轮播</td><td>3s/条</td></tr>
+            <tr><td>ECharts 渲染</td><td>&lt; 500ms</td></tr>
+            <tr><td>弹窗打开</td><td>&lt; 100ms</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>7.4 浏览器兼容</h3>
+        <ul>
+          <li>Chrome ≥ 90</li>
+          <li>Edge ≥ 90</li>
+          <li>Firefox ≥ 88</li>
+          <li>不兼容 IE</li>
+        </ul>
+
+        <h3>7.5 安全</h3>
+        <ul>
+          <li>所有 Modbus 写入操作（遥控）需二次确认</li>
+          <li>前端不做权限控制，依赖后端鉴权</li>
+          <li>操作人字段从登录态获取（点表无此字段）</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <div class="chapter" id="ch8">
+      <div class="chapter-hd"><span class="num">08</span><h2>数据流</h2></div>
+      <div class="chapter-bd">
+
+        <h3>8.1 主页数据流</h3>
+        <pre><code>通讯点表 → 后端采集服务 → WebSocket/HTTP 轮询
+                              ↓
+                          前端 devs 数组
+                              ↓
+                    renderDevices() 渲染 26 卡片
+                              ↓
+                  5s 定时更新（模拟实时数据）</code></pre>
+
+        <h3>8.2 详情页数据流</h3>
+        <pre><code>URL: relay-detail.html?dev=#01&station=S1
+       ↓
+URL 参数解析 → curDev
+       ↓
+renderRow1()  9 参数 P-block
+renderRow2()  三相 6 个
+renderDI()    32+16 遥信
+renderCtrl()  6 个 Obj
+renderCurAlarmList()  实时告警
+       ↓
+用户操作：弹窗（历史事件 / 历史曲线 / 控制记录 / 防误操作）</code></pre>
+
+        <h3>8.3 告警流</h3>
+        <pre><code>事件记录寄存器 402101
+   ↓ (事件代码 + 时标)
+前端 alarms 数组
+   ↓
+主页：告警轮播（3s/条）
+      + 状态 pill（点击浮窗看详情）
+      + 活跃告警列表弹窗
+   ↓
+详情页：实时告警列表（当前设备告警）
+      + 历史事件弹窗</code></pre>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <div class="chapter" id="ch9">
+      <div class="chapter-hd"><span class="num">09</span><h2>验收标准</h2></div>
+      <div class="chapter-bd">
+
+        <h3>9.1 主页验收</h3>
+        <ul>
+          <li>26 台设备一屏完整显示，不滚动</li>
+          <li>5 状态筛选正确（全部/在线/告警/严重/离线）</li>
+          <li>电站下拉支持模糊搜索</li>
+          <li>排序弹窗支持拖动，保存到 localStorage</li>
+          <li>告警轮播 3 秒切换一条</li>
+          <li>活跃告警列表弹窗显示设备信息</li>
+          <li>状态 pill 点击弹浮窗</li>
+        </ul>
+
+        <h3>9.2 详情页验收</h3>
+        <ul>
+          <li>路径条显示位置 + 设备 + 型号</li>
+          <li>主体信息 4 列：设备名/位置/电站/当前状态</li>
+          <li>9 参数遥测显示 17 项中实际采集的项</li>
+          <li>32+16 遥信按位展开</li>
+          <li>6 Obj 遥控有分闸/合闸按钮</li>
+          <li>遥控二次确认弹窗</li>
+          <li>实时告警单行显示</li>
+          <li>历史事件/历史曲线/控制记录都有起止时间选择</li>
+          <li>历史曲线参数用中文显示</li>
+        </ul>
+
+        <h3>9.3 数据准确度验收</h3>
+        <ul>
+          <li>严格按点表 17 项遥测展示，不添加 T/THD/I1/I2/3U0</li>
+          <li>严格按点表 6 个遥控 Obj</li>
+          <li>告警无 msg 字段</li>
+          <li>单位换算：P/Q/S ×1000 分别为 kW/kvar/kVA；U ×1000 为 V</li>
+          <li>单位字号 = 值字号</li>
+        </ul>
+
+        <h3>9.4 视觉验收</h3>
+        <ul>
+          <li>深色科技感，匹配发电厂强电磁干扰环境</li>
+          <li>26 台一屏完整（高 1920px 不滚动）</li>
+          <li>柱条从下往上</li>
+          <li>弹窗居中无模糊</li>
+          <li>参数名加大 + 明显颜色</li>
+          <li>状态色区分明显</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="chapter" id="ch10">
+      <div class="chapter-hd"><span class="num">10</span><h2>后续迭代规划</h2></div>
+      <div class="chapter-bd">
+
+        <h3>10.1 V5.x 计划</h3>
+        <ul>
+          <li>接入后端实时数据（WebSocket）</li>
+          <li>告警声音提示</li>
+          <li>多电站切换实际数据</li>
+          <li>用户登录态与权限控制</li>
+        </ul>
+
+        <h3>10.2 V6.x 计划</h3>
+        <ul>
+          <li>历史数据存储与回放</li>
+          <li>趋势分析与 AI 告警预测</li>
+          <li>移动端适配</li>
+          <li>离线模式（IndexedDB）</li>
+        </ul>
+
+        <h3>10.3 长期规划</h3>
+        <ul>
+          <li>多电站集团级监控</li>
+          <li>跨电站告警关联分析</li>
+          <li>设备健康度评估</li>
+          <li>预防性维护建议</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 11 -->
+    <div class="chapter" id="ch11">
+      <div class="chapter-hd"><span class="num">11</span><h2>附录</h2></div>
+      <div class="chapter-bd">
+
+        <h3>11.1 参考资料</h3>
+        <ul>
+          <li>Easergy MiCOM P3 系列继电保护装置样本 V3.20</li>
+          <li>通讯点表 <code>point_table.xls</code></li>
+          <li>发电厂继电保护设计规范 DL/T 5843</li>
+        </ul>
+
+        <h3>11.2 变更记录</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>版本</th><th>日期</th><th>变更</th></tr></thead>
+          <tbody>
+            <tr><td>V1</td><td>2026-08-28</td><td>基础主页</td></tr>
+            <tr><td>V2</td><td>2026-08-28</td><td>详情页初版</td></tr>
+            <tr><td>V3</td><td>2026-08-28</td><td>风格调整</td></tr>
+            <tr><td>V4</td><td>2026-08-31</td><td>顶部 tstat + 告警轮播</td></tr>
+            <tr><td>V4.5</td><td>2026-08-31</td><td>用户反馈多轮迭代：单位统一、标题对位、起止时间查询等</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h3>11.3 术语对照</h3>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>用户口语</th><th>文档术语</th></tr></thead>
+          <tbody>
+            <tr><td>主页面</td><td>26 台集中监控页面</td></tr>
+            <tr><td>详情页</td><td>单台继保监控页面</td></tr>
+            <tr><td>跑马灯 / 轮播</td><td>单条切换轮播</td></tr>
+            <tr><td>卡片</td><td>设备信息卡片</td></tr>
+            <tr><td>柱条</td><td>三相柱状条</td></tr>
+            <tr><td>弹窗</td><td>模态对话框</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div>孚创信息科技（成都）有限公司 · 信息化运维业务线</div>
+    <div class="ver">V4.5 · 2026-08-31</div>
+  </div>
+</div>
+</body>
+</html>

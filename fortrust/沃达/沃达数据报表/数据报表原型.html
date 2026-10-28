@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>燃气发电报表查询系统 v16 · 孚创动力</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #f0f2f5; color: #303133; font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { width: 100vw; height: 100vh; min-width: 1280px; min-height: 720px; overflow: hidden; display: flex; flex-direction: column; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input { font-family: inherit; }
+  select { font-family: inherit; font-size: 12px; }
+
+  /* 顶栏 */
+  .topbar {
+    height: 44px; background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex; align-items: center; padding: 0 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    flex-shrink: 0;
+  }
+  .topbar .breadcrumb { font-size: 13px; color: #606266; display: flex; align-items: center; gap: 8px; }
+  .topbar .breadcrumb .sep { color: #c0c4cc; }
+  .topbar .breadcrumb .current { color: #303133; font-weight: 500; }
+  .topbar .spacer { flex: 1; }
+  .topbar-meta { font-size: 12px; color: #909399; display: flex; gap: 16px; align-items: center; }
+  .live-dot { display: inline-block; width: 6px; height: 6px; background: #52c41a; border-radius: 50%; margin-right: 4px; box-shadow: 0 0 0 3px rgba(82,196,26,0.15); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(82,196,26,0.4); } 70% { box-shadow: 0 0 0 6px rgba(82,196,26,0); } 100% { box-shadow: 0 0 0 0 rgba(82,196,26,0); } }
+  .icon-btn { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: #606266; font-size: 14px; transition: all .15s; }
+  .icon-btn:hover { background: #f0f2f5; color: #1890ff; }
+  .btn { height: 28px; padding: 0 14px; border-radius: 4px; font-size: 12px; transition: all .15s; border: 1px solid #d9d9d9; background: #fff; color: #606266; }
+  .btn:hover { border-color: #1890ff; color: #1890ff; }
+
+  /* Tab + 时间条 */
+  .tabbar {
+    height: 48px; background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex; align-items: stretch;
+    padding: 0 20px; flex-shrink: 0;
+  }
+  .tabs { display: flex; gap: 4px; align-items: stretch; margin-right: 24px; }
+  .tab { padding: 0 20px; font-size: 14px; color: #606266; position: relative; transition: color .15s; font-weight: 500; }
+  .tab:hover { color: #1890ff; }
+  .tab.active { color: #1890ff; font-weight: 600; }
+  .tab.active::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; width: 24px; height: 2px; background: #1890ff; border-radius: 1px; }
+  .tab .badge { display: inline-block; background: #f0f0f0; color: #909399; font-size: 10px; padding: 1px 5px; border-radius: 8px; margin-left: 4px; font-weight: 400; }
+  .tab.active .badge { background: #e6f7ff; color: #1890ff; }
+
+  .date-controls { display: flex; align-items: center; gap: 4px; border-left: 1px solid #f0f0f0; padding-left: 24px; }
+  .date-controls .arrow { width: 26px; height: 26px; border-radius: 3px; color: #606266; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+  .date-controls .arrow:hover { background: #f0f2f5; color: #1890ff; }
+  .date-display { min-width: 130px; height: 30px; border: 1px solid #d9d9d9; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #303133; background: #fff; padding: 0 10px; gap: 6px; }
+  .date-display:hover { border-color: #1890ff; cursor: pointer; }
+  .date-display .cal { color: #909399; font-size: 13px; }
+  .date-display input { border: none; outline: none; background: transparent; font-size: 13px; font-weight: 500; color: #303133; text-align: center; width: 100%; }
+  .quick-btns { display: flex; gap: 2px; margin-left: 4px; }
+  .quick-btn { height: 26px; padding: 0 10px; border-radius: 3px; font-size: 12px; color: #606266; background: #fafafa; border: 1px solid #f0f0f0; }
+  .quick-btn:hover { color: #1890ff; border-color: #1890ff; background: #fff; }
+  .quick-btn.active { color: #1890ff; border-color: #1890ff; background: #e6f7ff; }
+  .custom-range { display: none; align-items: center; gap: 4px; margin-left: 8px; }
+  .custom-range.show { display: flex; }
+  .custom-range input { width: 130px; height: 28px; border: 1px solid #d9d9d9; border-radius: 3px; padding: 0 8px; font-size: 12px; outline: none; }
+  .custom-range input:focus { border-color: #1890ff; }
+  .custom-range .sep { color: #909399; font-size: 12px; }
+
+  .tabbar .spacer { flex: 1; }
+  .tabbar-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* 主体布局 */
+  .layout { flex: 1; display: grid; grid-template-columns: 360px 1fr; gap: 10px; padding: 10px; overflow: hidden; }
+
+  /* 左侧三级组织树 */
+  .summary-panel { background: #fff; border-radius: 6px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+  .panel-header { height: 40px; padding: 0 14px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+  .panel-header h3 { font-size: 13px; font-weight: 600; color: #303133; }
+  .panel-header .count { color: #909399; font-size: 12px; margin-left: 4px; }
+  .panel-header .actions { margin-left: auto; display: flex; gap: 4px; }
+  .panel-header .icon-btn { width: 24px; height: 24px; font-size: 12px; }
+
+  .tree-list { flex: 1; overflow-y: auto; padding: 8px; background: #f5f7fa; }
+  .tree-list::-webkit-scrollbar { width: 6px; }
+  .tree-list::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ===== v10 嵌套容器组织树 =====
+     思路：每个一级公司包一个 .tree-org-block 浅蓝"容器"，L1/L2/L3 直接放在容器内
+     • L1 满宽（margin-left: 0）        → 容器内最宽的卡片
+     • L2 margin-left: 18px（右对齐）    → 比 L1 短、左缩进
+     • L3 margin-left: 36px（右对齐）    → 比 L2 短、左缩进更多
+     所有节点的右边自然贴齐容器 padding-right → "右对齐"
+     浅蓝容器背景包住所有子节点          → "包含关系"
+     不再使用 ::before/::after 连接线    → 用户说"不一定是连线"
+  */
+  .tree-org-block {
+    background: #e6f7ff;        /* 浅蓝：表达"包含" */
+    border: 1px solid #91d5ff;
+    border-radius: 6px;
+    padding: 6px 6px 8px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .tree-org-block[data-selected="true"] {
+    background: #bae7ff;
+    border-color: #1890ff;
+  }
+  .tree-org-block .org-tag {
+    position: absolute; top: -8px; left: 8px;
+    background: #1890ff; color: #fff;
+    font-size: 10px; padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .tree-org-block .org-tag:hover { background: #40a9ff; box-shadow: 0 0 0 2px #91d5ff; }
+
+  /* 树节点基础样式 */
+  .tree-node {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: all .15s;
+    position: relative;
+  }
+  .tree-node.selected {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 1px #1890ff;
+  }
+  .tree-node.collapsed > .tree-node-body { display: none; }
+  .tree-node:last-child { margin-bottom: 0; }
+
+  /* L1：满宽（相对容器），蓝色左色条 */
+  .tree-node[data-depth="1"] {
+    border-left: 3px solid #1890ff;
+    /* margin-left: 0 撑满容器 */
+  }
+  .tree-node[data-depth="1"].selected { background: #f0f7ff; }
+
+  /* L2：右对齐到容器右边缘，左缩进 18px → 比 L1 短，绿色左色条 */
+  .tree-node[data-depth="2"] {
+    border-left: 3px solid #52c41a;
+    margin-left: 18px;
+    /* margin-right 默认 0 → 右边贴齐容器 */
+  }
+  .tree-node[data-depth="2"].selected { background: #f6ffed; }
+
+  /* L3：右对齐到容器右边缘，左缩进 36px → 比 L2 短，橙色左色条 */
+  .tree-node[data-depth="3"] {
+    border-left: 3px solid #fa8c16;
+    margin-left: 36px;
+  }
+  .tree-node[data-depth="3"].selected { background: #fff7e6; }
+
+  /* Head */
+  .tree-node-head {
+    padding: 6px 10px;
+    display: flex; align-items: center;
+    cursor: pointer;
+    background: #fff;
+    border-radius: 4px 4px 0 0;
+  }
+  .tree-node.collapsed > .tree-node-head { border-radius: 4px; }
+  .tree-node[data-depth="1"] > .tree-node-head { font-weight: 600; }
+  .tree-node .arrow { width: 14px; height: 14px; color: #909399; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; transition: transform .2s; margin-right: 4px; cursor: pointer; }
+  .tree-node .arrow:hover { color: #1890ff; background: #f0f7ff; border-radius: 3px; }
+  .tree-node.collapsed > .tree-node-head > .arrow { transform: rotate(-90deg); }
+  .tree-node[data-depth="3"] > .tree-node-head > .arrow { visibility: hidden; pointer-events: none; }
+  .tree-node .icon { width: 18px; height: 18px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 5px; flex-shrink: 0; }
+  .tree-node[data-depth="1"] .icon { background: #e6f7ff; color: #1890ff; }
+  .tree-node[data-depth="2"] .icon { background: #f6ffed; color: #52c41a; }
+  .tree-node[data-depth="3"] .icon { background: #fff7e6; color: #fa8c16; }
+  .tree-node .name { font-size: 12px; color: #303133; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tree-node .meta-tag { font-size: 10px; color: #909399; margin-left: 6px; }
+
+  /* Body：4x2 指标网格，所有级别统一 */
+  .tree-node-body {
+    padding: 6px 8px 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    background: #fafbfc;
+    border-top: 1px solid #f0f0f0;
+    border-radius: 0 0 4px 4px;
+  }
+  /* v14：项目组和井队不再在左侧展示指标，统计改到右侧 scope-row */
+  .tree-node[data-depth="2"] > .tree-node-body,
+  .tree-node[data-depth="3"] > .tree-node-body {
+    display: none;
+  }
+  .tree-node .metric {
+    background: #fff;
+    border: 1px solid #ebeef5;
+    border-radius: 3px;
+    padding: 4px 6px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .tree-node .metric:hover { background: #e6f7ff; border-color: #91d5ff; }
+  .tree-node .metric .l { font-size: 9px; color: #909399; line-height: 1.3; }
+  .tree-node .metric .v { font-size: 11px; color: #303133; font-weight: 600; line-height: 1.4; }
+  .tree-node .metric .v .u { font-size: 9px; color: #909399; font-weight: 400; }
+
+  /* 右侧明细 */
+  .detail-panel { background: #fff; border-radius: 6px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+  .detail-header { height: 44px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+  .detail-header h2 { font-size: 14px; font-weight: 600; color: #303133; }
+  .detail-header .date-tag { margin-left: 8px; background: #e6f7ff; color: #1890ff; font-size: 12px; padding: 1px 8px; border-radius: 10px; }
+  .detail-header .scope-tag { margin-left: 6px; background: #f0f9ff; color: #1890ff; font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid #91d5ff; }
+  .detail-header .spacer { flex: 1; }
+  .detail-header .stat-mini { font-size: 12px; color: #606266; margin-right: 12px; }
+  .detail-header .stat-mini b { color: #1890ff; font-weight: 600; }
+
+  .filter-bar { height: 40px; padding: 0 16px; display: flex; align-items: center; gap: 8px; background: #fafbfc; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+  .filter-bar .stat { font-size: 12px; color: #606266; margin-right: 8px; }
+  .filter-bar .stat b { color: #1890ff; font-weight: 600; }
+  .filter-bar .spacer { flex: 1; }
+  .filter-divider { width: 1px; height: 18px; background: #e8e8e8; margin: 0 4px; }
+  .filter-select { display: flex; align-items: center; gap: 4px; }
+  .filter-select label { font-size: 12px; color: #606266; }
+  .filter-select select { height: 28px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 8px; background: #fff; outline: none; min-width: 110px; }
+  .filter-select select:focus { border-color: #1890ff; }
+  .search-box { position: relative; width: 200px; }
+  .search-box input { width: 100%; height: 28px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 10px 0 28px; font-size: 12px; outline: none; transition: border-color .15s; }
+  .search-box input:focus { border-color: #1890ff; }
+  .search-box::before { content: '⌕'; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #909399; font-size: 14px; }
+  .btn-sm { height: 28px; padding: 0 10px; border-radius: 4px; font-size: 12px; transition: all .15s; border: 1px solid #d9d9d9; background: #fff; color: #606266; }
+  .btn-sm:hover { border-color: #1890ff; color: #1890ff; }
+  .btn-sm.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+  .btn-sm.primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+  /* 表格 */
+  .table-wrap { flex: 1; overflow: auto; position: relative; }
+  .table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+  table.data { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; table-layout: fixed; }
+  table.data th, table.data td { border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; text-align: center; font-size: 12px; padding: 0; background: #fff; }
+
+  /* 汇总表头：选中层级后显示 */
+  table.data thead tr.scope-row th {
+    background: linear-gradient(135deg, #fff7e6 0%, #fff 100%);
+    color: #d46b08;
+    font-weight: 600;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 12px;
+    text-align: left;
+    border-bottom: 2px solid #ffd591;
+  }
+  table.data thead tr.scope-row th .scope-info {
+    display: flex; align-items: center; gap: 16px; font-size: 12px;
+    flex-wrap: wrap;
+  }
+  table.data thead tr.scope-row th .scope-info .item { color: #303133; }
+  table.data thead tr.scope-row th .scope-info .item b { color: #d46b08; }
+  table.data thead tr.scope-row th .scope-info .sep { color: #d9d9d9; }
+  /* 多级路径面包屑：每级一个标签，鼠标悬停高亮 */
+  table.data thead tr.scope-row th .scope-info .scope-path .crumb {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 2px;
+    background: #fff7e6;
+    border: 1px solid #ffd591;
+    border-radius: 10px;
+    color: #d46b08;
+    font-weight: 600;
+    font-size: 12px;
+    transition: all .15s;
+  }
+  table.data thead tr.scope-row th .scope-info .scope-path .crumb:hover {
+    background: #ffd591;
+    cursor: default;
+  }
+  table.data thead tr.scope-row th .scope-info .scope-path .sep {
+    margin: 0 4px;
+    color: #d9d9d9;
+    font-weight: 400;
+  }
+  table.data thead tr.scope-row th .scope-info .scope-date {
+    color: #909399;
+    font-size: 12px;
+    margin-right: 4px;
+  }
+
+  table.data thead tr.group-header th { background: #f5f7fa; color: #303133; font-weight: 600; height: 26px; font-size: 12px; }
+  table.data thead tr.col-header th {
+    background: #fafbfc; color: #606266; font-weight: 500;
+    height: 50px; font-size: 11px;
+    position: sticky; top: 0; z-index: 3;
+    padding: 4px 6px;
+  }
+  table.data thead tr.col-header.sticky th { position: sticky; top: 36px; }
+  table.data thead .help {
+    display: inline-block;
+    width: 13px; height: 13px;
+    line-height: 13px; text-align: center;
+    background: #e6f7ff; color: #1890ff;
+    border-radius: 50%; font-size: 9px;
+    margin-left: 3px; cursor: help;
+    vertical-align: middle;
+    transition: all .15s;
+  }
+  table.data thead .help:hover { background: #1890ff; color: #fff; }
+
+  table.data .sticky-col { position: sticky; background: #fff; z-index: 1; }
+  table.data thead tr.col-header .sticky-col { z-index: 4; background: #fafbfc; }
+  table.data thead tr.group-header .sticky-col { z-index: 4; background: #f5f7fa; }
+  table.data .col-1 { left: 0; }
+  table.data .col-2 { left: 50px; }
+  table.data .col-3 { left: 160px; }
+  table.data .col-4 { left: 260px; }
+  table.data .col-5 { left: 380px; }
+
+  table.data tbody td { height: 32px; color: #303133; }
+  table.data tbody tr:hover td { background: #f5f9ff; }
+  table.data tbody td.editable { cursor: text; }
+  table.data tbody td.editable:hover { background: #e6f7ff; }
+  table.data tbody td input { width: 100%; height: 100%; border: 2px solid transparent; background: transparent; text-align: center; font-size: 12px; color: #303133; outline: none; padding: 0 4px; }
+  table.data tbody td input:focus { border-color: #1890ff; background: #fff; }
+  /* 已修改：单元格变浅黄底+左侧橙条，输入框文字变橙加粗 */
+  table.data tbody td:has(input.dirty) { background: #fff7e6 !important; box-shadow: inset 2px 0 0 #fa8c16; }
+  table.data tbody td input.dirty { background: transparent; color: #d46b08; font-weight: 600; }
+  /* 标记：单元格右上角小圆点 */
+  table.data tbody td:has(input.dirty) { position: relative; }
+  table.data tbody td:has(input.dirty)::after {
+    content: ''; position: absolute; top: 4px; right: 4px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #fa8c16; box-shadow: 0 0 0 2px #fff7e6;
+  }
+  table.data tbody td.readonly { color: #909399; background: #fafbfc; }
+  table.data tbody td.id-cell { font-family: "SF Mono", Consolas, monospace; color: #606266; }
+  table.data tbody tr.row-qy td { background: #f6ffed; }
+  table.data tbody tr.row-qy:hover td { background: #e6f7e0; }
+  table.data tbody tr.row-empty td { background: #fafbfc; color: #c0c4cc; font-style: italic; }
+  table.data tbody tr.divider td { padding: 0; height: 4px; background: #f0f2f5; border: none; }
+
+  /* 查询按钮 */
+  .btn-query { height: 28px; padding: 0 14px; border-radius: 4px; font-size: 12px; font-weight: 500; transition: all .15s; background: #1890ff; color: #fff; border: 1px solid #1890ff; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-query:hover { background: #40a9ff; border-color: #40a9ff; }
+
+  /* 刷新按钮（白底蓝边，区别于主操作"查询"） */
+  .btn-refresh { height: 28px; padding: 0 14px; border-radius: 4px; font-size: 12px; font-weight: 500; transition: all .15s; background: #fff; color: #1890ff; border: 1px solid #1890ff; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-refresh:hover { background: #e6f7ff; }
+  .btn-refresh.loading { opacity: 0.65; pointer-events: none; }
+  .btn-refresh.loading .icon-rotate { display: inline-block; animation: refresh-spin 0.8s linear infinite; }
+  @keyframes refresh-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .table-footer { height: 32px; padding: 0 16px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; font-size: 12px; color: #606266; background: #fafbfc; flex-shrink: 0; }
+  .table-footer .spacer { flex: 1; }
+  .table-footer .page-btn { min-width: 24px; height: 22px; border: 1px solid #d9d9d9; border-radius: 3px; background: #fff; color: #606266; font-size: 12px; padding: 0 6px; }
+  .table-footer .page-btn:hover { border-color: #1890ff; color: #1890ff; }
+  .table-footer .page-btn.active { background: #1890ff; border-color: #1890ff; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="breadcrumb">
+    <span>⚡</span>
+    <span>IoT 监控平台</span>
+    <span class="sep">/</span>
+    <span>发电管理</span>
+    <span class="sep">/</span>
+    <span class="current" id="bcTitle">燃气发电日报表</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="topbar-meta">
+    <span><span class="live-dot"></span>实时数据已连接</span>
+    <span>最后同步：<span id="syncTime">14:28:42</span></span>
+  </div>
+  <button class="icon-btn" title="刷新" onclick="refreshData()">↻</button>
+  <button class="icon-btn" title="导出" onclick="exportData()">⤓</button>
+  <button class="icon-btn" title="打印" onclick="window.print()">⎙</button>
+</div>
+
+<div class="tabbar">
+  <div class="tabs">
+    <button class="tab active" data-tab="daily" onclick="switchTab('daily')">日报 <span class="badge">按日</span></button>
+    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">月报 <span class="badge">按月</span></button>
+  </div>
+  <div class="date-controls">
+    <button class="arrow" onclick="shiftDate(-1)">‹</button>
+    <div class="date-display">
+      <span class="cal">📅</span>
+      <input id="dateInput" type="date" value="2026-08-05" onchange="onDateChange()">
+    </div>
+    <button class="arrow" onclick="shiftDate(1)">›</button>
+    <div class="quick-btns" id="quickBtns">
+      <!-- JS 按日报/月报渲染：日报=今日/昨日/自定义；月报=本月/上月/自定义 -->
+    </div>
+    <div class="custom-range" id="customRange">
+      <input type="date" id="startDate" value="2026-08-01" onchange="onCustomChange()">
+      <span class="sep">至</span>
+      <input type="date" id="endDate" value="2026-08-05" onchange="onCustomChange()">
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="tabbar-actions">
+    <button class="btn" onclick="resetAll()">↺ 重置</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- 左侧：项目汇总统计（点击每级查询右侧报表） -->
+  <aside class="summary-panel">
+    <div class="panel-header">
+      <h3>汇总统计</h3>
+      <span class="count" id="treeCount">· 1 公司 / 3 项目组 / 13 电站</span>
+      <div class="actions">
+        <button class="icon-btn" title="全部展开" onclick="expandAll(true)">⊞</button>
+        <button class="icon-btn" title="全部折叠" onclick="expandAll(false)">⊟</button>
+      </div>
+    </div>
+    <div class="tree-list" id="treeList">
+      <!-- JS 渲染 -->
+    </div>
+  </aside>
+
+  <!-- 右侧：明细表 -->
+  <section class="detail-panel">
+    <div class="detail-header">
+      <h2 id="detailTitle">电站日发电明细</h2>
+      <span class="date-tag" id="dateTag">📅 2026-08-05</span>
+      <span class="scope-tag" id="scopeTag">全部</span>
+      <div class="spacer"></div>
+      <span class="stat-mini">共 <b id="rowTotal">13</b> 条 · 已确认 <b id="rowConfirmed" style="color:#52c41a">0</b> 条</span>
+    </div>
+
+    <!-- 筛选条：所属组织/项目组/井队号 + 搜索框 + 查询按钮 + 刷新按钮 -->
+    <div class="filter-bar">
+      <div class="filter-select">
+        <label>所属组织：</label>
+        <select id="filterOrg" onchange="applyFilter()"><option value="">全部</option></select>
+      </div>
+      <div class="filter-select">
+        <label>项目组：</label>
+        <select id="filterGrp" onchange="applyFilter()"><option value="">全部</option></select>
+      </div>
+      <div class="filter-select">
+        <label>井队号：</label>
+        <select id="filterTeam" onchange="applyFilter()"><option value="">全部</option></select>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="search-box">
+        <input type="text" placeholder="搜索电站 ID / 井队 / 负责人" id="rightSearch" oninput="onSearchInput()" onkeydown="if(event.key==='Enter')doQuery()">
+      </div>
+      <button class="btn-query" onclick="doQuery()">🔍 查询</button>
+      <button class="btn-refresh" onclick="refreshData()" title="保留当前筛选条件，从服务器重新拉取最新数据">🔄 刷新</button>
+      <button class="btn-sm" onclick="resetFilter()">重置</button>
+      <button class="btn-sm primary" onclick="exportData()">⤓ 导出</button>
+      <div class="spacer"></div>
+    </div>
+
+    <div class="table-wrap" id="tableWrap">
+      <table class="data" id="dataTable">
+        <colgroup id="colgroup"></colgroup>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <span class="stat">第 1-13 条 / 共 13 条</span>
+      <div class="spacer"></div>
+      <div class="page-btn">‹</div>
+      <div class="page-btn active">1</div>
+      <div class="page-btn">2</div>
+      <div class="page-btn">›</div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // ============ Mock 数据 ============
+  // 每条电站含：id/org/grp/grpCode/team/wellCode + 装机power + 撬装skidCount + 单机machineCount + 电能读数 + 确认 + 功率 + 负责人
+  const stations = [
+    // ===== 沃达动力 / 乌审旗项目组 / 50123 (3 座) =====
+    { id:'VD000001', org:'沃达动力', grp:'乌审旗项目组', grpCode:'wsq', team:'50123', wellCode:'50123-1#', power:50123, skidCount:1, machineCount:1, start:1280.50, latest:1520.80, vodaConfirm:235.00, youConfirm:null,      avgPower:680, maxPower:820, owner:'张工 / 13812348888' },
+    { id:'VD000002', org:'沃达动力', grp:'乌审旗项目组', grpCode:'wsq', team:'50123', wellCode:'50123-2#', power:50123, skidCount:1, machineCount:1, start:1302.10, latest:1538.40, vodaConfirm:236.30, youConfirm:null,      avgPower:685, maxPower:815, owner:'张工 / 13812348888' },
+    { id:'VD000003', org:'沃达动力', grp:'乌审旗项目组', grpCode:'wsq', team:'50123', wellCode:'50123-3#', power:50123, skidCount:1, machineCount:1, start:1180.20, latest:1432.50, vodaConfirm:252.30, youConfirm:null,      avgPower:705, maxPower:850, owner:'李工 / 13923456666' },
+    // ===== 沃达动力 / 乌审旗项目组 / 50124 (2 座) =====
+    { id:'VD000004', org:'沃达动力', grp:'乌审旗项目组', grpCode:'wsq', team:'50124', wellCode:'50124-1#', power:60000, skidCount:1, machineCount:2, start:1255.00, latest:1488.70, vodaConfirm:233.70, youConfirm:null,      avgPower:680, maxPower:810, owner:'李工 / 13923456666' },
+    { id:'VD000005', org:'沃达动力', grp:'乌审旗项目组', grpCode:'wsq', team:'50124', wellCode:'50124-2#', power:60000, skidCount:1, machineCount:2, start:1320.30, latest:1565.10, vodaConfirm:244.80, youConfirm:235.00, avgPower:710, maxPower:840, owner:'王工 / 13734565555' },
+    // ===== 沃达动力 / 庆阳项目组 / 701236 (3 座) =====
+    { id:'VD000006', org:'沃达动力', grp:'庆阳项目组',  grpCode:'qy',  team:'701236', wellCode:'701236-1#', power:701236, skidCount:1, machineCount:1, start:2100.50, latest:2380.20, vodaConfirm:279.70, youConfirm:null,      avgPower:780, maxPower:920, owner:'赵工 / 13645673333' },
+    { id:'VD000007', org:'沃达动力', grp:'庆阳项目组',  grpCode:'qy',  team:'701236', wellCode:'701236-2#', power:701236, skidCount:1, machineCount:1, start:2080.20, latest:2356.80, vodaConfirm:276.60, youConfirm:null,      avgPower:770, maxPower:910, owner:'赵工 / 13645673333' },
+    { id:'VD000008', org:'沃达动力', grp:'庆阳项目组',  grpCode:'qy',  team:'701236', wellCode:'701236-3#', power:701236, skidCount:1, machineCount:1, start:2120.80, latest:2402.50, vodaConfirm:281.70, youConfirm:null,      avgPower:790, maxPower:930, owner:'孙工 / 13567892222' },
+    // ===== 沃达动力 / 庆阳项目组 / 701237 (2 座) =====
+    { id:'VD000009', org:'沃达动力', grp:'庆阳项目组',  grpCode:'qy',  team:'701237', wellCode:'701237-1#', power:80000, skidCount:1, machineCount:2, start:2150.30, latest:2432.10, vodaConfirm:281.80, youConfirm:null,      avgPower:795, maxPower:935, owner:'赵工 / 13645673333' },
+    { id:'VD000010', org:'沃达动力', grp:'庆阳项目组',  grpCode:'qy',  team:'701237', wellCode:'701237-2#', power:80000, skidCount:1, machineCount:2, start:2095.60, latest:2378.40, vodaConfirm:282.80, youConfirm:275.00, avgPower:785, maxPower:925, owner:'孙工 / 13567892222' },
+    // ===== XXX公司 / 西部项目组 / 90001 (2 座) =====
+    { id:'XXX00001', org:'XXX公司',   grp:'西部项目组',  grpCode:'xb',  team:'90001',  wellCode:'90001-1#',  power:100000, skidCount:1, machineCount:2, start:1500.20, latest:1780.50, vodaConfirm:280.30, youConfirm:null,      avgPower:720, maxPower:880, owner:'陈工 / 13478901111' },
+    { id:'XXX00002', org:'XXX公司',   grp:'西部项目组',  grpCode:'xb',  team:'90001',  wellCode:'90001-2#',  power:100000, skidCount:1, machineCount:2, start:1480.50, latest:1755.80, vodaConfirm:275.30, youConfirm:null,      avgPower:710, maxPower:870, owner:'陈工 / 13478901111' },
+    // ===== XXX公司 / 北部项目组 / 90002 (1 座) =====
+    { id:'XXX00003', org:'XXX公司',   grp:'北部项目组',  grpCode:'nb',  team:'90002',  wellCode:'90002-1#',  power:120000, skidCount:2, machineCount:4, start:2200.30, latest:2520.60, vodaConfirm:320.30, youConfirm:null,      avgPower:850, maxPower:1020, owner:'周工 / 13389000000' },
+    // ===== XXX公司 / 北部项目组 / 90003 (1 座) =====
+    { id:'XXX00004', org:'XXX公司',   grp:'北部项目组',  grpCode:'nb',  team:'90003',  wellCode:'90003-1#',  power:80000, skidCount:1, machineCount:2, start:1900.20, latest:2150.50, vodaConfirm:250.30, youConfirm:240.00, avgPower:680, maxPower:820, owner:'周工 / 13389000000' }
+  ];
+
+  // 月份数据（在 stations 上扩展）
+  function getMonthlyStations() {
+    return stations.map(s => {
+      const monthStart = 12000 + Math.random() * 5000;
+      const monthEnd = monthStart + 30000 + Math.random() * 10000;
+      const monthAccum = monthEnd - monthStart;
+      return { ...s,
+        monthStart: +monthStart.toFixed(2),
+        monthEnd: +monthEnd.toFixed(2),
+        monthAccum: +monthAccum.toFixed(2),
+        monthVoda: +(monthAccum * 0.95).toFixed(2),
+        monthYou:  +(monthAccum * 0.92).toFixed(2),
+        monthAvgPower: s.avgPower,
+        monthMaxPower: s.maxPower
+      };
+    });
+  }
+  // 注：getMonthlyStations 已通过扩展运算符保留 stations 的 skidCount/machineCount/wellCode/org/grp/team 等字段
+
+  // ============ 状态 ============
+  const state = {
+    tab: 'daily',
+    date: '2026-08-05',
+    quickMode: 'today',
+    customRange: { start: '2026-08-01', end: '2026-08-05' },
+    selectedNode: { type: 'all', code: null, name: '全部' },  // type: all/org/grp/team
+    filters: { org: '', grp: '', team: '' },
+    rightSearchKw: '',
+    collapsed: new Set()  // 折叠的节点
+  };
+
+  // ============ 三级组织树数据 ============
+  // 构造三级：org → grp → team
+  const orgTree = (() => {
+    const orgs = {};
+    stations.forEach(s => {
+      if (!orgs[s.org]) orgs[s.org] = {};
+      if (!orgs[s.org][s.grp]) orgs[s.org][s.grp] = [];
+      if (!orgs[s.org][s.grp].includes(s.team)) orgs[s.org][s.grp].push(s.team);
+    });
+    return orgs;
+  })();
+
+  // 计算每个节点的关键指标
+  function calcStats(filter) {
+    // filter 可以是 {org, grp, team}
+    let data = stations;
+    if (filter.org) data = data.filter(s => s.org === filter.org);
+    if (filter.grp) data = data.filter(s => s.grp === filter.grp);
+    if (filter.team) data = data.filter(s => s.team === filter.team);
+
+    const wells = data.length;
+    const accum = data.reduce((s, d) => s + (d.latest - d.start), 0);
+    const confirm = data.reduce((s, d) => s + d.vodaConfirm, 0);
+    const youConfirm = data.reduce((s, d) => s + (d.youConfirm || 0), 0);
+    const capacity = data.reduce((s, d) => s + d.power / 1000, 0);  // 装机 MW
+    const avgPower = wells > 0 ? Math.round(data.reduce((s, d) => s + d.avgPower, 0) / wells) : 0;
+    const maxPower = wells > 0 ? Math.max(...data.map(d => d.maxPower)) : 0;
+    const skid = data.reduce((s, d) => s + (d.skidCount || 0), 0);
+    const machine = data.reduce((s, d) => s + (d.machineCount || 0), 0);
+    return { wells, accum, confirm, youConfirm, capacity, avgPower, maxPower, skid, machine };
+  }
+
+  // ============ 通用 scope-row 指标（按 depth 分发，字段名和左侧 renderMetrics 完全一致） ============
+  function buildScopeMetrics(node) {
+    const isDaily = state.tab === 'daily';
+    const accumLabel  = isDaily ? '电表日累计' : '电表月累计';
+    const confirmLabel = isDaily ? '沃达日确认' : '沃达月确认';
+    const youConfirmLabel = isDaily ? '油田日确认' : '油田月确认';
+
+    // 取 stats
+    let stats;
+    if (node.type === 'all') stats = isDaily ? calcTotalStats() : calcTotalMonthlyStats();
+    else if (isDaily) stats = calcStatsByNode(node);
+    else stats = calcMonthlyStatsByNode(node);
+
+    // 公共 6 个字段（无 电站数 / 无 平均最大功率）
+    const common = [
+      { l: accumLabel,       v: stats.accum.toLocaleString() + ' kWh' },
+      { l: confirmLabel,     v: stats.confirm.toLocaleString() + ' kWh' },
+      { l: youConfirmLabel,  v: stats.youConfirm.toLocaleString() + ' kWh' },
+      { l: '装机',           v: stats.capacity.toFixed(2) + ' MW' },
+      { l: '撬装总数',       v: stats.skid },
+      { l: '单机总数',       v: stats.machine }
+    ];
+    // 井队末级：加 平均/最大功率（不加 电站数，因为末级无意义）
+    if (node.type === 'team') {
+      common.push({ l: '平均功率', v: stats.avgPower + ' kW' });
+      common.push({ l: '最大功率', v: stats.maxPower + ' kW' });
+      return common;
+    }
+    // 一级公司/二级项目组/全部：加 电站数（汇总概念）
+    common.unshift({ l: '电站数', v: stats.wells });
+    return common;
+  }
+
+  // ============ 列定义（日报/月报结构一致，字段名不同） ============
+  const columnsDef = {
+    daily: {
+      title: '电站日发电明细',
+      scopeLabel: (s) => `${getFullPath(s)} · 2026-08-05 汇总`,
+      scopeMetrics: (s) => buildScopeMetrics(s),
+      dateLabel: '统计日期',
+      dateField: 'date',
+      dateValue: '2026/8/5',
+      groupHeader: [
+        { colspan: 5, label: '基础信息' },
+        { colspan: 1, label: '日期' },
+        { colspan: 3, label: '电能数据' },
+        { colspan: 2, label: '确认数据' },
+        { colspan: 2, label: '功率数据' },
+        { colspan: 1, label: '人员' }
+      ],
+      cols: [
+        { key:'idx',    label:'序号',                w:50,  sticky:true, cls:1, tip:'数据行序号' },
+        { key:'id',     label1:'电站ID', label2:'项目ID', w:120, sticky:true, cls:2, tip:'电站唯一标识 = 项目唯一标识' },
+        { key:'org',    label:'所属组织',             w:100, sticky:true, cls:3, tip:'电站所属的法人公司（一级）' },
+        { key:'grp',    label:'项目组',               w:120, sticky:true, cls:4, tip:'公司下面建的项目组织（二级），电站里可以绑定' },
+        { key:'team',   label:'井队号',               w:90,  sticky:true, cls:5, tip:'电站服务的井队编号（三级）' },
+        { key:'date',   label:'统计日期',             w:100, tip:'数据所属日期' },
+        { key:'start',  label:'统计日开始电能',       w:120, unit:'kWh', tip:'查询统计日 0 点的电表读数，支持修改' },
+        { key:'latest', label:'统计日结束电能',       w:120, unit:'kWh', tip:'查询统计日 24 点的电表读数，支持修改' },
+        { key:'accum',  label:'电表日累计',           w:120, unit:'kWh', tip:'自动计算：统计日最新 - 统计日开始' },
+        { key:'voda',   label:'沃达确认',             w:120, unit:'kWh', tip:'手动填写，沃达方最终确认的日发电量' },
+        { key:'you',    label:'油田确认',             w:120, unit:'kWh', tip:'手动填写，油田方最终确认的日发电量' },
+        { key:'avg',    label:'平均功率',             w:100, unit:'kW',  tip:'统计日平均功率' },
+        { key:'max',    label:'最大功率',             w:100, unit:'kW',  tip:'统计日最大功率' },
+        { key:'owner',  label:'现场负责人',           w:140, tip:'取电站负责人的姓名和电话，支持修改' }
+      ]
+    },
+    monthly: {
+      title: '电站月发电汇总',
+      scopeLabel: (s) => `${getFullPath(s)} · 2026-08 汇总`,
+      scopeMetrics: (s) => buildScopeMetrics(s),
+      dateLabel: '统计月份',
+      dateField: 'date',
+      dateValue: '2026-08',
+      // 月报分组表头和日报结构一致，只把"日期"换"月份"
+      groupHeader: [
+        { colspan: 5, label: '基础信息' },
+        { colspan: 1, label: '月份' },
+        { colspan: 3, label: '电能数据' },
+        { colspan: 2, label: '确认数据' },
+        { colspan: 2, label: '功率数据' },
+        { colspan: 1, label: '人员' }
+      ],
+      // 月报列名：和日报几乎一致，只把"统计日期→统计月份"和"电表日累计→电表月累计"
+      cols: [
+        { key:'idx',    label:'序号',                w:50,  sticky:true, cls:1, tip:'数据行序号' },
+        { key:'id',     label1:'电站ID', label2:'项目ID', w:120, sticky:true, cls:2, tip:'电站唯一标识 = 项目唯一标识' },
+        { key:'org',    label:'所属组织',             w:100, sticky:true, cls:3, tip:'电站所属的法人公司（一级）' },
+        { key:'grp',    label:'项目组',               w:120, sticky:true, cls:4, tip:'公司下面建的项目组织（二级）' },
+        { key:'team',   label:'井队号',               w:90,  sticky:true, cls:5, tip:'电站服务的井队编号（三级）' },
+        { key:'date',   label:'统计月份',             w:100, tip:'数据所属月份' },
+        { key:'start',  label:'统计月开始电能',       w:120, unit:'kWh', tip:'查询月初 0 点的电表读数，支持修改' },
+        { key:'latest', label:'统计月结束电能',       w:120, unit:'kWh', tip:'查询月末的电表读数，支持修改' },
+        { key:'accum',  label:'电表月累计',           w:120, unit:'kWh', tip:'自动计算：本月末 - 本月初' },
+        { key:'voda',   label:'沃达确认',             w:120, unit:'kWh', tip:'手动填写，沃达方月度最终确认' },
+        { key:'you',    label:'油田确认',             w:120, unit:'kWh', tip:'手动填写，油田方月度最终确认' },
+        { key:'avg',    label:'平均功率',             w:100, unit:'kW',  tip:'月度平均功率' },
+        { key:'max',    label:'最大功率',             w:100, unit:'kW',  tip:'月度最大功率' },
+        { key:'owner',  label:'现场负责人',           w:140, tip:'电站负责人（取姓名和电话，支持修改）' }
+      ]
+    }
+  };
+
+  // ============ 统计辅助 ============
+  function calcStatsByNode(node) {
+    let filter = {};
+    if (node.type === 'org') filter = { org: node.name };
+    else if (node.type === 'grp') filter = { org: state.selectedOrg, grp: node.name };
+    else if (node.type === 'team') filter = { org: state.selectedOrg, grp: state.selectedGrp, team: node.name };
+    return calcStats(filter);
+  }
+  // 拼出选中节点的完整路径，用在 scope-row 表头汇总
+  function getFullPath(node) {
+    if (!node) return '全部电站';
+    if (node.type === 'all') return '全部电站';
+    if (node.type === 'org') return node.name;
+    if (node.type === 'grp') {
+      for (const [org, grps] of Object.entries(orgTree)) {
+        if (grps[node.name]) return `${org} / ${node.name}`;
+      }
+      return node.name;
+    }
+    if (node.type === 'team') {
+      for (const [org, grps] of Object.entries(orgTree)) {
+        for (const [grp, teams] of Object.entries(grps)) {
+          if (teams.includes(node.name)) return `${org} / ${grp} / ${node.name}`;
+        }
+      }
+      return node.name;
+    }
+    return node.name || '全部电站';
+  }
+  function calcMonthlyStatsByNode(node) {
+    let filter = {};
+    if (node.type === 'org') filter = { org: node.name };
+    else if (node.type === 'grp') filter = { org: state.selectedOrg, grp: node.name };
+    else if (node.type === 'team') filter = { org: state.selectedOrg, grp: state.selectedGrp, team: node.name };
+    const data = getMonthlyStations().filter(s => {
+      if (filter.org && s.org !== filter.org) return false;
+      if (filter.grp && s.grp !== filter.grp) return false;
+      if (filter.team && s.team !== filter.team) return false;
+      return true;
+    });
+    const wells = data.length;
+    const accum = data.reduce((s, d) => s + d.monthAccum, 0);
+    const confirm = data.reduce((s, d) => s + d.monthVoda, 0);
+    const youConfirm = data.reduce((s, d) => s + d.monthYou, 0);
+    const capacity = data.reduce((s, d) => s + d.power / 1000, 0);
+    const avgPower = wells > 0 ? Math.round(data.reduce((s, d) => s + d.avgPower, 0) / wells) : 0;
+    const maxPower = wells > 0 ? Math.max(...data.map(d => d.maxPower)) : 0;
+    const skid = data.reduce((s, d) => s + (d.skidCount || 0), 0);
+    const machine = data.reduce((s, d) => s + (d.machineCount || 0), 0);
+    return { wells, accum, confirm, youConfirm, capacity, avgPower, maxPower, skid, machine };
+  }
+  // 全公司统计（用于选中"全部"时）
+  function calcTotalStats() {
+    return calcStats({});
+  }
+  function calcTotalMonthlyStats() {
+    return calcMonthlyStatsByNode({ type: 'all' });
+  }
+
+  // ============ Tab 切换 ============
+  // 快捷选项按 tab 模式不同：日报=今日/昨日/自定义；月报=本月/上月/自定义
+  const quickConfig = {
+    daily: [
+      { key: 'today',     label: '今日' },
+      { key: 'yesterday', label: '昨日' },
+      { key: 'custom',    label: '自定义' }
+    ],
+    monthly: [
+      { key: 'thisMonth',  label: '本月' },
+      { key: 'lastMonth',  label: '上月' },
+      { key: 'custom',     label: '自定义' }
+    ]
+  };
+  function renderQuickBtns() {
+    const cfg = quickConfig[state.tab];
+    const html = cfg.map((q, i) => {
+      const active = (state.quickMode === q.key) ? 'active' : '';
+      return `<button class="quick-btn ${active}" data-key="${q.key}">${q.label}</button>`;
+    }).join('');
+    const wrap = document.getElementById('quickBtns');
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.quick-btn').forEach(b => {
+      b.addEventListener('click', () => setQuick(b.dataset.key));
+    });
+  }
+  function switchTab(tab) {
+    state.tab = tab;
+    // 切 tab 时把 quickMode 重置为该模式的首个选项
+    state.quickMode = quickConfig[tab][0].key;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    const titles = { daily: '燃气发电日报表', monthly: '燃气发电月报表' };
+    document.getElementById('bcTitle').textContent = titles[tab];
+
+    const di = document.getElementById('dateInput');
+    if (tab === 'daily') { di.type = 'date'; di.value = '2026-08-05'; state.date = '2026-08-05'; }
+    else { di.type = 'month'; di.value = '2026-08'; state.date = '2026-08'; }
+    renderQuickBtns();
+
+    updateDateTag();
+    renderAll();
+  }
+
+  function updateDateTag() {
+    if (state.quickMode === 'custom') {
+      document.getElementById('dateTag').innerHTML = `📅 ${state.customRange.start} ~ ${state.customRange.end}`;
+    } else {
+      document.getElementById('dateTag').innerHTML = `📅 ${state.date}`;
+    }
+  }
+
+  function onDateChange() {
+    state.date = document.getElementById('dateInput').value;
+    updateDateTag();
+    renderTable();
+  }
+  function shiftDate(dir) {
+    const di = document.getElementById('dateInput');
+    if (di.type === 'month') {
+      const [y, m] = di.value.split('-').map(Number);
+      const d = new Date(y, m - 1 + dir, 1);
+      di.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    } else {
+      const d = new Date(di.value);
+      d.setDate(d.getDate() + dir);
+      di.value = d.toISOString().slice(0, 10);
+    }
+    onDateChange();
+  }
+  function setQuick(mode) {
+    state.quickMode = mode;
+    renderQuickBtns();
+
+    const di = document.getElementById('dateInput');
+    const cr = document.getElementById('customRange');
+    if (mode === 'custom') { cr.classList.add('show'); return; }
+    cr.classList.remove('show');
+
+    if (state.tab === 'daily') {
+      di.type = 'date';
+      if (mode === 'today') di.value = '2026-08-05';
+      else if (mode === 'yesterday') di.value = '2026-08-04';
+    } else {
+      // monthly
+      di.type = 'month';
+      if (mode === 'thisMonth') di.value = '2026-08';
+      else if (mode === 'lastMonth') di.value = '2026-07';
+    }
+    onDateChange();
+  }
+  function onCustomChange() {
+    state.customRange.start = document.getElementById('startDate').value;
+    state.customRange.end = document.getElementById('endDate').value;
+    updateDateTag();
+    renderTable();
+  }
+
+  // ============ 渲染三级组织树 ============
+  // 按 depth 区分指标集：
+  //   depth 1/2: 7 指标 (4×2 网格，1 空)，含"电站数 / 电表日累计 / 沃达确认 / 油田确认 / 装机 / 撬装总数 / 单机总数"
+  //   depth 3:  8 指标 (4×2 网格，恰好填满)，去掉"电站数"（末级无意义），加"平均/最大功率"，用"电表月累计/月确认"区别
+  function renderMetrics(stats, depth) {
+    const isDaily = state.tab === 'daily';
+    // v10: 累计/确认的标签改为"电表日累计/电表月累计"，和表格列名对齐
+    const accumLabel  = isDaily ? '电表日累计' : '电表月累计';
+    const confirmLabel = isDaily ? '沃达日确认' : '沃达月确认';
+    const youConfirmLabel = isDaily ? '油田日确认' : '油田月确认';
+    if (depth === 3) {
+      // 末级井队：去掉"电站数"（井队本身就是末级，再列电站数没意义）
+      return `
+        <div class="metric"><div class="l">${accumLabel}</div><div class="v">${stats.accum.toLocaleString()}<span class="u"> kWh</span></div></div>
+        <div class="metric"><div class="l">${confirmLabel}</div><div class="v">${stats.confirm.toLocaleString()}<span class="u"> kWh</span></div></div>
+        <div class="metric"><div class="l">${youConfirmLabel}</div><div class="v">${stats.youConfirm.toLocaleString()}<span class="u"> kWh</span></div></div>
+        <div class="metric"><div class="l">装机</div><div class="v">${stats.capacity.toFixed(2)}<span class="u"> MW</span></div></div>
+        <div class="metric"><div class="l">平均功率</div><div class="v">${stats.avgPower}<span class="u"> kW</span></div></div>
+        <div class="metric"><div class="l">最大功率</div><div class="v">${stats.maxPower}<span class="u"> kW</span></div></div>
+        <div class="metric"><div class="l">撬装总数</div><div class="v">${stats.skid}</div></div>
+        <div class="metric"><div class="l">单机总数</div><div class="v">${stats.machine}</div></div>
+      `;
+    }
+    // depth 1/2: 含电站数（汇总概念），不含平均/最大功率（用户不要）
+    return `
+      <div class="metric"><div class="l">电站数</div><div class="v">${stats.wells}</div></div>
+      <div class="metric"><div class="l">${accumLabel}</div><div class="v">${stats.accum.toLocaleString()}<span class="u"> kWh</span></div></div>
+      <div class="metric"><div class="l">${confirmLabel}</div><div class="v">${stats.confirm.toLocaleString()}<span class="u"> kWh</span></div></div>
+      <div class="metric"><div class="l">${youConfirmLabel}</div><div class="v">${stats.youConfirm.toLocaleString()}<span class="u"> kWh</span></div></div>
+      <div class="metric"><div class="l">装机</div><div class="v">${stats.capacity.toFixed(2)}<span class="u"> MW</span></div></div>
+      <div class="metric"><div class="l">撬装总数</div><div class="v">${stats.skid}</div></div>
+      <div class="metric"><div class="l">单机总数</div><div class="v">${stats.machine}</div></div>
+    `;
+  }
+  function renderTree() {
+    const list = document.getElementById('treeList');
+    const isDaily = state.tab === 'daily';
+    let html = '';
+
+    // 收集 org 列表用于判断 last
+    const orgsArr = Object.keys(orgTree);
+
+    // 一级：公司 —— 每个公司包一个 .tree-org-block 浅蓝容器
+    orgsArr.forEach((org, orgIdx) => {
+      const code = `org::${org}`;
+      const isCollapsed = state.collapsed.has(code);
+      const isSelected = state.selectedNode.type === 'org' && state.selectedNode.name === org;
+      const orgGrps = orgTree[org];
+      const grpNames = Object.keys(orgGrps);
+      // 井队数 = 该 org 下所有 grp 的 team 数量之和
+      const totalTeams = grpNames.reduce((s, g) => s + orgGrps[g].length, 0);
+      const orgStats = isDaily ? calcStats({ org }) : calcMonthlyStatsByNode({ type: 'org', name: org });
+      const isLastOrg = (orgIdx === orgsArr.length - 1);
+      // 容器在该 org 被选中时高亮
+      const orgBlockSelected = (state.selectedNode.type === 'org' && state.selectedNode.name === org)
+                            || grpNames.some(g => state.selectedNode.type === 'grp' && state.selectedNode.name === g)
+                            || grpNames.some(g => orgGrps[g].some(t => state.selectedNode.type === 'team' && state.selectedNode.name === t));
+      // L1 公司：展开时不显示 meta，收起时显示"井队数 / 撬装 / 单机"
+      const orgMeta = isCollapsed
+        ? `<span class="meta-tag">${totalTeams} 井队 / ${orgStats.skid} 撬装 / ${orgStats.machine} 单机</span>`
+        : '';
+
+      html += `
+        <div class="tree-org-block" data-selected="${orgBlockSelected}" data-org="${org}">
+          <span class="org-tag" onclick="selectNode('org','${org}','${org}')" title="点击选中 ${org}">🏢 ${org}</span>
+          <div class="tree-node ${isSelected ? 'selected' : ''} ${isCollapsed ? 'collapsed' : ''}" data-depth="1" data-last="${isLastOrg}" data-code="${code}">
+            <div class="tree-node-head" onclick="selectNode('org','${org}','${org}')">
+              <span class="arrow" onclick="event.stopPropagation(); toggleCollapse('${code}')" title="展开/折叠">▼</span>
+              <span class="icon">📊</span>
+              <span class="name">${org}</span>
+              ${orgMeta}
+            </div>
+            <div class="tree-node-body">${renderMetrics(orgStats, 1)}</div>
+          </div>
+      `;
+
+      // 二级：项目组 —— 直接放在容器内（不嵌套子容器，简洁）
+      if (!isCollapsed) {
+        grpNames.forEach((grp, grpIdx) => {
+          const grpCode = `grp::${org}::${grp}`;
+          const grpCollapsed = state.collapsed.has(grpCode);
+          const grpSelected = state.selectedNode.type === 'grp' && state.selectedNode.name === grp;
+          const teams = orgGrps[grp];
+          const grpStats = isDaily ? calcStats({ org, grp }) : calcMonthlyStatsByNode({ type: 'grp', name: grp });
+          const isLastGrp = (grpIdx === grpNames.length - 1);
+
+          html += `
+            <div class="tree-node ${grpSelected ? 'selected' : ''} ${grpCollapsed ? 'collapsed' : ''}" data-depth="2" data-last="${isLastGrp}" data-code="${grpCode}">
+              <div class="tree-node-head" onclick="selectNode('grp','${grp}','${grp}')">
+                <span class="arrow" onclick="event.stopPropagation(); toggleCollapse('${grpCode}')" title="展开/折叠">▼</span>
+                <span class="icon">📂</span>
+                <span class="name">${grp}</span>
+                <span class="meta-tag">${teams.length} 井队 / ${grpStats.skid} 撬装 / ${grpStats.machine} 单机</span>
+              </div>
+              <div class="tree-node-body">${renderMetrics(grpStats, 2)}</div>
+            </div>
+          `;
+
+          // 三级：井队号
+          if (!grpCollapsed) {
+            teams.forEach((team, teamIdx) => {
+              const teamCode = `team::${org}::${grp}::${team}`;
+              const teamSelected = state.selectedNode.type === 'team' && state.selectedNode.name === team;
+              const teamStations = stations.filter(s => s.org === org && s.grp === grp && s.team === team);
+              const teamStats = isDaily ? calcStats({ org, grp, team }) : calcMonthlyStatsByNode({ type: 'team', name: team });
+              const isLastTeam = (teamIdx === teams.length - 1);
+
+              html += `
+                <div class="tree-node ${teamSelected ? 'selected' : ''}" data-depth="3" data-last="${isLastTeam}" data-code="${teamCode}">
+                  <div class="tree-node-head" onclick="selectNode('team','${team}','${team}')">
+                    <span class="arrow">▼</span>
+                    <span class="icon">⚙️</span>
+                    <span class="name">井队 ${team}</span>
+                    <span class="meta-tag">${teamStats.skid} 撬装 / ${teamStats.machine} 单机</span>
+                  </div>
+                  <div class="tree-node-body">${renderMetrics(teamStats, 3)}</div>
+                </div>
+              `;
+            });
+          }
+        });
+      }
+      // 关闭容器
+      html += `</div>`;
+    });
+
+    list.innerHTML = html;
+    // 更新顶部统计
+    document.getElementById('treeCount').textContent = `· ${orgsArr.length} 公司 / ${orgsArr.reduce((s, o) => s + Object.keys(orgTree[o]).length, 0)} 项目组 / ${stations.length} 电站`;
+  }
+
+  function toggleCollapse(code) {
+    if (state.collapsed.has(code)) state.collapsed.delete(code);
+    else state.collapsed.add(code);
+    renderTree();
+  }
+  function expandAll(open) {
+    state.collapsed.clear();
+    if (!open) {
+      // 折叠：把所有一级节点加入 collapsed
+      Object.keys(orgTree).forEach(org => state.collapsed.add(`org::${org}`));
+    }
+    renderTree();
+  }
+
+  function selectNode(type, code, name) {
+    state.selectedNode = { type, code, name };
+    if (type === 'grp') {
+      // 记录父级 org 和 grp 名字
+      Object.entries(orgTree).forEach(([org, grps]) => {
+        if (grps[code]) {
+          state.selectedOrg = org;
+          state.selectedGrp = code;
+        }
+      });
+    } else if (type === 'team') {
+      // 找到所属 org 和 grp
+      Object.entries(orgTree).forEach(([org, grps]) => {
+        Object.entries(grps).forEach(([grp, teams]) => {
+          if (teams.includes(code)) {
+            state.selectedOrg = org;
+            state.selectedGrp = grp;
+            state.selectedTeam = code;
+          }
+        });
+      });
+    } else {
+      state.selectedOrg = null; state.selectedGrp = null; state.selectedTeam = null;
+    }
+    renderTree();
+    renderTable();
+  }
+
+  // ============ 渲染表格 ============
+  function renderTable() {
+    const def = columnsDef[state.tab];
+    document.getElementById('detailTitle').textContent = def.title;
+
+    // 1. colgroup
+    document.getElementById('colgroup').innerHTML = def.cols.map(c => `<col style="width:${c.w}px">`).join('');
+
+    // 2. thead
+    let theadHtml = '';
+
+    // 2.1 选中层级后的汇总行 —— 用 scopeLabel 拿到完整多级路径，用 scopeMetrics 拿统计
+    const scopeName  = def.scopeLabel(state.selectedNode);   // 例如 "沃达动力 / 乌审旗项目组 / 50123 · 2026-08-05 汇总"
+    const scopeMetrics = def.scopeMetrics(state.selectedNode);
+    const dateText = state.quickMode === 'custom'
+      ? `${state.customRange.start} ~ ${state.customRange.end}`
+      : (state.tab === 'daily' ? '2026/8/5' : '2026-08');
+
+    // 把多级路径拆成面包屑式片段：每个层一段，hover 可看 tip
+    const pathParts = getFullPath(state.selectedNode).split(' / ');
+    const breadcrumbHtml = pathParts.map((p, i) => {
+      const sep = i < pathParts.length - 1 ? '<span class="sep">›</span>' : '';
+      return `<span class="crumb" title="第 ${i+1} 级">${p}</span>${sep}`;
+    }).join(' ');
+
+    theadHtml += `<tr class="scope-row"><th colspan="${def.cols.length}">
+      <div class="scope-info">
+        <span class="item scope-path">📊 ${breadcrumbHtml}</span>
+        <span class="item scope-date">· ${dateText} 汇总</span>
+        ${scopeMetrics.map(m => `<span class="item">${m.l} <b>${m.v}</b></span>`).join('')}
+      </div>
+    </th></tr>`;
+
+    // 2.2 分组表头
+    theadHtml += '<tr class="group-header">';
+    let pos = 0;
+    def.groupHeader.forEach(g => {
+      let stickyStyle = '';
+      if (pos < def.cols.filter(c => c.sticky).reduce((s, c) => s + c.w, 0)) {
+        const left = def.cols.slice(0, pos).reduce((s, c) => s + c.w, 0);
+        stickyStyle = `position:sticky;left:${left}px;z-index:4;background:#f5f7fa`;
+      }
+      theadHtml += `<th colspan="${g.colspan}" style="${stickyStyle}">${g.label}</th>`;
+      pos += g.colspan;
+    });
+    theadHtml += '</tr>';
+
+    // 2.3 列头
+    theadHtml += '<tr class="col-header sticky">';
+    def.cols.forEach(c => {
+      const labelHtml = c.label1 && c.label2
+        ? `${c.label1}<br><span style="color:#909399;font-size:10px">/ ${c.label2}</span>`
+        : `${c.label}<br><span style="color:#909399;font-size:10px">${c.unit || ''}</span>`;
+      if (c.sticky) {
+        const left = def.cols.slice(0, c.cls - 1).reduce((s, x) => s + x.w, 0);
+        theadHtml += `<th class="sticky-col col-${c.cls}" data-tip="${c.tip || ''}" style="position:sticky;left:${left}px;z-index:4;background:#fafbfc">${labelHtml}<span class="help">?</span></th>`;
+      } else {
+        theadHtml += `<th data-tip="${c.tip || ''}">${labelHtml}<span class="help">?</span></th>`;
+      }
+    });
+    theadHtml += '</tr>';
+    document.getElementById('thead').innerHTML = theadHtml;
+
+    // 3. tbody
+    let data = state.tab === 'daily' ? stations : getMonthlyStations();
+
+    // 左侧选中节点筛选
+    if (state.selectedNode.type === 'org') data = data.filter(s => s.org === state.selectedNode.name);
+    else if (state.selectedNode.type === 'grp') data = data.filter(s => s.grp === state.selectedNode.name);
+    else if (state.selectedNode.type === 'team') data = data.filter(s => s.team === state.selectedNode.name);
+
+    // 顶部筛选下拉
+    if (state.filters.org) data = data.filter(s => s.org === state.filters.org);
+    if (state.filters.grp) data = data.filter(s => s.grp === state.filters.grp);
+    if (state.filters.team) data = data.filter(s => s.team === state.filters.team);
+
+    // 搜索
+    if (state.rightSearchKw) {
+      const kw = state.rightSearchKw.toLowerCase();
+      data = data.filter(s => s.id.toLowerCase().includes(kw) || s.owner.toLowerCase().includes(kw));
+    }
+
+    let html = '';
+    let lastGroup = '';
+    data.forEach((s, idx) => {
+      if (s.grp !== lastGroup) {
+        if (lastGroup) html += `<tr class="divider"><td colspan="${def.cols.length}"></td></tr>`;
+        lastGroup = s.grp;
+      }
+      const isQy = s.grpCode === 'qy';
+      const rowCls = isQy ? 'row-qy' : '';
+      const st = (cls) => `position:sticky;left:${def.cols.slice(0, cls-1).reduce((s, x) => s + x.w, 0)}px;z-index:1;background:${isQy ? '#f6ffed' : '#fff'}`;
+
+      if (state.tab === 'daily') {
+        const accum = (s.latest - s.start).toFixed(2);
+        const youVal = s.youConfirm === null || s.youConfirm === undefined ? '—' : s.youConfirm.toFixed(2);
+        html += `<tr class="${rowCls}">
+          <td class="sticky-col col-1" style="${st(1)}">${idx + 1}</td>
+          <td class="sticky-col col-2 id-cell" style="${st(2)}">${s.id}</td>
+          <td class="sticky-col col-3" style="${st(3)}">${s.org}</td>
+          <td class="sticky-col col-4" style="${st(4)}">${s.grp}</td>
+          <td class="sticky-col col-5" style="${st(5)}">${s.team}</td>
+          <td>2026/8/5</td>
+          <td class="editable"><input value="${s.start.toFixed(2)}" data-field="start" data-id="${s.id}"></td>
+          <td class="editable"><input value="${s.latest.toFixed(2)}" data-field="latest" data-id="${s.id}"></td>
+          <td class="readonly" data-accum="${s.id}">${accum}</td>
+          <td class="editable"><input value="${s.vodaConfirm.toFixed(2)}" data-field="voda" data-id="${s.id}"></td>
+          <td class="editable"><input value="${youVal}" data-field="you" data-id="${s.id}" placeholder="—"></td>
+          <td>${s.avgPower || '—'}</td>
+          <td>${s.maxPower || '—'}</td>
+          <td class="editable"><input value="${s.owner}" data-field="owner" data-id="${s.id}"></td>
+        </tr>`;
+      } else {
+        html += `<tr class="${rowCls}">
+          <td class="sticky-col col-1" style="${st(1)}">${idx + 1}</td>
+          <td class="sticky-col col-2 id-cell" style="${st(2)}">${s.id}</td>
+          <td class="sticky-col col-3" style="${st(3)}">${s.org}</td>
+          <td class="sticky-col col-4" style="${st(4)}">${s.grp}</td>
+          <td class="sticky-col col-5" style="${st(5)}">${s.team}</td>
+          <td>2026-08</td>
+          <td class="editable"><input value="${s.monthStart.toFixed(2)}" data-field="mstart" data-id="${s.id}"></td>
+          <td class="editable"><input value="${s.monthEnd.toFixed(2)}" data-field="mend" data-id="${s.id}"></td>
+          <td class="readonly" data-accum="${s.id}">${s.monthAccum.toFixed(2)}</td>
+          <td class="editable"><input value="${s.monthVoda.toFixed(2)}" data-field="monthVoda" data-id="${s.id}"></td>
+          <td class="editable"><input value="${s.monthYou.toFixed(2)}" data-field="monthYou" data-id="${s.id}"></td>
+          <td>${s.monthAvgPower || '—'}</td>
+          <td>${s.monthMaxPower || '—'}</td>
+          <td class="editable"><input value="${s.owner}" data-field="owner" data-id="${s.id}"></td>
+        </tr>`;
+      }
+    });
+
+    if (data.length === 0) {
+      html = `<tr><td colspan="${def.cols.length}" style="padding:40px;color:#c0c4cc">无数据</td></tr>`;
+    }
+    document.getElementById('tbody').innerHTML = html;
+    bindCellEvents();
+    bindHeaderTooltips();
+    updateStats(data);
+  }
+
+  function bindCellEvents() {
+    document.querySelectorAll('table.data tbody td input').forEach(inp => {
+      inp.addEventListener('input', e => inp.classList.add('dirty'));
+      inp.addEventListener('change', e => {
+        const id = inp.dataset.id;
+        const field = inp.dataset.field;
+        const s = stations.find(x => x.id === id);
+        if (s) {
+          if (['start','latest','voda'].includes(field)) s[field] = parseFloat(inp.value) || 0;
+          else if (field === 'you') s.youConfirm = (inp.value === '—' || !inp.value) ? null : parseFloat(inp.value);
+          else if (['mstart','mend','monthVoda','monthYou'].includes(field)) s[field] = parseFloat(inp.value) || 0;
+          else s[field] = inp.value;
+
+          if (state.tab === 'daily' && (field === 'start' || field === 'latest')) {
+            const accumCell = document.querySelector(`td[data-accum="${id}"]`);
+            if (accumCell) accumCell.textContent = (s.latest - s.start).toFixed(2);
+          } else if (state.tab !== 'daily' && (field === 'mstart' || field === 'mend')) {
+            const accumCell = document.querySelector(`td[data-accum="${id}"]`);
+            if (accumCell) accumCell.textContent = (s.monthEnd - s.monthStart).toFixed(2);
+          }
+        }
+      });
+    });
+  }
+
+  function bindHeaderTooltips() {
+    document.querySelectorAll('table.data thead th[data-tip]').forEach(th => {
+      if (th._tipBound) return;
+      th._tipBound = true;
+      th.addEventListener('mouseenter', e => {
+        const txt = th.dataset.tip;
+        if (!txt) return;
+        showTip(txt, th);
+      });
+      th.addEventListener('mouseleave', hideTip);
+    });
+  }
+  function showTip(txt, anchor) {
+    let tip = document.getElementById('tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'tip';
+      Object.assign(tip.style, {
+        position: 'fixed', background: '#303133', color: '#fff',
+        padding: '8px 12px', borderRadius: '4px', fontSize: '12px',
+        lineHeight: '1.6', maxWidth: '280px', zIndex: '9999',
+        pointerEvents: 'none', display: 'none',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+      });
+      document.body.appendChild(tip);
+    }
+    tip.textContent = '字段说明：' + txt;
+    tip.style.display = 'block';
+    const r = anchor.getBoundingClientRect();
+    tip.style.left = Math.min(r.left, window.innerWidth - 300) + 'px';
+    tip.style.top  = (r.bottom + 6) + 'px';
+  }
+  function hideTip() {
+    const tip = document.getElementById('tip');
+    if (tip) tip.style.display = 'none';
+  }
+
+  // ============ 筛选下拉 ============
+  function populateFilterSelects() {
+    const orgs = [...new Set(stations.map(s => s.org))];
+    const grps = [...new Set(stations.map(s => s.grp))];
+    const teams = [...new Set(stations.map(s => s.team))];
+    const fo = document.getElementById('filterOrg');
+    const fg = document.getElementById('filterGrp');
+    const ft = document.getElementById('filterTeam');
+    orgs.forEach(o => fo.innerHTML += `<option value="${o}">${o}</option>`);
+    grps.forEach(g => fg.innerHTML += `<option value="${g}">${g}</option>`);
+    teams.forEach(t => ft.innerHTML += `<option value="${t}">${t}</option>`);
+  }
+  function applyFilter() {
+    state.filters.org = document.getElementById('filterOrg').value;
+    state.filters.grp = document.getElementById('filterGrp').value;
+    state.filters.team = document.getElementById('filterTeam').value;
+    state.rightSearchKw = document.getElementById('rightSearch').value.trim();
+    renderTable();
+  }
+  function onSearchInput() {
+    // 输入即查（实时筛选），但保留显式"查询"按钮给用户回车 / 点击的强语义
+    state.rightSearchKw = document.getElementById('rightSearch').value.trim();
+    renderTable();
+  }
+  function doQuery() {
+    // 查询按钮：组合筛选 + 搜索 + 左侧选中节点 一次性刷新，并给个小反馈
+    state.filters.org  = document.getElementById('filterOrg').value;
+    state.filters.grp  = document.getElementById('filterGrp').value;
+    state.filters.team = document.getElementById('filterTeam').value;
+    state.rightSearchKw = document.getElementById('rightSearch').value.trim();
+    renderTable();
+    // 顶部小提示
+    const tag = document.getElementById('dateTag');
+    if (tag) {
+      const orig = tag.textContent;
+      tag.textContent = '✓ 查询完成';
+      tag.style.background = '#f6ffed';
+      tag.style.color = '#52c41a';
+      tag.style.borderColor = '#b7eb8f';
+      setTimeout(() => { tag.textContent = orig; tag.style.background=''; tag.style.color=''; tag.style.borderColor=''; }, 1200);
+    }
+  }
+  function resetFilter() {
+    state.filters = { org: '', grp: '', team: '' };
+    state.rightSearchKw = '';
+    document.getElementById('filterOrg').value = '';
+    document.getElementById('filterGrp').value = '';
+    document.getElementById('filterTeam').value = '';
+    document.getElementById('rightSearch').value = '';
+    renderTable();
+  }
+  function resetAll() {
+    state.selectedNode = { type: 'all', code: null, name: '全部' };
+    state.filters = { org: '', grp: '', team: '' };
+    state.rightSearchKw = '';
+    state.collapsed.clear();
+    document.getElementById('filterOrg').value = '';
+    document.getElementById('filterGrp').value = '';
+    document.getElementById('filterTeam').value = '';
+    document.getElementById('rightSearch').value = '';
+    renderAll();
+  }
+
+  function updateStats(data) {
+    document.getElementById('rowTotal').textContent = data.length;
+    const confirmed = data.filter(s => s.youConfirm !== null && s.youConfirm !== undefined).length;
+    document.getElementById('rowConfirmed').textContent = confirmed;
+    document.getElementById('scopeTag').textContent = state.selectedNode.name;
+  }
+
+  // 刷新：保留筛选条件，从服务端重新拉取数据
+  function refreshData() {
+    const btn = document.querySelector('.btn-refresh');
+    const meta = document.querySelector('.topbar-meta');
+    if (!btn || btn.classList.contains('loading')) return;
+
+    // loading 态：旋转 + 半透明
+    btn.classList.add('loading');
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="icon-rotate">🔄</span> 刷新中';
+
+    // 真实场景：fetch('/api/report/...').then(refresh)
+    // 演示场景：模拟 800ms 网络请求
+    setTimeout(() => {
+      // 1. 重新渲染表格（使用当前 state.filters / state.selectedNode / state.rightSearchKw）
+      renderTable();
+      // 2. 顶部状态闪绿色提示
+      if (meta) {
+        const oldHTML = meta.innerHTML;
+        meta.innerHTML = `<span style="color:#52c41a">✓ 数据已刷新 · ${new Date().toLocaleTimeString('zh-CN')}</span>`;
+        setTimeout(() => { meta.innerHTML = oldHTML; }, 1800);
+      }
+      // 3. 恢复按钮
+      btn.classList.remove('loading');
+      btn.innerHTML = origHTML;
+    }, 800);
+  }
+  function exportData() {
+    const titles = { daily: '日报', monthly: '月报' };
+    const scope = state.selectedNode.name;
+    alert(`导出 ${titles[state.tab]} 数据（演示）\n范围：${scope} · ${state.date}\n实际场景调用后端 /api/report/export`);
+  }
+
+  function renderAll() {
+    renderTree();
+    renderTable();
+  }
+
+  // ============ 初始化 ============
+  populateFilterSelects();
+  renderQuickBtns();
+  renderAll();
+</script>
+
+</body>
+</html>

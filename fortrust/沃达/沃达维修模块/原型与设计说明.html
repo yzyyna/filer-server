@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>沃达 IoT 智慧电站 · 维修管理模块高保真交互原型</title>
+  <style>
+    :root {
+      --el-color-primary: #409EFF;
+      --el-color-primary-light-3: #79bbff;
+      --el-color-primary-light-9: #ecf5ff;
+      --el-color-success: #67C23A;
+      --el-color-success-light: #f0f9eb;
+      --el-color-warning: #E6A23C;
+      --el-color-warning-light: #fdf6ec;
+      --el-color-danger: #F56C6C;
+      --el-color-danger-light: #fef0f0;
+      --el-color-info: #909399;
+      --el-color-info-light: #f4f4f5;
+
+      --el-text-color-primary: #303133;
+      --el-text-color-regular: #606266;
+      --el-text-color-secondary: #909399;
+      --el-text-color-placeholder: #a8abb2;
+
+      --el-border-color: #dcdfe6;
+      --el-border-color-light: #e4e7ed;
+      --el-border-color-lighter: #ebeef5;
+
+      --el-bg-color: #ffffff;
+      --el-bg-color-page: #f2f3f5;
+      --el-fill-color-light: #f8f9fb;
+      --el-fill-color-blank: #ffffff;
+      --el-card-bg: #ffffff;
+    }
+
+    /* 暗色主题 */
+    body.dark {
+      --el-color-primary: #409EFF;
+      --el-color-primary-light-9: #18222c;
+      --el-text-color-primary: #e5eaf3;
+      --el-text-color-regular: #cfd3dc;
+      --el-text-color-secondary: #8d9095;
+      --el-text-color-placeholder: #58585b;
+      --el-border-color: #414243;
+      --el-border-color-light: #363637;
+      --el-border-color-lighter: #2b2b2c;
+      --el-bg-color: #1d1e1f;
+      --el-bg-color-page: #141414;
+      --el-fill-color-light: #262727;
+      --el-fill-color-blank: #1d1e1f;
+      --el-card-bg: #1d1e1f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--el-text-color-primary);
+      background: var(--el-bg-color-page);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* 顶部全局导航栏 (原型演示切换器) */
+    .proto-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 46px;
+      background: #001529;
+      color: #fff;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-x: auto;
+    }
+
+    .proto-bar .title {
+      font-weight: bold;
+      font-size: 13px;
+      color: #79bbff;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .proto-btn {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      color: #dcdfe6;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .proto-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .proto-btn.active {
+      background: var(--el-color-primary);
+      border-color: var(--el-color-primary);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .theme-toggle {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* 页面容器布局 */
+    .layout-wrapper {
+      margin-top: 46px;
+      padding: 16px 20px 40px;
+      max-width: 1440px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Element Plus 卡片风格 */
+    .el-card {
+      background: var(--el-card-bg);
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 4px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .el-card-header {
+      font-size: 14px;
+      font-weight: bold;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 按钮系统 */
+    .el-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 7px 14px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: 1px solid var(--el-border-color);
+      background: var(--el-fill-color-blank);
+      color: var(--el-text-color-regular);
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .el-btn:hover {
+      color: var(--el-color-primary);
+      border-color: var(--el-color-primary-light-3);
+      background: var(--el-color-primary-light-9);
+    }
+
+    .el-btn-primary {
+      background: var(--el-color-primary);
+      border-color: var(--el-color-primary);
+      color: #fff;
+    }
+
+    .el-btn-primary:hover {
+      background: var(--el-color-primary-light-3);
+      border-color: var(--el-color-primary-light-3);
+      color: #fff;
+    }
+
+    .el-btn-small {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .el-btn-link {
+      border: none;
+      background: transparent;
+      color: var(--el-color-primary);
+      padding: 2px 4px;
+    }
+
+    .el-btn-link:hover {
+      background: transparent;
+      text-decoration: underline;
+    }
+
+    .el-btn-link.danger {
+      color: var(--el-color-danger);
+    }
+
+    /* 标签 Tag */
+    .el-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      line-height: 1.4;
+      border: 1px solid transparent;
+    }
+
+    .el-tag-primary {
+      background: #ecf5ff;
+      color: #409eff;
+      border-color: #d9ecff;
+    }
+
+    .el-tag-success {
+      background: #f0f9eb;
+      color: #67c23a;
+      border-color: #e1f3d8;
+    }
+
+    .el-tag-warning {
+      background: #fdf6ec;
+      color: #e6a23c;
+      border-color: #faecd8;
+    }
+
+    .el-tag-danger {
+      background: #fef0f0;
+      color: #f56c6c;
+      border-color: #fde2e2;
+    }
+
+    .el-tag-info {
+      background: #f4f4f5;
+      color: #909399;
+      border-color: #e9e9eb;
+    }
+
+    /* 表单与输入框 */
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .form-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      font-size: 13px;
+      color: var(--el-text-color-regular);
+      white-space: nowrap;
+    }
+
+    .el-input,
+    .el-select {
+      padding: 6px 10px;
+      font-size: 13px;
+      border: 1px solid var(--el-border-color);
+      border-radius: 4px;
+      background: var(--el-fill-color-blank);
+      color: var(--el-text-color-primary);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .el-input:focus,
+    .el-select:focus {
+      border-color: var(--el-color-primary);
+    }
+
+    .el-input[readonly] {
+      background: var(--el-fill-color-light);
+      color: var(--el-text-color-secondary);
+    }
+
+    textarea.el-textarea {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid var(--el-border-color);
+      border-radius: 4px;
+      background: var(--el-fill-color-blank);
+      color: var(--el-text-color-primary);
+      outline: none;
+      font-family: inherit;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    textarea.el-textarea:focus {
+      border-color: var(--el-color-primary);
+    }
+
+    /* 表格样式 */
+    .el-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .el-table th,
+    .el-table td {
+      border: 1px solid var(--el-border-color-lighter);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .el-table th {
+      background: var(--el-fill-color-light);
+      color: var(--el-text-color-primary);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .el-table tr:hover td {
+      background: var(--el-fill-color-light);
+    }
+
+    .el-table .center {
+      text-align: center;
+    }
+
+    /* Radio Group 页签 */
+    .el-radio-group {
+      display: inline-flex;
+      border: 1px solid var(--el-border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .el-radio-btn {
+      padding: 7px 16px;
+      background: var(--el-fill-color-blank);
+      color: var(--el-text-color-regular);
+      cursor: pointer;
+      font-size: 13px;
+      border-right: 1px solid var(--el-border-color);
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .el-radio-btn:last-child {
+      border-right: none;
+    }
+
+    .el-radio-btn.active {
+      background: var(--el-color-primary);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* 步骤条 */
+    .el-steps {
+      display: flex;
+      justify-content: space-between;
+      max-width: 520px;
+      margin: 10px auto 20px;
+      position: relative;
+    }
+
+    .el-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .el-step-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--el-border-color-light);
+      color: var(--el-text-color-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 13px;
+      z-index: 2;
+    }
+
+    .el-step.active .el-step-icon {
+      background: var(--el-color-primary);
+      color: #fff;
+    }
+
+    .el-step.finished .el-step-icon {
+      background: var(--el-color-success);
+      color: #fff;
+    }
+
+    .el-step-title {
+      font-size: 12px;
+      margin-top: 6px;
+      color: var(--el-text-color-secondary);
+    }
+
+    .el-step.active .el-step-title {
+      color: var(--el-color-primary);
+      font-weight: 600;
+    }
+
+    .el-step.finished .el-step-title {
+      color: var(--el-color-success);
+      font-weight: 600;
+    }
+
+    /* 提示条 Alert */
+    .el-alert {
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      border: 1px solid transparent;
+    }
+
+    .el-alert-info {
+      background: var(--el-color-primary-light-9);
+      border-color: #d9ecff;
+      color: #337ecc;
+    }
+
+    /* 签名卡片展示 */
+    .sign-preview-card {
+      border: 1px dashed var(--el-border-color);
+      border-radius: 6px;
+      height: 80px;
+      background: var(--el-fill-color-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      position: relative;
+    }
+
+    .sign-img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    .sign-empty-text {
+      font-size: 12px;
+      color: var(--el-text-color-placeholder);
+    }
+
+    /* 原文展示区样式 */
+    .raw-doc-wrap {
+      background: var(--el-card-bg);
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 6px;
+      padding: 24px 30px;
+      line-height: 1.8;
+      color: var(--el-text-color-regular);
+      font-size: 14px;
+      /* 保留源码换行与缩进，原样展示 */
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .raw-doc-wrap h2 {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--el-text-color-primary);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+    }
+
+    .raw-doc-wrap p {
+      margin-bottom: 14px;
+      text-align: justify;
+    }
+
+    /* 视图切换容器 */
+    .view-container {
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 顶部全局导航栏 -->
+  <header class="proto-bar">
+    <span class="title">⚡ 沃达维修管理原型</span>
+    <button class="proto-btn active" onclick="switchView('v-station')">① 电站内维修记录 (Tab)</button>
+    <button class="proto-btn" onclick="switchView('v-menu-list')">② 维修管理工单池 (Menu)</button>
+    <button class="proto-btn" onclick="switchView('v-register')">③ 维修信息登记 (大页)</button>
+    <button class="proto-btn" onclick="switchView('v-detail')">④ 维修记录详情 (展示/编辑)</button>
+    <button class="proto-btn" onclick="switchView('v-genset-timeline')">⑤ 机组历史维修履历 (时间轴)</button>
+    <button class="proto-btn" onclick="switchView('v-spec')">⑥ 功能设计说明（陈运涛）</button>
+    <button class="theme-toggle" onclick="toggleDarkMode()">🌓 切换明/暗主题</button>
+  </header>
+
+  <div class="layout-wrapper">
+
+    <!-- ========================================================================= -->
+    <!-- 视图 1：电站详情内「维修记录」Tab (对应图二) -->
+    <!-- ========================================================================= -->
+    <section id="v-station" class="view-container active">
+      <!-- 电站头部模拟 -->
+      <div class="el-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h2 style="font-size:18px; font-weight:bold;">利比亚106MW燃气电站</h2>
+            <span class="el-tag el-tag-success">进行中</span>
+          </div>
+          <div>
+            <button class="el-btn el-btn-primary el-btn-small">电站监控</button>
+            <button class="el-btn el-btn-primary el-btn-small">机组监控</button>
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--el-text-color-secondary); display:flex; gap:20px; flex-wrap:wrap;">
+          <span>装机功率: 106000 kW</span>
+          <span>机组总数: 106 台</span>
+          <span>所属组织: 孚创信息科技（成都）有限公司</span>
+          <span>电站位置: -</span>
+        </div>
+        <!-- 电站二级 Tab 栏模拟 -->
+        <div
+          style="display:flex; gap:20px; border-bottom:1px solid var(--el-border-color-lighter); margin-top:14px; padding-bottom:8px; font-size:13px; color:var(--el-text-color-secondary);">
+          <span>电站信息</span>
+          <span>机组管理</span>
+          <span>电表气表</span>
+          <span>维保管理</span>
+          <span>电量统计</span>
+          <span>用气统计</span>
+          <span>运行记录</span>
+          <span
+            style="color:var(--el-color-primary); font-weight:bold; border-bottom:2px solid var(--el-color-primary); padding-bottom:6px;">维修记录</span>
+          <span>预警记录</span>
+          <span>历史曲线</span>
+          <span>远程解锁机</span>
+          <span>云通信记录</span>
+        </div>
+      </div>
+
+      <!-- 筛选栏 -->
+      <div class="el-card">
+        <div class="form-row">
+          <div class="form-item">
+            <span class="form-label">请输入关键字</span>
+            <input type="text" class="el-input" style="width:240px" placeholder="支持机组名称/撬装箱搜索" value="" />
+          </div>
+          <button class="el-btn">↻ 重置</button>
+          <button class="el-btn el-btn-primary">🔍 查询</button>
+        </div>
+
+        <!-- 机组列表表格 -->
+        <table class="el-table">
+          <thead>
+            <tr>
+              <th class="center" style="width:50px">序号</th>
+              <th>机组名称</th>
+              <th>所属撬装箱</th>
+              <th>所属电站</th>
+              <th class="center">运行状态</th>
+              <th class="center">维修状态</th>
+              <th class="center">维修记录</th>
+              <th class="center" style="width:160px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center">1</td>
+              <td><b>L1-4#FPSS8625100030</b></td>
+              <td style="color:var(--el-text-color-secondary)">—</td>
+              <td>利比亚106MW燃气电站</td>
+              <td class="center"><span class="el-tag el-tag-primary">运行</span></td>
+              <td class="center"><span class="el-tag el-tag-warning">维修中</span></td>
+              <td class="center"><b>3</b></td>
+              <td class="center">
+                <button class="el-btn-link"
+                  onclick="openRegister('利比亚106MW燃气电站', 'L1-4#FPSS8625100030', 'YM-001-A')">维修登记</button>
+                <button class="el-btn-link" onclick="switchView('v-genset-timeline')">查看更多</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="center">2</td>
+              <td><b>L1-5#FPSS8625100030</b></td>
+              <td style="color:var(--el-text-color-secondary)">—</td>
+              <td>利比亚106MW燃气电站</td>
+              <td class="center"><span class="el-tag el-tag-primary">运行</span></td>
+              <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+              <td class="center"><b>3</b></td>
+              <td class="center">
+                <button class="el-btn-link"
+                  onclick="openRegister('利比亚106MW燃气电站', 'L1-5#FPSS8625100030', 'YM-001-B')">维修登记</button>
+                <button class="el-btn-link" onclick="switchView('v-genset-timeline')">查看更多</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="center">3</td>
+              <td><b>1号机</b></td>
+              <td style="color:var(--el-text-color-secondary)">—</td>
+              <td>电站1</td>
+              <td class="center"><span class="el-tag el-tag-success">正常</span></td>
+              <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+              <td class="center"><b>18</b></td>
+              <td class="center">
+                <button class="el-btn-link" onclick="openRegister('电站1', '1号机', 'YM-001-A')">维修登记</button>
+                <button class="el-btn-link" onclick="switchView('v-genset-timeline')">查看更多</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 分页模拟 -->
+        <div
+          style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:14px; font-size:12px; color:var(--el-text-color-secondary);">
+          <span>共 60 条</span>
+          <select class="el-select" style="padding:3px 6px;">
+            <option>10条/页</option>
+          </select>
+          <button class="el-btn el-btn-small">‹</button>
+          <span class="el-tag el-tag-primary">1</span>
+          <button class="el-btn el-btn-small">2</button>
+          <button class="el-btn el-btn-small">3</button>
+          <button class="el-btn el-btn-small">›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 视图 2：运维管理 ➔ 维修管理主工单池 (对应图四) -->
+    <!-- ========================================================================= -->
+    <section id="v-menu-list" class="view-container">
+      <div class="el-card">
+        <!-- 状态页签 -->
+        <div style="margin-bottom:16px;">
+          <div class="el-radio-group">
+            <div class="el-radio-btn active">全部 (128)</div>
+            <div class="el-radio-btn">待维修 (23)</div>
+            <div class="el-radio-btn">维修中 (45)</div>
+            <div class="el-radio-btn">已完成 (60)</div>
+          </div>
+        </div>
+
+        <!-- 组合筛选区 -->
+        <div class="form-row" style="row-gap:12px; margin-bottom:14px;">
+          <div class="form-item">
+            <span class="form-label">关键词搜索</span>
+            <input type="text" class="el-input" style="width:240px" placeholder="支持记录编号、机组名称、电站名称" />
+          </div>
+          <div class="form-item">
+            <span class="form-label">所属电站</span>
+            <select class="el-select" style="width:160px">
+              <option>全部电站</option>
+              <option>电站1</option>
+              <option>电站2</option>
+              <option>利比亚106MW燃气电站</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <span class="form-label">故障类型</span>
+            <select class="el-select" style="width:160px">
+              <option>全部类型</option>
+              <option>电控系统类(ECU)</option>
+              <option>燃料与燃烧系统类</option>
+              <option>冷却与润滑系统类</option>
+              <option>机械与结构类</option>
+              <option>控制与安全保护类</option>
+              <option>环境与辅助系统类</option>
+              <option>发电侧系统类</option>
+              <option>其他类</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <span class="form-label">维修结果</span>
+            <select class="el-select" style="width:140px">
+              <option>全部结果</option>
+              <option>已修复</option>
+              <option>更换配件修复</option>
+              <option>临时处理待观察</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <span class="form-label">维修人员</span>
+            <input type="text" class="el-input" style="width:140px" placeholder="请输入维修人员" />
+          </div>
+          <div class="form-item">
+            <span class="form-label">完工时间</span>
+            <input type="text" class="el-input" style="width:200px" placeholder="年/月/日 至 年/月/日" />
+          </div>
+          <button class="el-btn">↻ 重置</button>
+          <button class="el-btn el-btn-primary">🔍 查询</button>
+        </div>
+
+        <!-- 工具栏 -->
+        <div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:10px;">
+          <button class="el-btn el-btn-primary" onclick="openRegister('电站1', '1号机', 'YM-001-A')">🧾 维修登记</button>
+        </div>
+
+        <!-- 表格 -->
+        <table class="el-table">
+          <thead>
+            <tr>
+              <th class="center" style="width:36px"><input type="checkbox" /></th>
+              <th class="center" style="width:45px">序号</th>
+              <th>记录编号</th>
+              <th>机组名称</th>
+              <th>所属电站</th>
+              <th>故障类型</th>
+              <th>维修事项</th>
+              <th class="center">维修结果</th>
+              <th class="center">维修人员</th>
+              <th class="center">维修时长</th>
+              <th>开始时间</th>
+              <th>结束时间</th>
+              <th class="center" style="width:90px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center"><input type="checkbox" /></td>
+              <td class="center">1</td>
+              <td><a href="javascript:void(0)"
+                  style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;"
+                  onclick="switchView('v-detail')">BX20260802008</a></td>
+              <td>7号机</td>
+              <td>电站2</td>
+              <td>机械故障</td>
+              <td>偏航轴承磨损，需要更换</td>
+              <td class="center"><span class="el-tag el-tag-warning">待维修</span></td>
+              <td class="center">赵维修</td>
+              <td class="center">6.0h</td>
+              <td style="font-family:monospace">2026-08-25 13:40</td>
+              <td style="font-family:monospace">2026-08-25 13:52</td>
+              <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button></td>
+            </tr>
+            <tr>
+              <td class="center"><input type="checkbox" /></td>
+              <td class="center">2</td>
+              <td><a href="javascript:void(0)"
+                  style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;"
+                  onclick="switchView('v-detail')">BX20260802005</a></td>
+              <td>4号机</td>
+              <td>电站4</td>
+              <td>电气故障</td>
+              <td>箱变高压侧熔断器熔断</td>
+              <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+              <td class="center">钱电工</td>
+              <td class="center">3.5h</td>
+              <td style="font-family:monospace">2026-08-25 13:40</td>
+              <td style="font-family:monospace">2026-08-25 13:52</td>
+              <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button></td>
+            </tr>
+            <tr>
+              <td class="center"><input type="checkbox" /></td>
+              <td class="center">3</td>
+              <td><a href="javascript:void(0)"
+                  style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;"
+                  onclick="switchView('v-detail')">BX20260804001</a></td>
+              <td>1号机</td>
+              <td>电站1</td>
+              <td>机械故障</td>
+              <td>齿轮箱异响，运行时振动加剧</td>
+              <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+              <td class="center">赵维修</td>
+              <td class="center">4.5h</td>
+              <td style="font-family:monospace">2026-08-25 13:40</td>
+              <td style="font-family:monospace">2026-08-25 13:52</td>
+              <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button></td>
+            </tr>
+            <tr>
+              <td class="center"><input type="checkbox" /></td>
+              <td class="center">4</td>
+              <td><a href="javascript:void(0)"
+                  style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;"
+                  onclick="switchView('v-detail')">BX20260731028</a></td>
+              <td>3号机</td>
+              <td>电站3</td>
+              <td>控制系统故障</td>
+              <td>SCADA通讯模块故障，数据丢失</td>
+              <td class="center"><span class="el-tag el-tag-warning">维修中</span></td>
+              <td class="center">赵维修</td>
+              <td class="center">8.0h</td>
+              <td style="font-family:monospace">2026-08-25 13:40</td>
+              <td style="font-family:monospace">2026-08-25 13:52</td>
+              <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 视图 3：维修信息登记大页 (对应图五) -->
+    <!-- ========================================================================= -->
+    <section id="v-register" class="view-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="el-btn" onclick="switchView('v-menu-list')">‹ 返回</button>
+          <div>
+            <h2 style="font-size:16px; font-weight:bold;">维修信息登记</h2>
+            <div style="font-size:12px; color:var(--el-text-color-secondary)">登记维修过程和结果信息，维修中可保存登记信息，维修完成后请手动更新维修状态
+            </div>
+          </div>
+        </div>
+        <button class="el-btn">↻ 刷新</button>
+      </div>
+
+      <!-- 步骤条 -->
+      <div class="el-steps">
+        <div class="el-step active">
+          <div class="el-step-icon">1</div>
+          <div class="el-step-title">维修登记</div>
+        </div>
+        <div class="el-step">
+          <div class="el-step-icon">2</div>
+          <div class="el-step-title">开始维修</div>
+        </div>
+        <div class="el-step">
+          <div class="el-step-icon">3</div>
+          <div class="el-step-title">完工确认</div>
+        </div>
+      </div>
+
+      <!-- 1. 机组选择与关联记录 -->
+      <div class="el-card">
+        <div class="el-card-header">机组选择与关联记录</div>
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom:12px;">
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 所属电站</div>
+            <select id="reg-station" class="el-select" style="width:100%">
+              <option>电站1</option>
+              <option>电站2</option>
+              <option>利比亚106MW燃气电站</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 机组名称</div>
+            <select id="reg-genset" class="el-select" style="width:100%">
+              <option>1号机</option>
+              <option>2号机</option>
+              <option>L1-4#FPSS8625100030</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px">云猫编号 <span
+                style="font-size:10px; color:var(--el-color-primary)">(自动带出)</span></div>
+            <input id="reg-cloud" type="text" class="el-input" style="width:100%" value="YM-001-A" readonly />
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px">机组运行时长 <span
+                style="font-size:10px; color:var(--el-color-primary)">(自动带出)</span></div>
+            <input type="text" class="el-input" style="width:100%" value="12,580 h" readonly />
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <div class="form-label" style="margin-bottom:4px">报警记录 (关联选择)</div>
+            <select class="el-select" style="width:100%">
+              <option>2026-08-25 13:40:30 Atomic模块通信线路开路</option>
+              <option>2026-08-20 09:12:11 冷却水温高报警</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px">停机记录 (关联选择)</div>
+            <select class="el-select" style="width:100%">
+              <option>2026-08-25 13:40:30 ~ 2026-08-25 13:40:30</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 提示条 -->
+      <div class="el-alert el-alert-info">
+        <b>维修登记说明：</b>请如实填写维修过程和结果信息，带 <span style="color:red">*</span> 为必填项。维修中可保存登记信息，维修完成后请手动更新维修状态。
+      </div>
+
+      <!-- 2. 维修基本信息 -->
+      <div class="el-card">
+        <div class="el-card-header">维修基本信息</div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom:12px;">
+          <div>
+            <div class="form-label" style="margin-bottom:4px">登记编号 <span
+                style="font-size:10px; color:var(--el-color-primary)">(自动生成)</span></div>
+            <input type="text" class="el-input" style="width:100%" value="WXD20260805001" readonly />
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px">登记时间 <span
+                style="font-size:10px; color:var(--el-color-primary)">(自动)</span></div>
+            <input type="text" class="el-input" style="width:100%" value="2026-08-05 18:30" readonly />
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px">登记人</div>
+            <input type="text" class="el-input" style="width:100%" value="赵维修" readonly />
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 维修事项</div>
+            <input type="text" class="el-input" style="width:100%" value="更换火花塞" />
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 故障级别</div>
+            <select class="el-select" style="width:100%">
+              <option>一级: 报警停机类</option>
+              <option>二级: 报警故障类</option>
+              <option>三级: 一般警告类</option>
+              <option>四级: 提示信息类</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 故障类型</div>
+            <select class="el-select" style="width:100%">
+              <option>电控系统类(ECU)</option>
+              <option>燃料与燃烧系统类</option>
+              <option>冷却与润滑系统类</option>
+              <option>机械与结构类</option>
+              <option>控制与安全保护类</option>
+              <option>环境与辅助系统类</option>
+              <option>发电侧系统类</option>
+              <option>其他类</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 维修开始时间</div>
+            <input type="text" class="el-input" style="width:100%" value="2026/08/04 14:30" />
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:4px"><span style="color:red">*</span> 维修结束时间</div>
+            <input type="text" class="el-input" style="width:100%" value="2026/08/05 18:00" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 维修过程描述 -->
+      <div class="el-card">
+        <div class="el-card-header"><span style="color:red">*</span> 维修过程描述</div>
+        <textarea class="el-textarea" rows="4">8月4日 14:30-18:00 拆解检查：拆除各级齿轮箱上盖，检查各级齿轮状态，发现高速级第二级小齿轮齿面存在明显点蚀，部分齿根有微裂纹。
+8月5日 09:00-12:00 配件更换：更换高速级小齿轮（GR-HS-002），更换配套圆锥滚子轴承（30212）。
+8月5日 14:00-16:30 清洗换油：彻底清洗齿轮箱内部，更换新油（Mobilgear 600 XP 320，280L），更换油滤和磁堵。
+8月5日 17:00-18:00 调试运行：空载试运行30分钟，加载运行1小时，各项指标正常，振动值从6.2mm/s降至2.1mm/s。</textarea>
+        <div style="text-align:right; font-size:11px; color:var(--el-text-color-secondary); margin-top:4px;">234 / 1000
+        </div>
+      </div>
+
+      <!-- 4. 维修更换件 -->
+      <div class="el-card">
+        <div class="el-card-header">
+          <span>维修更换件</span>
+          <span style="font-size:12px; color:var(--el-text-color-secondary)">共 4 项</span>
+        </div>
+        <table class="el-table">
+          <thead>
+            <tr>
+              <th class="center" style="width:45px">序号</th>
+              <th>备件名称</th>
+              <th>件号</th>
+              <th style="width:80px">单位</th>
+              <th style="width:90px" class="center">数量</th>
+              <th style="width:110px">位置</th>
+              <th class="center" style="width:60px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center">1</td>
+              <td><input type="text" class="el-input" value="火花塞" style="width:100%" /></td>
+              <td><input type="text" class="el-input" value="GR-HS-002" style="width:100%" /></td>
+              <td><input type="text" class="el-input" value="件" style="width:100%" /></td>
+              <td class="center"><input type="text" class="el-input center" value="1" style="width:100%" /></td>
+              <td><select class="el-select" style="width:100%">
+                  <option>1缸</option>
+                  <option>2缸</option>
+                </select></td>
+              <td class="center"><button class="el-btn-link danger">✕</button></td>
+            </tr>
+            <tr>
+              <td class="center">2</td>
+              <td><input type="text" class="el-input" value="圆锥滚子轴承" style="width:100%" /></td>
+              <td><input type="text" class="el-input" value="30212" style="width:100%" /></td>
+              <td><input type="text" class="el-input" value="套" style="width:100%" /></td>
+              <td class="center"><input type="text" class="el-input center" value="2" style="width:100%" /></td>
+              <td><span style="color:var(--el-text-color-secondary)">—</span></td>
+              <td class="center"><button class="el-btn-link danger">✕</button></td>
+            </tr>
+            <tr>
+              <td class="center">3</td>
+              <td><input type="text" class="el-input" value="齿轮箱润滑油" style="width:100%" /></td>
+              <td><input type="text" class="el-input" value="Mobilgear 600 XP 320" style="width:100%" /></td>
+              <td><input type="text" class="el-input" value="L" style="width:100%" /></td>
+              <td class="center"><input type="text" class="el-input center" value="280" style="width:100%" /></td>
+              <td><span style="color:var(--el-text-color-secondary)">—</span></td>
+              <td class="center"><button class="el-btn-link danger">✕</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="el-btn el-btn-small" style="margin-top:10px; border-style:dashed;">＋ 添加更换件</button>
+      </div>
+
+      <!-- 5. 维修过程图片 -->
+      <div class="el-card">
+        <div class="el-card-header">
+          <span>维修过程图片</span>
+          <span style="font-size:12px; color:var(--el-text-color-secondary)">支持 JPG、PNG 格式，单张不超过 5MB，最多 12 张</span>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+          <!-- 图片卡 1 -->
+          <div
+            style="width:100px; height:100px; border:1px solid var(--el-border-color); border-radius:6px; background:var(--el-fill-color-light); position:relative; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:4px;">
+            <span style="font-size:24px; margin-bottom:12px; color:var(--el-text-color-placeholder)">🖼</span>
+            <span
+              style="font-size:11px; color:#fff; background:rgba(0,0,0,0.6); padding:1px 6px; border-radius:3px;">拆解前</span>
+          </div>
+          <!-- 图片卡 2 -->
+          <div
+            style="width:100px; height:100px; border:1px solid var(--el-border-color); border-radius:6px; background:var(--el-fill-color-light); position:relative; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:4px;">
+            <span style="font-size:24px; margin-bottom:12px; color:var(--el-text-color-placeholder)">🖼</span>
+            <span
+              style="font-size:11px; color:#fff; background:rgba(0,0,0,0.6); padding:1px 6px; border-radius:3px;">故障点</span>
+          </div>
+          <!-- 图片卡 3 -->
+          <div
+            style="width:100px; height:100px; border:1px solid var(--el-border-color); border-radius:6px; background:var(--el-fill-color-light); position:relative; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:4px;">
+            <span style="font-size:24px; margin-bottom:12px; color:var(--el-text-color-placeholder)">🖼</span>
+            <span
+              style="font-size:11px; color:#fff; background:rgba(0,0,0,0.6); padding:1px 6px; border-radius:3px;">维修中</span>
+          </div>
+          <!-- 图片卡 4 -->
+          <div
+            style="width:100px; height:100px; border:1px solid var(--el-border-color); border-radius:6px; background:var(--el-fill-color-light); position:relative; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:4px;">
+            <span style="font-size:24px; margin-bottom:12px; color:var(--el-text-color-placeholder)">🖼</span>
+            <span
+              style="font-size:11px; color:#fff; background:rgba(0,0,0,0.6); padding:1px 6px; border-radius:3px;">完工状态</span>
+          </div>
+        </div>
+        <!-- 上传拖拽区 -->
+        <div
+          style="border:1px dashed var(--el-border-color); border-radius:6px; padding:20px; text-align:center; background:var(--el-fill-color-blank); color:var(--el-text-color-secondary); cursor:pointer;">
+          <div style="font-size:20px; color:var(--el-color-primary)">⇪</div>
+          <div style="font-size:13px; margin-top:4px;">点击或拖拽图片到此处 <span
+              style="color:var(--el-color-primary)">上传图片</span></div>
+          <div style="font-size:11px; color:var(--el-text-color-placeholder); margin-top:2px;">可上传维修前、维修中、维修后对比图片，最多12张
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. 维修人员与签字 -->
+      <div class="el-card">
+        <div class="el-card-header">维修人员与签字</div>
+        <!-- 人员行 1 -->
+        <div
+          style="display:flex; align-items:center; gap:16px; border:1px solid var(--el-border-color-lighter); padding:10px 14px; border-radius:6px; margin-bottom:8px; background:var(--el-fill-color-light)">
+          <div
+            style="width:32px; height:32px; border-radius:50%; background:var(--el-color-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+            赵</div>
+          <div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">姓名</div>
+            <div style="font-weight:bold;">赵维修</div>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">联系电话</div>
+            <div>138****1234</div>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">角色</div>
+            <select class="el-select" style="padding:2px 6px;">
+              <option>主维修人</option>
+              <option>协助人员</option>
+            </select>
+          </div>
+          <button class="el-btn-link danger" style="margin-left:auto;">✕</button>
+        </div>
+        <!-- 人员行 2 -->
+        <div
+          style="display:flex; align-items:center; gap:16px; border:1px solid var(--el-border-color-lighter); padding:10px 14px; border-radius:6px; margin-bottom:12px; background:var(--el-fill-color-light)">
+          <div
+            style="width:32px; height:32px; border-radius:50%; background:var(--el-color-success); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+            刘</div>
+          <div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">姓名</div>
+            <div style="font-weight:bold;">刘师傅</div>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">联系电话</div>
+            <div>139****5678</div>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">角色</div>
+            <select class="el-select" style="padding:2px 6px;">
+              <option>协助人员</option>
+              <option>主维修人</option>
+            </select>
+          </div>
+          <button class="el-btn-link danger" style="margin-left:auto;">✕</button>
+        </div>
+        <button class="el-btn el-btn-small" style="border-style:dashed; margin-bottom:16px;">＋ 添加维修人员</button>
+
+        <!-- 签名展示区 -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div>
+            <div class="form-label" style="margin-bottom:6px"><span style="color:red">*</span> 主维修人签名 <span
+                style="font-size:11px; color:var(--el-text-color-secondary)">(系统读取个人资料签名)</span></div>
+            <div class="sign-preview-card">
+              <svg class="sign-img" viewBox="0 0 200 60">
+                <path d="M10,40 Q30,10 60,35 T120,25 T180,45" fill="none" stroke="#1f2d3d" stroke-width="3" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:6px"><span style="color:red">*</span> 协助人员签名 <span
+                style="font-size:11px; color:var(--el-text-color-secondary)">(系统读取个人资料签名)</span></div>
+            <div class="sign-preview-card">
+              <span class="sign-empty-text">（该协助人员个人资料暂未上传签名图片）</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. 补充信息 -->
+      <div class="el-card">
+        <div class="el-card-header">补充信息</div>
+        <div class="form-label" style="margin-bottom:4px">备注说明</div>
+        <textarea class="el-textarea" rows="2"
+          placeholder="填写备件领用、废品回收等其他说明...">本次维修使用的配件均从电站1备品备件库领用。废齿轮和废轴承已按规定回收处理，旧油已收集存储待统一处理。</textarea>
+      </div>
+
+      <!-- 底部操作栏 -->
+      <div class="el-card" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:var(--el-color-primary)">* 维修登记信息填写完成后，可手动更新维修状态（待维修 → 维修中 → 已完成）</span>
+        <div style="display:flex; gap:10px;">
+          <button class="el-btn" onclick="alert('已保存为草稿，工单保持【维修中】状态')">💾 保存草稿</button>
+          <button class="el-btn" onclick="switchView('v-menu-list')">取 消</button>
+          <button class="el-btn el-btn-primary" onclick="alert('维修登记已提交，工单状态更新为【已完成】！'); switchView('v-detail')">✔
+            提交维修登记</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 视图 4：维修记录详情 / 修改大页 (对应图六) -->
+    <!-- ========================================================================= -->
+    <section id="v-detail" class="view-container">
+      <!-- 头部操作条 -->
+      <div class="el-card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="el-btn" onclick="switchView('v-menu-list')">‹ 返回</button>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h2 style="font-size:17px; font-weight:bold;">Atomic模块通信故障维修单</h2>
+              <span style="font-family:monospace; font-weight:bold; color:var(--el-color-primary)">WXD20260805001</span>
+              <span class="el-tag el-tag-success">● 已完成</span>
+            </div>
+            <div style="font-size:12px; color:var(--el-text-color-secondary); margin-top:2px;">
+              电站1 / 1号机 / YM-001-A · 登记时间: 2026-08-05 18:30
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="el-btn el-btn-primary" onclick="switchView('v-register')">✏ 编辑修改</button>
+        </div>
+      </div>
+
+      <!-- 三步完成进度条 -->
+      <div class="el-steps" style="max-width:520px; margin:0 auto 16px;">
+        <div class="el-step finished">
+          <div class="el-step-icon">✓</div>
+          <div class="el-step-title">维修登记</div>
+        </div>
+        <div class="el-step finished">
+          <div class="el-step-icon">✓</div>
+          <div class="el-step-title">开始维修</div>
+        </div>
+        <div class="el-step finished">
+          <div class="el-step-icon">✓</div>
+          <div class="el-step-title">完工确认</div>
+        </div>
+      </div>
+
+      <!-- 机组信息与关联记录 -->
+      <div class="el-card">
+        <div class="el-card-header">机组信息与关联记录</div>
+        <div
+          style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; font-size:13px; margin-bottom:12px;">
+          <div><span style="color:var(--el-text-color-secondary)">所属电站:</span> <b>电站1</b></div>
+          <div><span style="color:var(--el-text-color-secondary)">机组名称:</span> <b>1号机</b></div>
+          <div><span style="color:var(--el-text-color-secondary)">云猫编号:</span> <span
+              style="color:var(--el-color-primary); font-family:monospace">YM-001-A</span></div>
+          <div><span style="color:var(--el-text-color-secondary)">机组运行时长:</span> <b>12,580 h</b></div>
+          <div><span style="color:var(--el-text-color-secondary)">故障类型:</span> 电控系统类(ECU)</div>
+          <div><span style="color:var(--el-text-color-secondary)">故障级别:</span> <span class="el-tag el-tag-danger">一级:
+              报警停机类</span></div>
+        </div>
+        <div style="background:var(--el-fill-color-light); padding:10px; border-radius:4px; font-size:12px;">
+          <div><b>关联报警记录:</b> 2026-08-25 13:40:30 Atomic模块通信线路开路</div>
+          <div style="margin-top:4px;"><b>关联停机记录:</b> 2026-08-25 13:40:30 ~ 2026-08-25 13:40:30</div>
+        </div>
+      </div>
+
+      <!-- 维修基本信息 -->
+      <div class="el-card">
+        <div class="el-card-header">维修基本信息</div>
+        <div
+          style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size:13px; margin-bottom:12px;">
+          <div><span style="color:var(--el-text-color-secondary)">登记编号:</span> <span
+              style="font-family:monospace; color:var(--el-color-primary); font-weight:bold;">WXD20260805001</span>
+          </div>
+          <div><span style="color:var(--el-text-color-secondary)">登记时间:</span> 2026-08-05 18:30</div>
+          <div><span style="color:var(--el-text-color-secondary)">登记人:</span> 赵维修</div>
+          <div><span style="color:var(--el-text-color-secondary)">维修事项:</span> <b>更换火花塞</b></div>
+          <div><span style="color:var(--el-text-color-secondary)">故障级别:</span> <span class="el-tag el-tag-danger">一级:
+              报警停机类</span></div>
+          <div><span style="color:var(--el-text-color-secondary)">故障类型:</span> 电控系统类(ECU)</div>
+          <div><span style="color:var(--el-text-color-secondary)">维修开始时间:</span> 2026/08/04 14:30</div>
+          <div><span style="color:var(--el-text-color-secondary)">维修结束时间:</span> 2026/08/05 18:00</div>
+          <div><span style="color:var(--el-text-color-secondary)">维修工时:</span> <b
+              style="color:var(--el-color-primary)">4.5 小时</b></div>
+        </div>
+      </div>
+
+      <!-- 过程描述 -->
+      <div class="el-card">
+        <div class="el-card-header">维修过程描述</div>
+        <div
+          style="background:var(--el-fill-color-light); padding:12px; border-radius:4px; font-family:monospace; font-size:12px; line-height:1.7; white-space:pre-line;">
+          8月4日 14:30-18:00 拆解检查：拆除各级齿轮箱上盖，检查各级齿轮状态，发现高速级第二级小齿轮齿面存在明显点蚀。
+          8月5日 09:00-12:00 配件更换：更换高速级小齿轮（GR-HS-002），更换配套圆锥滚子轴承（30212）。
+          8月5日 14:00-16:30 清洗换油：彻底清洗齿轮箱内部，更换新油（Mobilgear 600 XP 320，280L），更换油滤和磁堵。
+          8月5日 17:00-18:00 调试运行：空载试运行30分钟，加载运行1小时，各项指标正常，振动值从6.2mm/s降至2.1mm/s。
+        </div>
+      </div>
+
+      <!-- 更换配件表格 -->
+      <div class="el-card">
+        <div class="el-card-header">维修更换件</div>
+        <table class="el-table">
+          <thead>
+            <tr>
+              <th class="center" style="width:45px">序号</th>
+              <th>备件名称</th>
+              <th>件号</th>
+              <th style="width:80px">单位</th>
+              <th class="center" style="width:90px">数量</th>
+              <th>位置</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center">1</td>
+              <td>火花塞</td>
+              <td>GR-HS-002</td>
+              <td>件</td>
+              <td class="center">1</td>
+              <td>1缸</td>
+            </tr>
+            <tr>
+              <td class="center">2</td>
+              <td>圆锥滚子轴承</td>
+              <td>30212</td>
+              <td>套</td>
+              <td class="center">2</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="center">3</td>
+              <td>齿轮箱润滑油</td>
+              <td>Mobilgear 600 XP 320</td>
+              <td>L</td>
+              <td class="center">280</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 签字与人员展示 -->
+      <div class="el-card">
+        <div class="el-card-header">维修人员与签名</div>
+        <div style="display:flex; gap:16px; margin-bottom:14px;">
+          <div
+            style="border:1px solid var(--el-border-color-lighter); padding:10px 14px; border-radius:6px; background:var(--el-fill-color-light); display:flex; gap:10px; align-items:center;">
+            <div
+              style="width:28px; height:28px; border-radius:50%; background:var(--el-color-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">
+              赵</div>
+            <div><b>赵维修</b> <span style="font-size:11px; color:var(--el-text-color-secondary)">(主维修人) ·
+                138****1234</span></div>
+          </div>
+          <div
+            style="border:1px solid var(--el-border-color-lighter); padding:10px 14px; border-radius:6px; background:var(--el-fill-color-light); display:flex; gap:10px; align-items:center;">
+            <div
+              style="width:28px; height:28px; border-radius:50%; background:var(--el-color-success); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px;">
+              刘</div>
+            <div><b>刘师傅</b> <span style="font-size:11px; color:var(--el-text-color-secondary)">(协助人员) ·
+                139****5678</span></div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="sign-preview-card">
+            <svg class="sign-img" viewBox="0 0 200 60">
+              <path d="M10,40 Q30,10 60,35 T120,25 T180,45" fill="none" stroke="#1f2d3d" stroke-width="3" />
+            </svg>
+          </div>
+          <div class="sign-preview-card">
+            <svg class="sign-img" viewBox="0 0 200 60">
+              <path d="M20,30 Q60,50 100,20 T170,40" fill="none" stroke="#1f2d3d" stroke-width="3" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 工单流转垂直时间线 -->
+      <div class="el-card">
+        <div class="el-card-header">工单过程流转记录</div>
+        <div style="padding:10px 0 0 10px; font-size:13px;">
+          <div
+            style="position:relative; padding-left:24px; padding-bottom:18px; border-left:2px solid var(--el-color-success);">
+            <div
+              style="position:absolute; left:-7px; top:0; width:12px; height:12px; border-radius:50%; background:var(--el-color-success);">
+            </div>
+            <div style="font-weight:bold;">维修登记 <span
+                style="font-weight:normal; font-size:12px; color:var(--el-text-color-secondary)">2026-08-04 09:15</span>
+            </div>
+            <div style="font-size:12px; color:var(--el-text-color-secondary); margin-top:2px;">
+              创建维修登记单，选择机组及关联报警记录，填写维修基本信息 · 操作人：赵维修</div>
+          </div>
+
+          <div
+            style="position:relative; padding-left:24px; padding-bottom:18px; border-left:2px solid var(--el-color-primary);">
+            <div
+              style="position:absolute; left:-7px; top:0; width:12px; height:12px; border-radius:50%; background:var(--el-color-primary);">
+            </div>
+            <div style="font-weight:bold;">开始维修 <span
+                style="font-weight:normal; font-size:12px; color:var(--el-text-color-secondary)">2026-08-04 14:30</span>
+            </div>
+            <div style="font-size:12px; color:var(--el-text-color-secondary); margin-top:2px;">
+              维修人员到达现场，开始维修作业，工单状态更新为【维修中】 · 操作人：赵维修</div>
+          </div>
+
+          <div
+            style="position:relative; padding-left:24px; padding-bottom:18px; border-left:2px solid var(--el-color-warning);">
+            <div
+              style="position:absolute; left:-7px; top:0; width:12px; height:12px; border-radius:50%; background:var(--el-color-warning);">
+            </div>
+            <div style="font-weight:bold;">信息更新 <span
+                style="font-weight:normal; font-size:12px; color:var(--el-text-color-secondary)">2026-08-05 12:00</span>
+            </div>
+            <div style="font-size:12px; color:var(--el-text-color-secondary); margin-top:2px;">补充维修过程描述及更换件信息 · 操作人：赵维修
+            </div>
+          </div>
+
+          <div style="position:relative; padding-left:24px; padding-bottom:4px;">
+            <div
+              style="position:absolute; left:-7px; top:0; width:12px; height:12px; border-radius:50%; background:var(--el-color-success);">
+            </div>
+            <div style="font-weight:bold; color:var(--el-color-success);">完工确认 <span
+                style="font-weight:normal; font-size:12px; color:var(--el-text-color-secondary)">2026-08-05 18:30</span>
+            </div>
+            <div style="font-size:12px; color:var(--el-text-color-secondary); margin-top:2px;">维修完成，确认完工，工单状态更新为【已完成】 ·
+              操作人：赵维修</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 视图 5：机组历史维修履历 (时间轴大页，对应图三) -->
+    <!-- ========================================================================= -->
+    <section id="v-genset-timeline" class="view-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="el-btn" onclick="switchView('v-station')">‹ 返回</button>
+          <div>
+            <h2 style="font-size:16px; font-weight:bold;">机组维修记录</h2>
+            <div style="font-size:12px; color:var(--el-text-color-secondary)">查询机组历次维修记录详情，关联报修管理工单</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 电站与机组联动下拉 -->
+      <div class="el-card">
+        <div class="form-row">
+          <div class="form-item">
+            <span class="form-label">所属电站</span>
+            <select class="el-select" style="width:180px">
+              <option>电站1</option>
+              <option>电站2</option>
+              <option>利比亚106MW燃气电站</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <span class="form-label">机组名称</span>
+            <select class="el-select" style="width:180px">
+              <option>1号机</option>
+              <option>2号机</option>
+              <option>L1-4#FPSS8625100030</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 机组英雄卡 -->
+      <div class="el-card">
+        <div style="display:flex; align-items:center; gap:20px;">
+          <div
+            style="width:72px; height:72px; border-radius:10px; background:linear-gradient(135deg, var(--el-color-primary), #2b6cb0); color:#fff; display:flex; align-items:center; justify-content:center; font-size:32px;">
+            ⚡
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <h3 style="font-size:18px; font-weight:bold;">1号机</h3>
+              <span class="el-tag el-tag-success">● 正常运行</span>
+              <span style="font-size:12px; font-family:monospace; color:var(--el-text-color-secondary)">FD-001-A</span>
+            </div>
+            <div style="display:flex; gap:36px; margin-top:8px; font-size:12px;">
+              <div><span style="color:var(--el-text-color-secondary)">型号规格:</span> <b>FD2.0-130</b></div>
+              <div><span style="color:var(--el-text-color-secondary)">额定功率:</span> <b>2.0MW</b></div>
+              <div><span style="color:var(--el-text-color-secondary)">投运日期:</span> <b>2020-06-15</b></div>
+              <div><span style="color:var(--el-text-color-secondary)">运行总时长:</span> <b>32,560 小时</b></div>
+            </div>
+          </div>
+          <div
+            style="background:var(--el-color-primary-light-9); border:1px solid #d9ecff; border-radius:8px; padding:12px 24px; text-align:center;">
+            <div style="font-size:28px; font-weight:bold; font-family:monospace; color:var(--el-color-primary)">18</div>
+            <div style="font-size:11px; color:var(--el-text-color-secondary)">累计维修次数</div>
+          </div>
+        </div>
+
+        <!-- 四大分类卡片 (对应图三) -->
+        <div
+          style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px; border-top:1px solid var(--el-border-color-lighter); padding-top:14px;">
+          <div
+            style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:10px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <span style="font-size:20px; color:var(--el-color-primary)">📄</span>
+            <div>
+              <div style="font-size:16px; font-weight:bold;">18 次</div>
+              <div style="font-size:11px; color:var(--el-text-color-secondary)">总维修记录</div>
+            </div>
+          </div>
+          <div
+            style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:10px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <span style="font-size:20px; color:var(--el-color-warning)">⚙</span>
+            <div>
+              <div style="font-size:16px; font-weight:bold; color:var(--el-color-warning)">7 次</div>
+              <div style="font-size:11px; color:var(--el-text-color-secondary)">电控系统类</div>
+            </div>
+          </div>
+          <div
+            style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:10px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <span style="font-size:20px; color:var(--el-color-danger)">⚡</span>
+            <div>
+              <div style="font-size:16px; font-weight:bold; color:var(--el-color-danger)">5 次</div>
+              <div style="font-size:11px; color:var(--el-text-color-secondary)">燃料与燃烧系统类</div>
+            </div>
+          </div>
+          <div
+            style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:10px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <span style="font-size:20px; color:#8e44ad">🛢</span>
+            <div>
+              <div style="font-size:16px; font-weight:bold; color:#8e44ad">4 次</div>
+              <div style="font-size:11px; color:var(--el-text-color-secondary)">机械与结构类</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 时间轴与列表 -->
+      <div class="el-card">
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--el-border-color-lighter); padding-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="el-radio-group">
+              <div id="btn-genset-timeline" class="el-radio-btn active" onclick="switchGensetSubView('timeline')">🕐 时间轴视图</div>
+              <div id="btn-genset-table" class="el-radio-btn" onclick="switchGensetSubView('table')">≡ 列表视图</div>
+            </div>
+            <span style="font-size:12px; font-weight:bold; color:var(--el-color-primary)">全部记录 18</span>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <select class="el-select" style="width:130px">
+              <option>全部类型</option>
+              <option>电控系统类</option>
+              <option>机械与结构类</option>
+            </select>
+            <select class="el-select" style="width:120px">
+              <option>全部人员</option>
+              <option>赵维修</option>
+              <option>孙工</option>
+            </select>
+            <input type="text" class="el-input" style="width:180px" placeholder="年/月/日 至 年/月/日" />
+            <button class="el-btn el-btn-primary">查询</button>
+          </div>
+        </div>
+
+        <!-- 1. 时间轴主体 (按年分组) -->
+        <div id="genset-view-timeline" style="padding:10px 0 0 10px;">
+          <div style="font-weight:bold; margin-bottom:12px; color:var(--el-text-color-regular)">2026 年 (10 条)</div>
+
+          <!-- 节点 1 -->
+          <div
+            style="position:relative; padding-left:24px; padding-bottom:18px; border-left:2px solid var(--el-border-color-lighter);">
+            <div
+              style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--el-color-success);">
+            </div>
+            <div
+              style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:bold; font-size:14px;">齿轮箱异响故障维修</span>
+                  <span class="el-tag el-tag-warning">机械故障</span>
+                </div>
+                <span style="font-size:12px; color:var(--el-text-color-secondary)">🗓 2026-08-05 完工</span>
+              </div>
+              <div style="font-size:12px; color:var(--el-text-color-regular); margin:6px 0;">
+                高速级小齿轮点蚀损坏，更换齿轮及轴承，更换润滑油。机组已恢复正常运行。
+              </div>
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--el-text-color-secondary)">
+                <span>👤 赵维修、刘师傅 <span class="el-tag el-tag-success"
+                    style="padding:1px 6px; font-size:10px;">已完成</span></span>
+                <button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 节点 2 -->
+          <div
+            style="position:relative; padding-left:24px; padding-bottom:18px; border-left:2px solid var(--el-border-color-lighter);">
+            <div
+              style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--el-color-success);">
+            </div>
+            <div
+              style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:bold; font-size:14px;">风速仪校准</span>
+                  <span class="el-tag el-tag-info">其他</span>
+                </div>
+                <span style="font-size:12px; color:var(--el-text-color-secondary)">🗓 2026-08-01 完工</span>
+              </div>
+              <div style="font-size:12px; color:var(--el-text-color-regular); margin:6px 0;">
+                风速仪数据异常，重新校准后恢复正常。
+              </div>
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--el-text-color-secondary)">
+                <span>👤 孙工 <span class="el-tag el-tag-success"
+                    style="padding:1px 6px; font-size:10px;">已完成</span></span>
+                <button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 节点 3 -->
+          <div style="position:relative; padding-left:24px; padding-bottom:4px;">
+            <div
+              style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--el-color-warning);">
+            </div>
+            <div
+              style="background:var(--el-fill-color-light); border:1px solid var(--el-border-color-lighter); border-radius:6px; padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:bold; font-size:14px;">主轴泵润滑脂补充</span>
+                  <span class="el-tag el-tag-warning">机械故障</span>
+                </div>
+                <span style="font-size:12px; color:var(--el-text-color-secondary)">🗓 2026-07-28 完工</span>
+              </div>
+              <div style="font-size:12px; color:var(--el-text-color-regular); margin:6px 0;">
+                主轴泵润滑脂不足，补充润滑脂后恢复正常。
+              </div>
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--el-text-color-secondary)">
+                <span>👤 赵维修 <span class="el-tag el-tag-success"
+                    style="padding:1px 6px; font-size:10px;">已完成</span></span>
+                <button class="el-btn-link" onclick="switchView('v-detail')">查看详情</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 列表视图 (机组维修记录表格) -->
+        <div id="genset-view-table" style="display:none; padding-top:4px;">
+          <table class="el-table">
+            <thead>
+              <tr>
+                <th class="center" style="width:45px">序号</th>
+                <th>记录编号</th>
+                <th>故障类型</th>
+                <th>维修事项</th>
+                <th class="center">维修结果</th>
+                <th class="center">维修人员</th>
+                <th class="center">维修时长</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>完工时间</th>
+                <th class="center" style="width:80px">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="center">1</td>
+                <td><a href="javascript:void(0)" style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;" onclick="switchView('v-detail')">BX20260804001</a></td>
+                <td><span class="el-tag el-tag-warning">机械故障</span></td>
+                <td>齿轮箱异响故障维修</td>
+                <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+                <td class="center">赵维修、刘师傅</td>
+                <td class="center">4.5h</td>
+                <td style="font-family:monospace">2026-08-04 14:30</td>
+                <td style="font-family:monospace">2026-08-05 18:00</td>
+                <td style="font-family:monospace">2026-08-05</td>
+                <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">详情</button></td>
+              </tr>
+              <tr>
+                <td class="center">2</td>
+                <td><a href="javascript:void(0)" style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;" onclick="switchView('v-detail')">BX20260801020</a></td>
+                <td><span class="el-tag el-tag-info">其他</span></td>
+                <td>风速仪校准</td>
+                <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+                <td class="center">孙工</td>
+                <td class="center">2.0h</td>
+                <td style="font-family:monospace">2026-08-01 09:00</td>
+                <td style="font-family:monospace">2026-08-01 11:00</td>
+                <td style="font-family:monospace">2026-08-01</td>
+                <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">详情</button></td>
+              </tr>
+              <tr>
+                <td class="center">3</td>
+                <td><a href="javascript:void(0)" style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;" onclick="switchView('v-detail')">BX20260728011</a></td>
+                <td><span class="el-tag el-tag-warning">机械故障</span></td>
+                <td>主轴泵润滑脂补充</td>
+                <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+                <td class="center">赵维修</td>
+                <td class="center">1.5h</td>
+                <td style="font-family:monospace">2026-07-28 10:00</td>
+                <td style="font-family:monospace">2026-07-28 11:30</td>
+                <td style="font-family:monospace">2026-07-28</td>
+                <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">详情</button></td>
+              </tr>
+              <tr>
+                <td class="center">4</td>
+                <td><a href="javascript:void(0)" style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;" onclick="switchView('v-detail')">BX20260727009</a></td>
+                <td><span class="el-tag el-tag-danger">控制系统故障</span></td>
+                <td>变流器控制板卡故障</td>
+                <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+                <td class="center">赵维修</td>
+                <td class="center">3.0h</td>
+                <td style="font-family:monospace">2026-07-27 08:30</td>
+                <td style="font-family:monospace">2026-07-27 11:30</td>
+                <td style="font-family:monospace">2026-07-27</td>
+                <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">详情</button></td>
+              </tr>
+              <tr>
+                <td class="center">5</td>
+                <td><a href="javascript:void(0)" style="color:var(--el-color-primary); font-family:monospace; font-weight:bold;" onclick="switchView('v-detail')">BX20260715003</a></td>
+                <td><span class="el-tag el-tag-primary">液压系统故障</span></td>
+                <td>液压站滤芯更换</td>
+                <td class="center"><span class="el-tag el-tag-success">已完成</span></td>
+                <td class="center">刘师傅</td>
+                <td class="center">2.5h</td>
+                <td style="font-family:monospace">2026-07-15 13:00</td>
+                <td style="font-family:monospace">2026-07-15 15:30</td>
+                <td style="font-family:monospace">2026-07-15</td>
+                <td class="center"><button class="el-btn-link" onclick="switchView('v-detail')">详情</button></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- 列表分页 -->
+          <div
+            style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:14px; font-size:12px; color:var(--el-text-color-secondary);">
+            <span>共 18 条</span>
+            <select class="el-select" style="padding:3px 6px;">
+              <option>10条/页</option>
+              <option>20条/页</option>
+            </select>
+            <button class="el-btn el-btn-small">‹</button>
+            <span class="el-tag el-tag-primary">1</span>
+            <button class="el-btn el-btn-small">2</button>
+            <button class="el-btn el-btn-small">›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 视图 6：功能设计说明（陈运涛） - 100% 原始文档文本，无擅自修改 -->
+    <!-- ========================================================================= -->
+    <section id="v-spec" class="view-container">
+      <div class="raw-doc-wrap">
+        维修涉及到的功能模块共有两部分：
+        1、电站详情加一个tab页：维修记录
+        维修记录页主要展示机组列表，以利比亚为例，1-106台机组依次排列。
+        点击维修登记可直接进入维修登记页面，并且电站和机组已经默认选择。
+        点击查看更多进入该机组的维修记录页面，可查看该机组的历史维修记录。
+        点击某一次维修记录可查看维修记录详情（电站详情入口和运维管理入口查看的维修记录详情页一样）
+        2、运维管理模块下加一个模块：维修管理
+        维修管理页面呈现所有的维修记录并可以进行筛选查看
+        维修登记：点击维修登记可进行维修情况登记，在维修记录通过维修登记按钮进入登记，维修登记不需要审核流程，由登记人员在登记界面手动登记维修登记、开始维修、完工确认，确认对应的维修状态（待维修——维修中——已完成）。
+        维修登记时先选择电站、机组，带出云猫编号、机组运行时长的信息；然后可选择该机组关联的报警记录、停机记录；
+        故障级别的选择：一级:报警停机类；二级:报警故障类；三级:一般警告类；四级:提示信息类。故障类型的选择：电控系统类(ECU)、燃料与燃烧系统类、冷却与润滑系统类、机械与结构类、控制与安全保护类、环境与辅助系统类、发电侧系统类、其他类。
+
+        注意：故障级别，故障类型，维修过程描述，都和报警处理登记中的内容一一对应，在报警处理登记添加一个保存并登记维修，即可将报警处理登记的信息带入到维修登记中进行对应机组对应报警记录的维修登记。同时报警处理登记添加一个维修记录选择栏，点击可查看该机组的维修记录，选择后自动带入上面三种信息
+        <p
+          style="
+            margin: 16px 0 0;
+            text-align: right;
+          "
+        >
+          <a
+            href="https://https-website-cloudflare.pages.dev/_view?u=%2Ffortrust%2F%25E6%25B2%2583%25E8%25BE%25BE%2F%25E6%25B2%2583%25E8%25BE%25BE%25E7%25BB%25B4%25E4%25BF%25AE%25E6%25A8%25A1%25E5%259D%2597%2F%25E5%258A%259F%25E8%2583%25BD%25E8%25AE%25BE%25E8%25AE%25A1%25E8%25AF%25B4%25E6%2598%258E.docx"
+            target="_blank"
+            rel="noopener noreferrer"
+          >查看源文件</a>
+        </p>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // 视图切换
+    function switchView(viewId) {
+      document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('.proto-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.proto-btn')).find(b => b.getAttribute('onclick')?.includes(viewId));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 机组维修履历：时间轴视图 vs 列表视图 切换
+    function switchGensetSubView(subMode) {
+      const timelineView = document.getElementById('genset-view-timeline');
+      const tableView = document.getElementById('genset-view-table');
+      const btnTimeline = document.getElementById('btn-genset-timeline');
+      const btnTable = document.getElementById('btn-genset-table');
+
+      if (subMode === 'timeline') {
+        if (timelineView) timelineView.style.display = 'block';
+        if (tableView) tableView.style.display = 'none';
+        if (btnTimeline) btnTimeline.classList.add('active');
+        if (btnTable) btnTable.classList.remove('active');
+      } else {
+        if (timelineView) timelineView.style.display = 'none';
+        if (tableView) tableView.style.display = 'block';
+        if (btnTimeline) btnTimeline.classList.remove('active');
+        if (btnTable) btnTable.classList.add('active');
+      }
+    }
+
+    // 从机组带入电站机组直接打开维修登记
+    function openRegister(stationName, gensetName, cloudCode) {
+      switchView('v-register');
+      const stEl = document.getElementById('reg-station');
+      const gsEl = document.getElementById('reg-genset');
+      const cdEl = document.getElementById('reg-cloud');
+      if (stEl) stEl.value = stationName;
+      if (gsEl) gsEl.value = gensetName;
+      if (cdEl) cdEl.value = cloudCode;
+    }
+
+    // 暗黑模式切换
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+  </script>
+</body>
+
+</html>

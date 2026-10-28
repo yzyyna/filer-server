@@ -1,0 +1,1355 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>服务到期提醒 · APP 设计稿 | 发电机组云监控</title>
+<style>
+  :root{
+    --bg:#eef1f6;
+    --panel:#ffffff;
+    --line:#e5e9f0;
+    --line-2:#d8dee9;
+    --ink:#0f172a;
+    --ink-2:#475569;
+    --ink-3:#94a3b8;
+    --primary:#1e6fff;
+    --primary-2:#3b82f6;
+    --primary-soft:#e8f0ff;
+    --warn:#f59e0b;
+    --warn-soft:#fff7e6;
+    --warn-2:#b45309;
+    --danger:#ef4444;
+    --danger-soft:#fee2e2;
+    --danger-2:#b91c1c;
+    --success:#10b981;
+    --success-soft:#d1fae5;
+    --shadow:0 1px 3px rgba(15,23,42,.06), 0 8px 24px rgba(15,23,42,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(ellipse 800px 400px at 20% 0%, rgba(30,111,255,.08), transparent 60%),
+      linear-gradient(180deg,#f5f7fb 0%,#eef1f6 100%);
+    min-height:100vh;
+    padding:32px 24px 48px;
+  }
+
+  /* ===== Page Header ===== */
+  .page-head{max-width:1640px;margin:0 auto 28px}
+  .page-head .brand{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .page-head .logo{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(135deg,#1e6fff,#22d3ee);
+    display:grid;place-items:center;color:#fff;font-weight:600;
+    box-shadow:0 4px 14px rgba(30,111,255,.35);
+  }
+  .page-head h1{font-size:20px;font-weight:600;letter-spacing:.3px}
+  .page-head .sub{font-size:12px;color:var(--ink-2);margin-top:3px;letter-spacing:1px}
+  .page-head .meta{
+    display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;
+    font-size:12px;color:var(--ink-2);
+  }
+  .page-head .meta b{color:var(--ink);font-weight:600;margin-right:4px}
+
+  /* ===== Frames Container ===== */
+  .frames{
+    max-width:1640px;margin:0 auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));
+    gap:28px;
+  }
+  .frame{display:flex;flex-direction:column;align-items:center}
+  .frame .label{
+    font-size:13px;font-weight:600;color:var(--ink);
+    margin-bottom:8px;align-self:flex-start;
+    display:flex;align-items:center;gap:8px;
+  }
+  .frame .label .tag{
+    font-size:10px;padding:2px 8px;border-radius:10px;
+    background:var(--primary-soft);color:var(--primary);
+    font-weight:500;letter-spacing:.5px;
+  }
+  .frame .desc{
+    font-size:12px;color:var(--ink-2);
+    margin-bottom:14px;align-self:flex-start;line-height:1.6;
+  }
+  .frame .desc code{
+    background:#f1f5f9;padding:1px 6px;border-radius:4px;
+    font-family:"JetBrains Mono",Consolas,monospace;font-size:11px;color:var(--ink);
+  }
+
+  /* ===== Phone ===== */
+  .phone{
+    width:340px;height:700px;
+    background:#0f172a;
+    border-radius:42px;padding:11px;
+    box-shadow:
+      0 0 0 1.5px #1e293b,
+      0 20px 50px rgba(15,23,42,.18),
+      0 8px 20px rgba(15,23,42,.12);
+    position:relative;
+  }
+  .phone .notch{
+    position:absolute;top:11px;left:50%;transform:translateX(-50%);
+    width:110px;height:26px;background:#0f172a;
+    border-radius:0 0 16px 16px;z-index:5;
+  }
+  .phone .notch::before{
+    content:"";position:absolute;right:18px;top:8px;
+    width:8px;height:8px;border-radius:50%;
+    background:#1e293b;border:1px solid #334155;
+  }
+  .phone .screen{
+    width:100%;height:100%;
+    background:#f7f8fb;
+    border-radius:32px;
+    overflow:hidden;
+    position:relative;
+    display:flex;flex-direction:column;
+  }
+  .phone .statusbar{
+    height:34px;flex-shrink:0;
+    background:#f7f8fb;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px 0 26px;font-size:13px;font-weight:600;color:var(--ink);
+  }
+  .phone .statusbar .right{display:flex;align-items:center;gap:5px}
+  .phone .statusbar svg{width:14px;height:14px}
+
+  /* ===== App Bar ===== */
+  .appbar{
+    background:#fff;
+    padding:12px 16px 14px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .appbar .title{font-size:17px;font-weight:600;color:var(--ink)}
+  .appbar .icon{
+    width:28px;height:28px;border-radius:8px;
+    display:grid;place-items:center;color:var(--ink-2);cursor:pointer;
+  }
+  .appbar .icon:hover{background:#f1f5f9;color:var(--ink)}
+  .appbar .icon svg{width:18px;height:18px}
+
+  /* ===== Tabs ===== */
+  .tabs{
+    background:#fff;display:flex;
+    border-bottom:1px solid var(--line);
+    padding:0 8px;
+  }
+  .tab{
+    flex:1;text-align:center;padding:11px 4px 9px;
+    font-size:13px;color:var(--ink-2);
+    position:relative;cursor:pointer;
+  }
+  .tab.active{color:var(--primary);font-weight:600}
+  .tab.active::after{
+    content:"";position:absolute;left:50%;bottom:0;
+    width:24px;height:3px;background:var(--primary);
+    border-radius:2px;transform:translateX(-50%);
+  }
+  .tab .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--danger);margin-left:4px;vertical-align:top;margin-top:5px;
+  }
+
+  /* ===== Content ===== */
+  .content{flex:1;overflow-y:auto;background:#f7f8fb}
+  .content::-webkit-scrollbar{display:none}
+
+  /* ===== Top Warning Strip ===== */
+  .top-strip{
+    background:linear-gradient(135deg,#fff7e6 0%,#ffe2c4 100%);
+    padding:11px 14px 12px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+  }
+  .top-strip .row1{
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .top-strip .row1 .l{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--warn-2);font-weight:600}
+  .top-strip .row1 .l svg{width:14px;height:14px}
+  .top-strip .row1 .r{font-size:11px;color:var(--warn-2)}
+  .top-strip .row1 .r b{font-size:18px;font-weight:800;margin-right:2px}
+  .top-strip .hint{
+    margin-top:6px;font-size:11.5px;color:#92400e;line-height:1.5;
+    padding-left:20px;position:relative;
+  }
+  .top-strip .hint::before{
+    content:"";position:absolute;left:7px;top:7px;
+    width:6px;height:6px;border-radius:50%;background:var(--warn);
+  }
+
+  /* ===== List ===== */
+  .list{padding:8px 12px 16px}
+  .card{
+    background:#fff;border-radius:10px;padding:10px 12px 11px;
+    margin-bottom:7px;
+    border:1px solid var(--line);
+    box-shadow:0 1px 2px rgba(15,23,42,.03);
+  }
+  .card.urgent{border-left:3px solid var(--danger)}
+  .card.warn{border-left:3px solid var(--warn)}
+
+  .card .head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:4px;gap:8px;
+  }
+  .card .name{font-size:13.5px;font-weight:600;color:var(--ink);flex:1;min-width:0}
+  .card .remain{
+    font-size:10.5px;padding:2px 7px;border-radius:10px;
+    background:var(--warn-soft);color:var(--warn-2);font-weight:600;flex-shrink:0;
+    white-space:nowrap;
+  }
+  .card.urgent .remain{background:var(--danger-soft);color:var(--danger-2)}
+
+  .card .station{font-size:11px;color:var(--ink-3);margin-bottom:6px}
+
+  .card .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;align-items:center}
+  .card .tags .tag-lbl{
+    font-size:10.5px;color:var(--ink-3);font-weight:500;margin-right:1px;
+  }
+  .card .tags .tag{
+    font-size:10px;padding:1.5px 6px;border-radius:8px;
+    background:#f1f5f9;color:var(--ink-2);font-weight:500;
+  }
+  .card .tags .tag.svc-comm{background:#e0f2fe;color:#0369a1}
+  .card .tags .tag.svc-store{background:#ede9fe;color:#6d28d9}
+  .card .tags .tag.svc-param{background:#fef3c7;color:#a16207}
+  .card .tags .tag.svc-diag{background:#cffafe;color:#0e7490}
+  .card .tags .tag.svc-maint{background:#fce7f3;color:#be185d}
+
+  .card .meta{
+    display:flex;flex-wrap:wrap;gap:2px 10px;
+    font-size:10.5px;color:var(--ink-3);line-height:1.6;
+  }
+  .card .meta span b{color:var(--ink-2);font-weight:500}
+
+  .card .foot{
+    display:flex;align-items:center;justify-content:flex-end;
+    margin-top:7px;padding-top:7px;border-top:1px dashed var(--line);
+  }
+  .btn-renew{
+    background:var(--primary);color:#fff;border:0;
+    padding:4px 10px;border-radius:11px;font-size:11px;font-weight:600;
+    cursor:pointer;display:inline-flex;align-items:center;gap:3px;
+  }
+  .btn-renew svg{width:11px;height:11px}
+  .card.urgent .btn-renew{background:var(--danger)}
+
+  /* ===== Bottom Nav ===== */
+  .bottomnav{
+    height:60px;flex-shrink:0;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(20px);
+    border-top:1px solid var(--line);
+    display:flex;padding:0 6px 6px;
+  }
+  .bnav{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;color:var(--ink-3);font-size:10px;cursor:pointer;position:relative;
+  }
+  .bnav svg{width:20px;height:20px}
+  .bnav.active{color:var(--primary)}
+  .bnav .dot{
+    position:absolute;top:8px;right:32%;
+    min-width:14px;height:14px;border-radius:7px;
+    background:var(--danger);color:#fff;font-size:9px;
+    display:grid;place-items:center;padding:0 3px;font-weight:600;
+    border:1.5px solid #fff;
+  }
+
+  /* ===== Detail Hero ===== */
+  .detail-hero{
+    background:linear-gradient(135deg,#fff7e6 0%,#ffe2c4 100%);
+    padding:16px 18px 20px;position:relative;overflow:hidden;
+  }
+  .detail-hero::before{
+    content:"";position:absolute;right:-30px;top:-30px;
+    width:140px;height:140px;border-radius:50%;
+    background:rgba(245,158,11,.15);
+  }
+  .detail-hero .urgency{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(245,158,11,.20);color:#b45309;
+    padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600;
+    position:relative;z-index:1;
+  }
+  .detail-hero .urgency svg{width:12px;height:12px}
+  .detail-hero h2{
+    font-size:18px;font-weight:700;color:var(--ink);
+    margin:8px 0 2px;position:relative;z-index:1;
+  }
+  .detail-hero .days{
+    font-size:12px;color:#b45309;position:relative;z-index:1;
+  }
+  .detail-hero .days b{font-size:22px;font-weight:800;color:var(--warn);margin:0 3px}
+  .detail-hero .services{
+    position:relative;z-index:1;margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;
+  }
+  .detail-hero .services .tag{
+    font-size:10.5px;padding:2.5px 8px;border-radius:10px;
+    background:rgba(255,255,255,.7);color:var(--ink-2);font-weight:500;
+    border:1px solid rgba(245,158,11,.25);
+  }
+  .detail-hero.urgent{background:linear-gradient(135deg,#fee2e2 0%,#fecaca 100%)}
+  .detail-hero.urgent .urgency{background:rgba(239,68,68,.18);color:#b91c1c}
+  .detail-hero.urgent .days{color:#b91c1c}
+  .detail-hero.urgent .days b{color:var(--danger)}
+  .detail-hero.urgent::before{background:rgba(239,68,68,.15)}
+  .detail-hero.urgent .services .tag{border-color:rgba(239,68,68,.25)}
+
+  /* ===== Info Section ===== */
+  .info-section{
+    background:#fff;margin:10px 12px;border-radius:10px;
+    border:1px solid var(--line);overflow:hidden;
+  }
+  .info-section .head{
+    padding:10px 14px;border-bottom:1px solid var(--line);
+    font-size:13px;font-weight:600;color:var(--ink);
+    display:flex;align-items:center;gap:6px;
+  }
+  .info-section .head svg{width:14px;height:14px;color:var(--primary)}
+  .info-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border-bottom:1px solid var(--line);
+    font-size:12.5px;
+  }
+  .info-row:last-child{border-bottom:0}
+  .info-row .k{color:var(--ink-3)}
+  .info-row .v{color:var(--ink);font-weight:500;display:flex;align-items:center;gap:4px}
+  .info-row .v .status{
+    display:inline-flex;align-items:center;gap:3px;
+    font-size:10.5px;padding:2px 7px;border-radius:10px;
+    background:var(--success-soft);color:var(--success);font-weight:600;
+  }
+  .info-row .v .status::before{
+    content:"";width:5px;height:5px;border-radius:50%;background:var(--success);
+  }
+  .info-row .v .status.warn{background:var(--warn-soft);color:var(--warn)}
+  .info-row .v .status.warn::before{background:var(--warn)}
+
+  /* 实时监控跳转链接（跟在运行状态标签后面） */
+  .monitor-link{
+    display:inline-flex;align-items:center;gap:2px;
+    color:var(--primary);font-weight:600;font-size:12.5px;
+    margin-left:10px;cursor:pointer;line-height:1;
+  }
+  .monitor-link::before{
+    content:"";display:inline-block;width:1px;height:11px;
+    background:var(--line-2);margin-right:8px;
+  }
+  .monitor-link svg{width:13px;height:13px}
+
+  /* ===== Service Tags in section ===== */
+  .svc-list{
+    padding:8px 14px 10px;display:flex;flex-wrap:wrap;gap:5px;
+  }
+  .svc-list .tag{
+    font-size:11px;padding:3px 9px;border-radius:11px;
+    background:#f1f5f9;color:var(--ink-2);font-weight:500;
+  }
+  .svc-list .tag.comm{background:#e0f2fe;color:#0369a1}
+  .svc-list .tag.store{background:#ede9fe;color:#6d28d9}
+  .svc-list .tag.param{background:#fef3c7;color:#a16207}
+  .svc-list .tag.diag{background:#cffafe;color:#0e7490}
+  .svc-list .tag.maint{background:#fce7f3;color:#be185d}
+
+  /* ===== Call Card ===== */
+  .call-card{
+    background:linear-gradient(135deg,#1e6fff 0%,#22d3ee 100%);
+    color:#fff;padding:13px 14px;border-radius:10px;
+    margin:10px 12px;display:flex;align-items:center;gap:12px;
+    position:relative;overflow:hidden;
+  }
+  .call-card::after{
+    content:"";position:absolute;right:-20px;top:-20px;
+    width:80px;height:80px;border-radius:50%;
+    background:rgba(255,255,255,.10);
+  }
+  .call-card .icon{
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,.22);
+    display:grid;place-items:center;flex-shrink:0;position:relative;z-index:1;
+  }
+  .call-card .icon svg{width:20px;height:20px}
+  .call-card .body{flex:1;position:relative;z-index:1}
+  .call-card .body .l{font-size:11px;opacity:.85;margin-bottom:1px}
+  .call-card .body .n{font-size:16px;font-weight:700;letter-spacing:.5px}
+  .call-card .tap{font-size:11px;opacity:.85;position:relative;z-index:1;display:flex;align-items:center;gap:3px}
+  .call-card .tap svg{width:12px;height:12px}
+
+  .tip-box{
+    margin:0 12px 14px;padding:9px 12px;
+    background:#fff7e6;border-radius:8px;
+    border-left:3px solid #f59e0b;
+    font-size:11.5px;color:#92400e;line-height:1.5;
+  }
+  .tip-box b{color:#7c2d12}
+
+  /* ===== Notification ===== */
+  .phone.notif .screen{background:rgba(0,0,0,.35)}
+  .notif-banner{
+    position:absolute;left:14px;right:14px;top:14px;
+    background:rgba(255,255,255,.78);
+    backdrop-filter:blur(30px) saturate(180%);
+    -webkit-backdrop-filter:blur(30px) saturate(180%);
+    border-radius:16px;padding:11px 12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);
+    display:flex;gap:10px;align-items:flex-start;
+    z-index:10;
+    animation:slidein .35s cubic-bezier(.2,.8,.3,1.2);
+  }
+  @keyframes slidein{
+    from{transform:translateY(-20px);opacity:0}
+    to{transform:translateY(0);opacity:1}
+  }
+  .notif-banner .appicon{
+    width:38px;height:38px;border-radius:9px;
+    background:linear-gradient(135deg,#1e6fff,#22d3ee);
+    display:grid;place-items:center;flex-shrink:0;
+    color:#fff;font-weight:700;font-size:13px;
+  }
+  .notif-banner .body{flex:1;min-width:0}
+  .notif-banner .body .row1{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;color:var(--ink-2);margin-bottom:2px;
+  }
+  .notif-banner .body .row1 b{color:var(--ink);font-weight:600;font-size:12px}
+  .notif-banner .body .row1 .time{font-size:11px;color:var(--ink-3);font-weight:500}
+  .notif-banner .body .ttl{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .notif-banner .body .msg{
+    font-size:12px;color:var(--ink-2);line-height:1.45;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  /* ===== Empty State ===== */
+  .empty{text-align:center;padding:50px 20px;color:var(--ink-3)}
+  .empty .ic{
+    width:60px;height:60px;border-radius:50%;
+    background:var(--success-soft);color:var(--success);
+    display:grid;place-items:center;margin:0 auto 12px;
+  }
+  .empty .ic svg{width:28px;height:28px}
+  .empty .t{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .empty .s{font-size:11.5px}
+
+  /* ===== Flow Diagram ===== */
+  .flow-card{
+    max-width:1640px;margin:32px auto 0;
+    background:#fff;border-radius:14px;padding:22px 24px;
+    border:1px solid var(--line);box-shadow:var(--shadow);
+  }
+  .flow-card h3{font-size:15px;font-weight:600;margin-bottom:4px}
+  .flow-card .hint{font-size:12px;color:var(--ink-2);margin-bottom:18px}
+  .flow{
+    display:grid;grid-template-columns:1fr auto 1fr auto 1fr;
+    gap:14px;align-items:stretch;
+  }
+  .flow-step{
+    background:#f8fafc;border:1px solid var(--line);
+    border-radius:10px;padding:14px;
+  }
+  .flow-step .num{
+    display:inline-block;width:22px;height:22px;border-radius:50%;
+    background:var(--primary);color:#fff;font-size:11px;font-weight:700;
+    text-align:center;line-height:22px;margin-bottom:8px;
+  }
+  .flow-step .t{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .flow-step .d{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+  .flow-step .d code{
+    background:#fff;padding:1px 5px;border-radius:3px;
+    border:1px solid var(--line);
+    font-family:"JetBrains Mono",Consolas,monospace;font-size:10.5px;color:var(--ink);
+  }
+  .flow-arrow{display:grid;place-items:center;color:var(--primary)}
+  .flow-arrow svg{width:24px;height:24px}
+
+  /* ===== Spec Card ===== */
+  .notif-spec{
+    max-width:1640px;margin:32px auto 0;
+    background:#fff;border-radius:14px;padding:22px 24px;
+    border:1px solid var(--line);box-shadow:var(--shadow);
+  }
+  .notif-spec h3{font-size:15px;font-weight:600;margin-bottom:4px}
+  .notif-spec .hint{font-size:12px;color:var(--ink-2);margin-bottom:14px}
+  .notif-spec table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .notif-spec table th,
+  .notif-spec table td{
+    text-align:left;padding:9px 12px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  .notif-spec table th{
+    background:#f8fafc;font-weight:600;color:var(--ink-2);
+    font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;
+    width:24%;
+  }
+  .notif-spec table td code{
+    background:#f1f5f9;padding:1px 6px;border-radius:4px;
+    font-family:"JetBrains Mono",Consolas,monospace;font-size:11px;color:var(--ink);
+  }
+  .notif-spec table td ul{margin:0;padding-left:16px;line-height:1.7}
+
+  /* ===== Web Admin Frame ===== */
+  .webframe{
+    width:100%;max-width:1280px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 1px 3px rgba(15,23,42,.06),0 12px 32px rgba(15,23,42,.10);
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  /* browser chrome */
+  .webframe .chrome{
+    background:#f1f3f5;
+    padding:8px 14px;
+    display:flex;align-items:center;gap:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .webframe .chrome .dots{display:flex;gap:6px}
+  .webframe .chrome .dot{width:11px;height:11px;border-radius:50%}
+  .webframe .chrome .d1{background:#ff5f57}
+  .webframe .chrome .d2{background:#febc2e}
+  .webframe .chrome .d3{background:#28c840}
+  .webframe .chrome .url{
+    flex:1;background:#fff;border-radius:6px;
+    padding:5px 12px;font-size:11px;color:var(--ink-3);
+    border:1px solid var(--line);
+    font-family:"JetBrains Mono",Consolas,monospace;
+  }
+  /* admin layout */
+  .admin{display:grid;grid-template-columns:220px 1fr;min-height:680px}
+  .admin .aside{
+    background:#fbfcfe;
+    border-right:1px solid var(--line);
+    padding:18px 0;
+  }
+  .admin .aside .brand{
+    display:flex;align-items:center;gap:9px;
+    padding:0 18px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .admin .aside .brand .logo{
+    width:28px;height:28px;border-radius:7px;
+    background:linear-gradient(135deg,#1e6fff,#22d3ee);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;
+  }
+  .admin .aside .brand .n{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .admin .aside .brand .s{font-size:10px;color:var(--ink-3);letter-spacing:.5px}
+  .admin .aside .menu{padding:10px 8px}
+  .admin .aside .menu .group{margin-bottom:14px}
+  .admin .aside .menu .gt{
+    font-size:10.5px;color:var(--ink-3);
+    padding:4px 12px;letter-spacing:1px;
+    text-transform:uppercase;font-weight:600;
+  }
+  .admin .aside .menu .mi{
+    display:flex;align-items:center;gap:8px;
+    padding:7px 12px;border-radius:6px;
+    font-size:12.5px;color:var(--ink-2);
+    cursor:pointer;line-height:1.3;
+  }
+  .admin .aside .menu .mi svg{width:14px;height:14px;flex-shrink:0}
+  .admin .aside .menu .mi.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+  .admin .aside .menu .mi:hover{background:#f1f5f9;color:var(--ink)}
+  .admin .aside .menu .sub{padding-left:28px;font-size:12px}
+  .admin .aside .menu .sub.active{color:var(--primary);font-weight:600;background:var(--primary-soft)}
+
+  /* main */
+  .admin .main{display:flex;flex-direction:column}
+  .admin .topbar{
+    background:#fff;padding:14px 24px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .admin .topbar .crumbs{font-size:12px;color:var(--ink-3)}
+  .admin .topbar .crumbs b{color:var(--ink);font-weight:500}
+  .admin .topbar .crumbs .sep{margin:0 6px}
+  .admin .topbar .user{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2)}
+  .admin .topbar .user .av{
+    width:28px;height:28px;border-radius:50%;
+    background:linear-gradient(135deg,#1e6fff,#22d3ee);
+    color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px;
+  }
+  .admin .content{padding:24px 28px;flex:1;background:#fafbfd}
+  .admin .content h1{font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .admin .content .sub{font-size:12.5px;color:var(--ink-2);margin-bottom:20px}
+
+  /* form card */
+  .card-x{
+    background:#fff;border:1px solid var(--line);border-radius:8px;
+    margin-bottom:16px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(15,23,42,.03);
+  }
+  .card-x .ch{
+    padding:13px 20px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .card-x .ch h3{font-size:14px;font-weight:600;color:var(--ink)}
+  .card-x .ch .tag{font-size:10.5px;color:var(--ink-3);background:#f1f5f9;padding:2px 8px;border-radius:10px}
+  .card-x .cb{padding:18px 20px}
+  .field{
+    display:grid;grid-template-columns:160px 1fr;
+    align-items:start;padding:12px 0;
+    border-bottom:1px dashed var(--line);
+    gap:16px;
+  }
+  .field:last-child{border-bottom:0}
+  .field .lbl{font-size:13px;color:var(--ink);font-weight:500;padding-top:5px}
+  .field .lbl .req{color:var(--danger);margin-left:2px}
+  .field .lbl .desc{font-size:11.5px;color:var(--ink-3);font-weight:400;margin-top:2px;line-height:1.5}
+  .field .ctrl{font-size:13px}
+
+  /* switch */
+  .switch{
+    display:inline-flex;align-items:center;gap:8px;
+    cursor:pointer;
+  }
+  .switch input{display:none}
+  .switch .track{
+    width:36px;height:20px;border-radius:11px;background:#cbd5e1;
+    position:relative;transition:all .2s;
+  }
+  .switch .track::after{
+    content:"";position:absolute;left:2px;top:2px;
+    width:16px;height:16px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.2);transition:all .2s;
+  }
+  .switch input:checked + .track{background:var(--primary)}
+  .switch input:checked + .track::after{left:18px}
+  .switch .lbl{font-size:12.5px;color:var(--ink-2)}
+
+  /* radio chips */
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    padding:5px 12px;border-radius:14px;font-size:12px;
+    background:#f1f5f9;color:var(--ink-2);
+    border:1px solid transparent;cursor:pointer;
+  }
+  .chip.active{background:var(--primary-soft);color:var(--primary);font-weight:600;border-color:rgba(30,111,255,.2)}
+  .chip:hover{background:#e2e8f0}
+  .chip.active:hover{background:var(--primary-soft)}
+
+  /* footer */
+  .admin .footer{
+    padding:14px 28px;background:#fff;
+    border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:flex-end;gap:10px;
+  }
+  .admin .footer .ghost{
+    padding:7px 16px;border:1px solid var(--line);background:#fff;
+    border-radius:5px;font-size:13px;color:var(--ink-2);cursor:pointer;
+  }
+  .admin .footer .primary{
+    padding:7px 18px;border:0;
+    background:var(--primary);color:#fff;
+    border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;
+    box-shadow:0 2px 8px rgba(30,111,255,.25);
+  }
+
+  @media (max-width:1280px){
+    .frames{grid-template-columns:repeat(auto-fit, minmax(340px, 1fr))}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="brand">
+    <div class="logo">F</div>
+    <div>
+      <h1>服务到期提醒 · 手机 APP 页面设计稿</h1>
+      <div class="sub">FUCHUAN CLOUD · 发电机组物联网监控系统 · 移动端</div>
+    </div>
+  </div>
+  <div class="meta">
+    <span><b>设备宽度</b> 375pt (iPhone 14/15 标准)</span>
+    <span><b>设计稿</b> 4 个核心页面 + 1 个通知样式 + 1 个流转图 + 1 个规范表</span>
+    <span><b>默认提前提醒</b> 到期前 30 天</span>
+    <span><b>触发时机</b> APP 冷启动 / 热启动进入前台时</span>
+  </div>
+</div>
+
+<!-- ============ Frames ============ -->
+<div class="frames">
+
+  <!-- ============ Frame 1: 消息中心 - 服务到期 Tab ============ -->
+  <div class="frame">
+    <div class="label">① 消息中心 · "服务到期" Tab <span class="tag">列表</span></div>
+    <div class="desc">紧凑卡片：机组 + 剩余天数标签 + 服务类型标签 + 到期日期 + 云猫 + 位置。紧急（≤7天）卡片左侧红条警告，<code>立即续期</code> 按钮变红。</div>
+
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V11L12 2 2 11v11zm5-9h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4l2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+          </div>
+        </div>
+
+        <div class="appbar">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></div>
+          <div class="title">消息中心</div>
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21v-4M3 11v4M9 11v10M15 7v14M21 3v18"/></svg></div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab">全部</div>
+          <div class="tab">告警</div>
+          <div class="tab">工单</div>
+          <div class="tab active">服务到期<span class="dot"></span></div>
+        </div>
+
+        <div class="content">
+          <!-- 顶部统计条 + 提示文案 -->
+          <div class="top-strip">
+            <div class="row1">
+              <div class="l">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                30 天内即将到期
+              </div>
+              <div class="r"><b>5</b>项</div>
+            </div>
+            <div class="hint">为避免数据通信中断和丢失，失去监控权，请及时续期</div>
+          </div>
+
+          <div class="list">
+            <!-- Card 1 - Urgent (≤7 days) -->
+            <div class="card urgent">
+              <div class="head">
+                <div class="name">机组 G-08 · 西藏那曲 2 号电站</div>
+                <div class="remain">3 天后到期</div>
+              </div>
+              <div class="tags">
+                <span class="tag-lbl">运维服务：</span>
+                <span class="tag svc-comm">通信服务</span>
+                <span class="tag svc-store">历史数据存储</span>
+              </div>
+              <div class="meta">
+                <span><b>到期</b>2026-08-31</span>
+                <span><b>云猫</b>CM-2024-1872</span>
+                <span><b>位置</b>那曲县 海拔 4500m</span>
+              </div>
+              <div class="foot">
+                <button class="btn-renew">
+                  立即续期
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card warn">
+              <div class="head">
+                <div class="name">机组 G-15 · 新疆喀什光伏电站</div>
+                <div class="remain">13 天后到期</div>
+              </div>
+              <div class="tags">
+                <span class="tag-lbl">运维服务：</span>
+                <span class="tag svc-comm">通信服务</span>
+              </div>
+              <div class="meta">
+                <span><b>到期</b>2026-09-10</span>
+                <span><b>云猫</b>CM-2024-2104</span>
+                <span><b>位置</b>喀什 塔什库尔干</span>
+              </div>
+              <div class="foot">
+                <button class="btn-renew">
+                  立即续期
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3 - 不足一天示例 -->
+            <div class="card urgent">
+              <div class="head">
+                <div class="name">机组 G-66 · 青海玉树电站</div>
+                <div class="remain">5 小时 23 分后到期</div>
+              </div>
+              <div class="tags">
+                <span class="tag-lbl">运维服务：</span>
+                <span class="tag svc-comm">通信服务</span>
+                <span class="tag svc-param">远程调参</span>
+              </div>
+              <div class="meta">
+                <span><b>到期</b>2026-08-31 19:00</span>
+                <span><b>云猫</b>CM-2024-3021</span>
+                <span><b>位置</b>玉树 曲麻莱县</span>
+              </div>
+              <div class="foot">
+                <button class="btn-renew">
+                  立即续期
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="card warn">
+              <div class="head">
+                <div class="name">机组 G-22 · 内蒙乌兰察布电站</div>
+                <div class="remain">18 天后到期</div>
+              </div>
+              <div class="tags">
+                <span class="tag-lbl">运维服务：</span>
+                <span class="tag svc-comm">通信服务</span>
+                <span class="tag svc-diag">远程故障诊断与处理</span>
+              </div>
+              <div class="meta">
+                <span><b>到期</b>2026-09-15</span>
+                <span><b>云猫</b>CM-2024-2356</span>
+                <span><b>位置</b>乌兰察布 化德县</span>
+              </div>
+              <div class="foot">
+                <button class="btn-renew">
+                  立即续期
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="card warn">
+              <div class="head">
+                <div class="name">机组 G-44 · 青海格尔木电站</div>
+                <div class="remain">29 天后到期</div>
+              </div>
+              <div class="tags">
+                <span class="tag-lbl">运维服务：</span>
+                <span class="tag svc-comm">通信服务</span>
+                <span class="tag svc-store">历史数据存储</span>
+              </div>
+              <div class="meta">
+                <span><b>到期</b>2026-09-26</span>
+                <span><b>云猫</b>CM-2024-2701</span>
+                <span><b>位置</b>格尔木 昆仑山</span>
+              </div>
+              <div class="foot">
+                <button class="btn-renew">
+                  立即续期
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottomnav">
+          <div class="bnav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9v9a2 2 0 0 1-2 2h-3v-7H8v7H5a2 2 0 0 1-2-2v-9z"/></svg>
+            <span>首页</span>
+          </div>
+          <div class="bnav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-6"/></svg>
+            <span>监控</span>
+          </div>
+          <div class="bnav active">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>消息</span>
+          </div>
+          <div class="bnav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>我的</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Frame 2: 续期提示详情页 ============ -->
+  <div class="frame">
+    <div class="label">② 服务到期详情页 <span class="tag">详情</span></div>
+    <div class="desc">"实时监控 ＞" 链接跟在运行状态标签后面（同一行），不再独立成行。温馨提示上移到 Hero 下方，移除冗余文案。</div>
+
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V11L12 2 2 11v11zm5-9h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4l2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+          </div>
+        </div>
+
+        <div class="appbar">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></div>
+          <div class="title">服务到期详情</div>
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></div>
+        </div>
+
+        <div class="content" style="overflow-y:auto">
+          <!-- Hero -->
+          <div class="detail-hero urgent">
+            <span class="urgency">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              服务即将中断
+            </span>
+            <h2>机组 G-08 · 西藏那曲 2 号电站</h2>
+            <div class="days">距到期仅剩 <b>3</b> 天</div>
+            <div class="services">
+              <span class="tag">通信服务</span>
+              <span class="tag">历史数据存储</span>
+              <span class="tag">远程故障诊断</span>
+              <span class="tag">维保提醒</span>
+            </div>
+          </div>
+
+          <!-- 温馨提示（上移） -->
+          <div class="tip-box" style="margin-top:10px">
+            <b>温馨提示：</b>为避免数据通信中断和丢失，失去监控权，请提前办理续期。
+          </div>
+
+          <!-- 设备信息 -->
+          <div class="info-section">
+            <div class="head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              设备信息
+            </div>
+            <div class="info-row">
+              <span class="k">机组名称</span>
+              <span class="v">机组 G-08</span>
+            </div>
+            <div class="info-row">
+              <span class="k">运行状态</span>
+              <span class="v">
+                <span class="status">运行中</span>
+                <span class="monitor-link">实时监控
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </span>
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="k">所在位置</span>
+              <span class="v">那曲县 海拔 4500m</span>
+            </div>
+            <div class="info-row">
+              <span class="k">云猫编号</span>
+              <span class="v" style="font-family:JetBrains Mono,Consolas,monospace;font-size:11.5px">CM-2024-1872</span>
+            </div>
+            <div class="info-row">
+              <span class="k">到期日期</span>
+              <span class="v" style="color:var(--danger);font-weight:600">2026-08-31</span>
+            </div>
+            <div class="info-row">
+              <span class="k">剩余天数</span>
+              <span class="v" style="color:var(--danger);font-weight:700">3 天后到期</span>
+            </div>
+          </div>
+
+          <!-- 运维服务 -->
+          <div class="info-section">
+            <div class="head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              运维服务
+            </div>
+            <div class="svc-list">
+              <span class="tag comm">通信服务</span>
+              <span class="tag store">历史数据存储服务</span>
+              <span class="tag diag">远程故障诊断与处理</span>
+              <span class="tag maint">维保提醒与管理</span>
+            </div>
+          </div>
+
+          <!-- 续期电话 -->
+          <div class="call-card">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div class="body">
+              <div class="l">续期联系电话 · 点击拨打</div>
+              <div class="n">400-888-0808</div>
+            </div>
+            <div class="tap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <div style="height:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Frame 3: 系统通知样式 ============ -->
+  <div class="frame">
+    <div class="label">③ 系统通知样式 <span class="tag">系统级</span></div>
+    <div class="desc">iOS / 安卓状态栏通知样式。文案按需求模板生成：<code>机组XX(XX电站)的XX服务将在X天后到期，请及时续期避免离线导致无法监控</code>。</div>
+
+    <div class="phone notif">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar" style="background:rgba(0,0,0,.35);color:#fff">
+          <span>9:41</span>
+          <div class="right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4l2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+          </div>
+        </div>
+
+        <div style="position:absolute;inset:34px 0 0 0;background:linear-gradient(135deg,#1e6fff,#22d3ee);opacity:.5;filter:blur(2px)"></div>
+
+        <!-- 通知横幅 -->
+        <div class="notif-banner">
+          <div class="appicon">F</div>
+          <div class="body">
+            <div class="row1">
+              <span><b>孚创云监控</b></span>
+              <span class="time">刚刚</span>
+            </div>
+            <div class="ttl">服务到期提醒</div>
+            <div class="msg">机组 G-08（西藏那曲 2 号电站）的<b style="color:#0369a1">通信服务</b>将在 <b style="color:var(--warn)">3</b> 天后到期，请及时续期避免离线导致无法监控。</div>
+          </div>
+        </div>
+
+        <div style="position:absolute;left:14px;right:14px;top:130px;display:flex;flex-direction:column;gap:8px">
+          <div class="notif-banner" style="position:static;animation:none">
+            <div class="appicon">F</div>
+            <div class="body">
+              <div class="row1">
+                <span><b>孚创云监控</b></span>
+                <span class="time">10 分钟前</span>
+              </div>
+              <div class="ttl">服务到期提醒</div>
+              <div class="msg">机组 G-66（青海玉树电站）的<b style="color:#0369a1">通信服务</b>将在 <b style="color:var(--warn)">5</b> 小时 23 分后到期，请及时续期避免离线导致无法监控。</div>
+            </div>
+          </div>
+          <div class="notif-banner" style="position:static;animation:none">
+            <div class="appicon">F</div>
+            <div class="body">
+              <div class="row1">
+                <span><b>孚创云监控</b></span>
+                <span class="time">10 分钟前</span>
+              </div>
+              <div class="ttl">服务到期提醒</div>
+              <div class="msg">机组 G-15（新疆喀什光伏电站）的<b style="color:#0369a1">通信服务</b>将在 <b style="color:var(--warn)">13</b> 天后到期，请及时续期避免离线导致无法监控。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Frame 4: 空态 ============ -->
+  <div class="frame">
+    <div class="label">④ 空态 · 无即将到期服务 <span class="tag">状态</span></div>
+    <div class="desc">当 30 天内没有即将到期的服务时，Tab 无红点，列表区显示空态插画。</div>
+
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="right">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20V11L12 2 2 11v11zm5-9h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4l2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+          </div>
+        </div>
+
+        <div class="appbar">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></div>
+          <div class="title">消息中心</div>
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21v-4M3 11v4M9 11v10M15 7v14M21 3v18"/></svg></div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab">全部</div>
+          <div class="tab">告警</div>
+          <div class="tab">工单</div>
+          <div class="tab active">服务到期</div>
+        </div>
+
+        <div class="content" style="display:flex;align-items:center;justify-content:center">
+          <div class="empty">
+            <div class="ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="t">30 天内无即将到期的服务</div>
+            <div class="s">所有机组服务状态正常</div>
+          </div>
+        </div>
+
+        <div class="bottomnav">
+          <div class="bnav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9v9a2 2 0 0 1-2 2h-3v-7H8v7H5a2 2 0 0 1-2-2v-9z"/></svg>
+            <span>首页</span>
+          </div>
+          <div class="bnav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 5-6"/></svg>
+            <span>监控</span>
+          </div>
+          <div class="bnav active">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>消息</span>
+          </div>
+          <div class="bnav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>我的</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ Web 后台：运维服务到期提醒自动循环提醒策略 ============ -->
+<div class="flow-card" style="margin-top:32px">
+  <h3>Web 后台 · 运维服务到期提醒自动循环提醒策略</h3>
+  <div class="hint">APP 端不展示自动循环相关说明（避免界面冗余），所有配置统一在 Web 后台「系统管理 → 提醒策略」完成，仅提供 <b>开启/关闭开关</b> 与 <b>循环提醒间隔</b> 两个核心设置项。下方为页面设计稿。</div>
+
+  <div class="webframe" style="margin-top:14px">
+    <div class="chrome">
+      <div class="dots">
+        <div class="dot d1"></div>
+        <div class="dot d2"></div>
+        <div class="dot d3"></div>
+      </div>
+      <div class="url">https://admin.fc-cloud.com/system/notify-strategy</div>
+    </div>
+
+    <div class="admin">
+      <!-- 侧边栏 -->
+      <aside class="aside">
+        <div class="brand">
+          <div class="logo">F</div>
+          <div>
+            <div class="n">孚创云监控</div>
+            <div class="s">ADMIN CONSOLE</div>
+          </div>
+        </div>
+        <div class="menu">
+          <div class="group">
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              概览
+            </div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              机组管理
+            </div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              告警管理
+            </div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              消息中心
+            </div>
+          </div>
+          <div class="group">
+            <div class="gt">系统管理</div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              用户管理
+            </div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              角色权限
+            </div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              设备分类
+            </div>
+            <div class="mi active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              提醒策略
+            </div>
+            <div class="mi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              操作日志
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 主体 -->
+      <main class="main">
+        <div class="topbar">
+          <div class="crumbs">系统管理<b class="sep">/</b><b>提醒策略</b></div>
+          <div class="user">
+            <span>张工 · 设备管理员</span>
+            <div class="av">张</div>
+          </div>
+        </div>
+
+        <div class="content">
+          <h1>运维服务到期提醒自动循环提醒策略</h1>
+          <div class="sub">为全部用户开启/关闭自动循环提醒功能，并设置提醒的时间间隔；保存后 ≤ 5 分钟内生效。</div>
+
+          <!-- 基础设置 -->
+          <div class="card-x" style="max-width:720px">
+            <div class="ch">
+              <h3>基础设置</h3>
+              <span class="tag">全局生效</span>
+            </div>
+            <div class="cb">
+              <div class="field">
+                <div class="lbl">自动循环推送<div class="desc">关闭后所有即将到期的服务不再自动推送，仅在用户打开 APP 时检测</div></div>
+                <div class="ctrl">
+                  <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="track"></span>
+                    <span class="lbl">已启用</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field" style="border-bottom:0">
+                <div class="lbl">循环提醒间隔<span class="req">*</span><div class="desc">后台自动循环推送的时间间隔，<b>默认 4 小时</b>，支持自定义输入（支持小数，如 0.5 = 30 分钟）</div></div>
+                <div class="ctrl">
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <input type="number" value="4" min="0.1" max="168" step="0.1" style="width:110px;padding:6px 10px;border:1px solid var(--line);border-radius:5px;font-size:13px">
+                      <span style="color:var(--ink-2);font-size:13px;font-weight:500">h</span>
+                    </div>
+                    <button class="ghost" style="padding:5px 12px;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:5px;color:var(--ink-2);cursor:pointer">恢复默认（4h）</button>
+                  </div>
+                  <div style="margin-top:8px;font-size:11.5px;color:var(--ink-3);line-height:1.5">
+                    输入范围：<b>0.1 ~ 168</b> 小时（≈ 7 天），支持小数。<br/>
+                    常用参考：30 分钟 = 0.5 ｜ 1 ｜ 2 ｜ 4（默认）｜ 6 ｜ 8 ｜ 12 ｜ 24 ｜ 48 ｜ 72 ｜ 168
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="footer">
+          <button class="ghost">取消</button>
+          <button class="primary">保存配置</button>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 页面流转 ============ -->
+<div class="flow-card">
+  <h3>页面流转 & 触发逻辑</h3>
+  <div class="hint">用户从打开 APP 到完成续期提醒的完整路径，每步的触发条件、接口和跳转行为都已对齐。</div>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="num">1</div>
+      <div class="t">APP 启动检测</div>
+      <div class="d">冷启动 / 热启动进入前台时，前端调用 <code>GET /api/services/expiring?days=30</code>，获取 30 天内到期服务列表。</div>
+    </div>
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="flow-step">
+      <div class="num">2</div>
+      <div class="t">触发系统通知</div>
+      <div class="d">遍历列表，对每条即将到期服务调用 <code>plus.push.createMessage()</code> 发送本地通知（iOS / 安卓横幅）。</div>
+    </div>
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="flow-step">
+      <div class="num">3</div>
+      <div class="t">点击通知 / 立即续期</div>
+      <div class="d">点击通知栏或消息中心「立即续期」按钮 → 跳转详情页 <code>/pages/service/renew?serviceId=xxx</code>。</div>
+    </div>
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <div class="flow-step">
+      <div class="num">4</div>
+      <div class="t">唤起拨号 / 实时监控</div>
+      <div class="d">点击电话卡 → <code>plus.device.dial()</code> 唤起系统拨号；点击详情页「运行状态」行尾的「实时监控 ＞」链接 → 跳转机组实时监控页。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 规范表 ============ -->
+<div class="notif-spec">
+  <h3>通知文案规范 & 业务规则</h3>
+  <div class="hint">文案模板、变量约定、防骚扰策略、时间精度规则、服务类型枚举、接口字段约定 —— 研发可直接对照落地。</div>
+  <table>
+    <tr><th>项目</th><td>说明</td></tr>
+    <tr>
+      <td><b>通知标题</b></td>
+      <td>服务到期提醒</td>
+    </tr>
+    <tr>
+      <td><b>通知内容模板</b></td>
+      <td>机组 <code>{unitCode}</code>（<code>{stationName}</code>）的 <code>{serviceName}</code> 将在 <code>{remainText}</code> 后到期，为避免数据通信中断和丢失，失去监控权，请及时续期。</td>
+    </tr>
+    <tr>
+      <td><b>变量说明</b></td>
+      <td>
+        <code>unitCode</code> - 机组编号（如 G-08）<br/>
+        <code>stationName</code> - 电站名称（如 西藏那曲 2 号电站）<br/>
+        <code>serviceName</code> - 服务名称（如 通信服务）<br/>
+        <code>remainText</code> - 剩余时间文本（动态生成，见下表）
+      </td>
+    </tr>
+    <tr>
+      <td><b>剩余时间显示规则</b></td>
+      <td>
+        <ul>
+          <li>剩余 <b>≥ 1 天</b>：<code>{n} 天后到期</code>（例：3 天后到期）</li>
+          <li>剩余 <b>≥ 1 小时 且 &lt; 1 天</b>：<code>{h} 小时{m} 分后到期</code>（例：5 小时 23 分后到期）</li>
+          <li>剩余 <b>&lt; 1 小时</b>：<code>{m} 分钟后到期</code>（例：12 分钟后到期）</li>
+          <li>剩余 <b>≤ 0</b>：<code>已到期</code>，状态升级为红色"已中断"</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><b>服务类型枚举</b></td>
+      <td>
+        <code>communication</code> 通信服务 ｜ <code>history_storage</code> 历史数据存储服务<br/>
+        <code>remote_param</code> 远程调参服务 ｜ <code>remote_diag</code> 远程故障诊断与处理<br/>
+        <code>maintain_mgmt</code> 维保提醒与管理（按需扩展）<br/>
+        <code>video_stream</code> 视频流服务（按需扩展）
+      </td>
+    </tr>
+    <tr>
+      <td><b>触发规则</b></td>
+      <td>用户每次打开 APP（冷启动 + 热启动）时，对 <b>30 天内</b>到期且 <b>当日尚未发送过通知</b>的服务，发送一次系统通知。</td>
+    </tr>
+    <tr>
+      <td><b>防骚扰</b></td>
+      <td>
+        <ul>
+          <li>同一服务同一天最多提醒 1 次</li>
+          <li>剩余 <b>≤ 7 天</b>：升级为红色紧急样式 + 震动反馈 + 列表置顶</li>
+          <li>剩余 <b>≤ 1 天</b>：每小时 1 次（避免漏看）</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><b>列表排序</b></td>
+      <td>按剩余时间升序（最紧急的置顶），相同剩余时间按机组编号升序。</td>
+    </tr>
+    <tr>
+      <td><b>跳转目标</b></td>
+      <td>通知点击 / 卡片「立即续期」 → 详情页 <code>/pages/service/renew?serviceId={serviceId}</code>；详情页运行状态行尾部「实时监控 ＞」链接 → 监控页 <code>/pages/monitor/unit?unitCode={unitCode}</code>。</td>
+    </tr>
+    <tr>
+      <td><b>接口约定</b></td>
+      <td>
+        <code>GET /api/services/expiring?days=30</code><br/>
+        返回字段：<code>serviceId, unitCode, stationName, cloudCatCode, serviceType, serviceName, expireDate, remainSeconds, remainText, location, status</code>
+      </td>
+    </tr>
+    <tr>
+      <td><b>续期电话</b></td>
+      <td>运维中心统一号码 <code>400-888-0808</code>（后台可配置），点击唤起系统拨号键盘。</td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align:center;color:var(--ink-3);font-size:11px;margin-top:30px">
+  © 孚创云监控 · 移动端设计稿 · 仅供产品/研发内部讨论
+</div>
+
+</body>
+</html>

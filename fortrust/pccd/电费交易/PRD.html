@@ -1,0 +1,1125 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电费交易结算管理系统 · PRD v1.0</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #F5F7FB; color: #1F2937; line-height: 1.7; }
+
+/* ===== 顶部 hero ===== */
+.hero { background: linear-gradient(135deg, #1749D9 0%, #5B8FF9 100%); color: #fff; padding: 48px 32px 56px; }
+.hero-inner { max-width: 1100px; margin: 0 auto; }
+.hero h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+.hero .version { display: inline-block; background: rgba(255,255,255,.18); padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-left: 12px; vertical-align: middle; }
+.hero .meta { font-size: 14px; opacity: 0.9; margin-top: 12px; }
+.hero .meta span { margin-right: 24px; }
+.hero .badge { display: inline-block; background: #5AD8A6; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px; }
+.hero .deliverables { margin-top: 16px; font-size: 13px; opacity: 0.95; }
+.hero .deliverables code { background: rgba(255,255,255,.18); padding: 2px 8px; border-radius: 3px; font-family: "Consolas", "Monaco", monospace; font-size: 12px; }
+
+/* ===== 主体 ===== */
+.layout { max-width: 1100px; margin: 0 auto; padding: 32px; display: grid; grid-template-columns: 220px 1fr; gap: 32px; }
+
+/* 侧栏目录 */
+.toc { position: sticky; top: 32px; align-self: start; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 20px; }
+.toc h3 { font-size: 13px; font-weight: 600; color: #6B7280; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.toc ol { list-style: none; }
+.toc li { margin-bottom: 6px; }
+.toc a { color: #4B5563; text-decoration: none; font-size: 13px; display: block; padding: 4px 8px; border-radius: 4px; transition: all 0.15s; }
+.toc a:hover { background: #EFF6FF; color: #1749D9; }
+.toc .sub { padding-left: 20px; font-size: 12px; color: #6B7280; }
+
+/* 内容区 */
+.content { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); padding: 40px 56px; }
+.content h1 { font-size: 26px; font-weight: 700; margin: 32px 0 16px; padding-bottom: 12px; border-bottom: 2px solid #1749D9; color: #111827; }
+.content h1:first-child { margin-top: 0; }
+.content h2 { font-size: 22px; font-weight: 600; margin: 28px 0 12px; color: #1F2937; }
+.content h3 { font-size: 18px; font-weight: 600; margin: 24px 0 10px; color: #374151; }
+.content h4 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; color: #4B5563; }
+.content p { margin-bottom: 12px; color: #374151; }
+.content ul, .content ol { margin: 0 0 16px 24px; color: #374151; }
+.content li { margin-bottom: 4px; }
+.content code { background: #F3F4F6; padding: 2px 6px; border-radius: 3px; font-family: "Consolas", "Monaco", monospace; font-size: 13px; color: #B91C1C; }
+.content pre { background: #1F2937; color: #E5E7EB; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 12px 0 20px; }
+.content pre code { background: transparent; color: inherit; padding: 0; font-size: 13px; }
+.content blockquote { background: #F0F9FF; border-left: 4px solid #1749D9; padding: 12px 20px; margin: 16px 0; color: #1F2937; border-radius: 0 8px 8px 0; }
+.content blockquote p { margin: 4px 0; }
+.content strong { color: #111827; font-weight: 600; }
+.content em { color: #6B7280; }
+.content a { color: #1749D9; text-decoration: none; }
+.content a:hover { text-decoration: underline; }
+.content hr { border: none; border-top: 1px solid #E5E7EB; margin: 32px 0; }
+
+/* 表格 */
+.content table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+.content th, .content td { border: 1px solid #E5E7EB; padding: 8px 12px; text-align: left; }
+.content th { background: #F9FAFB; font-weight: 600; color: #374151; }
+.content tr:hover { background: #F9FAFB; }
+
+/* 状态机代码块 */
+.state-machine { background: #1F2937; color: #5AD8A6; padding: 20px 24px; border-radius: 8px; font-family: "Consolas", "Monaco", monospace; font-size: 13px; line-height: 1.8; white-space: pre; overflow-x: auto; margin: 16px 0; }
+
+/* 验收清单 ✓ */
+.checklist-pass { color: #059669; font-weight: 600; margin-right: 4px; }
+.checklist-fail { color: #DC2626; font-weight: 600; margin-right: 4px; }
+.checklist-pending { color: #D97706; font-weight: 600; margin-right: 4px; }
+
+/* 关键警示框 */
+.alert { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 20px; border-radius: 0 8px 8px 0; margin: 16px 0; color: #78350F; }
+.alert-info { background: #DBEAFE; border-color: #3B82F6; color: #1E3A8A; }
+.alert-success { background: #D1FAE5; border-color: #10B981; color: #064E3B; }
+.alert-danger { background: #FEE2E2; border-color: #EF4444; color: #7F1D1D; }
+
+/* 签名 */
+.signature { margin-top: 40px; padding-top: 24px; border-top: 1px solid #E5E7EB; font-size: 13px; color: #6B7280; text-align: center; }
+
+/* footer */
+.footer { text-align: center; padding: 32px; color: #9CA3AF; font-size: 12px; }
+
+/* 响应式 */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { position: static; }
+  .content { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 顶部 hero ===== -->
+<div class="hero">
+  <div class="hero-inner">
+    <h1>电费交易结算管理系统<span class="version">PRD v1.0</span></h1>
+    <div class="meta">
+      <span>📅 2026-10-14</span>
+      <span>📝 产品 · 业务经理</span>
+      <span>🎯 Q4 重点项目</span>
+      <span class="badge">✅ 已通过业务经理 + 产品自审</span>
+    </div>
+    <div class="deliverables">
+      配套交付：
+      <code>index.html</code> · <code>docs.html</code> · <code>PRD.html</code> · <code>PRD.md</code> · <code>PRS.yaml</code> · <code>README.md</code>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 主体两栏 ===== -->
+<div class="layout">
+
+  <!-- 侧栏目录 -->
+  <nav class="toc">
+    <h3>目录</h3>
+    <ol>
+      <li><a href="#rev">修订历史</a></li>
+      <li><a href="#terms">0. 名词术语</a></li>
+      <li><a href="#bg">1. 项目背景</a></li>
+      <li><a href="#pos">2. 产品定位</a></li>
+      <li><a href="#role">3. 角色与权限</a></li>
+      <li><a href="#flow">4. 业务流程</a></li>
+      <li class="sub"><a href="#flow-1">4.1 账户创建</a>
+      <li class="sub"><a href="#flow-2">4.2 账户结余</a></li></li>
+      <li class="sub"><a href="#flow-3">4.3 锁机（系统）</a></li>
+      <li class="sub"><a href="#flow-4">4.4 解机（系统）</a></li>
+      <li class="sub"><a href="#flow-5">4.5 手动锁机</a></li>
+      <li class="sub"><a href="#flow-6">4.6 手动解机</a></li>
+      <li class="sub"><a href="#flow-7">4.7 账单生成</a></li>
+      <li class="sub"><a href="#flow-8">4.8 账单支付</a></li>
+      <li class="sub"><a href="#flow-9">4.9 规则配置</a>
+      <li class="sub"><a href="#flow-9-1">4.9.1 配置账单生成规则</a></li>
+      <li class="sub"><a href="#flow-9-2">4.9.2 配置解锁机确认规则</a></li></li>
+      <li><a href="#state">5. 状态机</a></li>
+      <li><a href="#mod">6. 功能模块</a></li>
+      <li><a href="#data">7. 数据模型</a></li>
+      <li><a href="#api">8. 接口契约</a></li>
+      <li><a href="#nfr">9. 非功能需求</a></li>
+      <li><a href="#qa">10. 验收自检</a></li>
+      <li><a href="#roadmap">11. 后续迭代路线</a></li>
+      <li><a href="#app">12. 附录</a></li>
+    </ol>
+  </nav>
+
+  <!-- 内容区 -->
+  <main class="content">
+
+    <h1 id="rev">📜 修订历史</h1>
+    <table>
+      <thead><tr><th>版本</th><th>日期</th><th>修订人</th><th>主要变更</th></tr></thead>
+      <tbody>
+        <tr><td>v0.1</td><td>2026-09-25</td><td>产品</td><td>初稿，5 大功能模块</td></tr>
+        <tr><td>v0.2</td><td>2026-10-02</td><td>产品</td><td>增加状态机、自动撤销、7 模块</td></tr>
+        <tr><td>v0.3</td><td>2026-10-08</td><td>产品</td><td>整改计划，HTML 原型 v1.0 配套</td></tr>
+        <tr style="background:#FEF3C7"><td><strong>v1.0</strong></td><td>2026-10-14</td><td>产品</td><td><strong>9 大模块 + 8 张流程图 + 完整状态机 + 跨角色权限 + 数据模型 + 接口契约</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h1 id="terms">📖 0. 名词术语</h1>
+    <table>
+      <thead><tr><th>术语</th><th>缩写</th><th>定义</th></tr></thead>
+      <tbody>
+        <tr><td>代币账户</td><td>—</td><td>系统中为用电方开立的虚拟账户，如 1 代币对应 1 NGN（汇算关系可配）</td></tr>
+        <tr><td>DVA</td><td>Dedicated Virtual Account</td><td>Paystack 为每个用电方开立的专用虚拟账户，编号格式如 <code>9930000123</code></td></tr>
+        <tr><td>锁机</td><td>—</td><td>通过 Modbus 协议下发参数使发电机组停止发电，限制其继续消耗代币</td></tr>
+        <tr><td>解机</td><td>—</td><td>反向操作，恢复发电机组运行</td></tr>
+        <tr><td>锁机阈值</td><td>—</td><td>触发"自动锁机确认单"的代币余额下限（账户余额 ≤ 阈值 → 锁机）</td></tr>
+        <tr><td>解机阈值</td><td>—</td><td>触发"自动解机确认单"的代币余额上限（账户余额 ≥ 阈值 且有机组锁定 → 解机）</td></tr>
+        <tr><td>汇算关系</td><td>—</td><td>代币 ↔ NGN（Paystack 入账用） / kWh ↔ 代币（电费计算用）双轨</td></tr>
+        <tr><td>Modbus</td><td>—</td><td>工业协议，云猫网关通过 Modbus 寄存器 7501/7504/7506/7502/7503 控制发电机组</td></tr>
+        <tr><td>二次确认</td><td>—</td><td>所有下发操作必须经过"操作员 → 系统校验 → 用户点确认"两道关，避免误操作</td></tr>
+        <tr><td>扣款密令</td><td>—</td><td>用电方支付时输入的密码，等同于银行支付密码，需两次输入一致校验</td></tr>
+        <tr><td>运维数据</td><td>—</td><td>锁机/解机执行后从设备回读的实时数据（功率、转速），用于操作回执验证</td></tr>
+      </tbody>
+    </table>
+
+    <h1 id="bg">🎯 1. 项目背景</h1>
+
+    <h2>1.1 业务背景</h2>
+    <p>发电方在非洲尼日利亚为用电方提供发电机组卖电服务。发电机组发电→用电方使用→按电量结算电费是核心商业模式。但当前痛点是：</p>
+    <ol>
+      <li><strong>资金流不闭环</strong>：发电量没有自动转化为"可回笼的代币"，电费靠人工催收，账期长、坏账高</li>
+      <li><strong>风险控制薄弱</strong>：用电方余额不足仍可继续用电，导致坏账累积</li>
+      <li><strong>三方协作低效</strong>：发电方对账工作量大、用电方支付体验差、平台方无统一审计</li>
+    </ol>
+
+    <h2>1.2 解决方案</h2>
+    <p><strong>电费交易结算管理系统</strong>承接以下业务诉求：</p>
+    <ul>
+      <li><strong>资金流闭环</strong>：发电量 → 自动生成账单 → 用电方自动扣款</li>
+      <li><strong>风险实时控制</strong>：代币余额 ≤ 阈值自动锁机，断开发电</li>
+      <li><strong>三方协作标准化</strong>：发电方（发电+审核）/ 用电方（消费+支付）/ 平台方（账户+规则+审计）</li>
+      <li><strong>存量数据对接</strong>：发电量数据从已有 IoT 监控系统接入；代币账户对接 Paystack 充值通道</li>
+    </ul>
+
+    <h2>1.3 核心目标</h2>
+    <table>
+      <thead><tr><th>视角</th><th>目标</th></tr></thead>
+      <tbody>
+        <tr><td><strong>业务价值</strong></td><td>① 把"发电量"变现为"可回笼的代币" ② 用代币余额做风险控制 ③ 减少催收环节</td></tr>
+        <tr><td><strong>发电方</strong></td><td>① 减少对账工作量 ② 异常账户自动锁机降低风险敞口 ③ 电量调整可追溯</td></tr>
+        <tr><td><strong>用电方</strong></td><td>① 代币账户清晰 ② 一键支付 + 电量使用明细 ③ 跨周期账单可查</td></tr>
+        <tr><td><strong>操作员</strong></td><td>① 锁机/解机操作标准化 ② 参数下发有回执验证 ③ 失败有重试机制</td></tr>
+      </tbody>
+    </table>
+
+    <h1 id="pos">📌 2. 产品定位</h1>
+
+    <h2>2.1 价值主张</h2>
+    <div class="alert alert-info">
+      <strong>电费交易结算管理系统</strong> = <strong>代币账户（DVA）+ 锁机/解机 + 账单 + 支付</strong> 的一体化平台。
+    </div>
+
+    <h2>2.2 与现有系统关系</h2>
+    <table>
+      <thead><tr><th>系统</th><th>关系</th></tr></thead>
+      <tbody>
+        <tr><td>发电机组物联网监控</td><td>上游：发电量数据由此系统推送</td></tr>
+        <tr><td>云猫网关</td><td>下游：锁机/解机指令通过 Modbus 协议下发到网关再到发电机组</td></tr>
+        <tr><td>Paystack</td><td>第三方：代币账户的充值通道（专用虚拟账户 + Webhook 通知）</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2.3 不做事项（v1.0 范围外）</h2>
+    <ul>
+      <li>❌ 多币种汇算（v1.0 仅 NGN，单一代币）</li>
+      <li>❌ 锁机分级（v1.0 单一动作，v2.0 考虑轻锁/重锁）</li>
+      <li>❌ 部分支付（余额不足硬阻断，不支持挂账）</li>
+      <li>❌ 跨月账单（v1.0 按规则周期内整月处理）</li>
+      <li>❌ 电量预测（基于历史电量的预测性账单，v1.1）</li>
+    </ul>
+
+    <h1 id="role">👥 3. 角色与权限矩阵</h1>
+
+    <h2>3.1 5 种角色定义</h2>
+    <table>
+      <thead><tr><th>角色</th><th>关键能力</th><th>不可见模块</th></tr></thead>
+      <tbody>
+        <tr><td><strong>系统管理员</strong></td><td>全部模块可读、规则配置、账户创建、审计</td><td>—</td></tr>
+        <tr><td><strong>发电方</strong></td><td>账单审核、锁机/解机确认、机组状态查看</td><td>规则配置（部分可读）</td></tr>
+        <tr><td><strong>用电方</strong></td><td>本组织待支付账单、确认支付、查询交易、查看账户余额</td><td>其他组织账单、规则配置、锁机/解机</td></tr>
+        <tr><td><strong>审核员</strong></td><td>账单审核（电量/电费确认）、作废</td><td>锁机/解机、规则配置</td></tr>
+        <tr><td><strong>操作员</strong></td><td>锁机/解机操作、参数调整、机组状态查看</td><td>账单审核、规则配置</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3.2 权限矩阵</h2>
+    <table>
+      <thead><tr><th>功能</th><th>管理员</th><th>发电方</th><th>用电方</th><th>审核员</th><th>操作员</th></tr></thead>
+      <tbody>
+        <tr><td>代币账户列表</td><td>✓ 全部</td><td>✓ 全部</td><td>✓ 本组织</td><td>✓ 全部</td><td>✓ 全部</td></tr>
+        <tr><td>创建账户</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>账户交易记录</td><td>✓</td><td>✓</td><td>✓ 本组织</td><td>✓</td><td>✓</td></tr>
+        <tr><td>账单审核</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>—</td></tr>
+        <tr><td>账单支付</td><td>✓</td><td>—</td><td>✓ 本组织</td><td>—</td><td>—</td></tr>
+        <tr><td>锁机/解机确认</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>锁机/解机操作</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr><td>规则配置</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>审计日志</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <h1 id="flow">🔄 4. 业务流程（8 张流程图详解）</h1>
+    <div class="alert alert-info">
+      详细流程图见 <code>docs.html</code>。以下为业务规则摘要。
+    </div>
+
+    <h2 id="flow-1">4.1 业务流程图 · 账户创建</h2>
+    <p><strong>流程</strong>：系统管理员代用电方创建代币账户 → 4 步表单 → Paystack DVA 分配 → 启用</p>
+    <table>
+      <thead><tr><th>步骤</th><th>输入</th><th>输出</th></tr></thead>
+      <tbody>
+        <tr><td>① 本系统账户信息</td><td>用电方组织 + 账户名</td><td>—</td></tr>
+        <tr><td>② Paystack 必填</td><td>邮箱/名/姓/电话 + 银行</td><td>—</td></tr>
+        <tr><td>③ 汇算关系</td><td>1 代币 = ? NGN；1 kWh = ? 代币</td><td>—</td></tr>
+        <tr><td>④ 扣款密令</td><td>两次密令一致校验</td><td>—</td></tr>
+        <tr><td>⑤ 启用（保存）</td><td>—</td><td>触发 Paystack <code>POST /customer</code> + <code>/dedicated_account/assign</code></td></tr>
+        <tr><td>系统回调</td><td>—</td><td>返回 DVA 编号（如 <code>9930000123</code> Wema Bank）</td></tr>
+        <tr><td>创建成功</td><td>—</td><td>跳转账户详情</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>暂只支持开一个代币账户</li>
+      <li>DVA 编号由 Paystack 分配，本系统<strong>回填</strong>到账户</li>
+      <li>启用=可扣款+可触发配置规则</li>
+    </ul>
+
+    <h2 id="flow-2">4.2 业务流程图 · 账户结余</h2>
+    <p><strong>适用场景</strong>：用电方实时查看账户当前结余、充值扣款流水；管理员/发电方/操作员查看任一账户的实时余额</p>
+    <p><strong>计算公式</strong>：<code>账户结余 = ∑(RECHARGE 流水) - ∑(DEDUCT 流水)</code></p>
+    <p><strong>关键不变量</strong>：Paystack <strong>不返回</strong>账户余额（Paystack 只推送交易事件，不提供余额查询接口），本系统必须自己维护结余，<strong>严禁</strong>依赖 Paystack API 获取余额</p>
+    <p><strong>流程</strong>：</p>
+    <ol>
+      <li>用户进入账户详情页（<code>page-token-detail</code>）</li>
+      <li>前端请求 <code>GET /token-account/{id}</code></li>
+      <li>后端按 <code>account_id</code> 查询 <code>TokenTransaction</code> 表，累加 RECHARGE 减 DEDUCT</li>
+      <li>返回当前结余 + 最近 20 条流水</li>
+      <li>实时更新（Paystack Webhook 触发充值流水写入后立即可见）</li>
+    </ol>
+    <p><strong>业务规则</strong>：</p>
+    <ul>
+      <li>结余显示精度：保留 2 位小数 + 代币单位（如 <code>1,234.56 代币</code>）</li>
+      <li>结余为负数：触发红色告警（用电方欠费状态），但仍允许充值恢复</li>
+      <li>并发一致性：写流水时加行级锁（<code>SELECT FOR UPDATE</code>）避免并发扣减导致结余错误</li>
+      <li>历史流水永久保留</li>
+    </ul>
+
+    <h2 id="flow-3">4.3 业务流程图 · 锁机（系统规则触发）</h2>
+    <p><strong>流程</strong>：系统自动检测账户余额 → 余额 ≤ 锁机阈值 → 生成锁机确认单 → 通知操作员 → 操作员处理 → 二次确认 → 下发参数 → 写锁机记录</p>
+    <p><strong>触发条件</strong>：账户余额 ≤ 锁机阈值</p>
+    <p><strong>关键节点</strong>：</p>
+    <ul>
+      <li><strong>系统侧</strong>：检测账户余额 → 生成锁机确认单（<code>LCK-2026-XXXX-XXXX</code>）→ 通知操作员</li>
+      <li><strong>操作员侧</strong>：查看锁机确认单（待确认锁机列表）→ 点"处理 →" → 进入锁机操作页（from-confirm 模式）</li>
+      <li><strong>系统回显</strong>：账户 + 原因（账户只读、原因可改）</li>
+      <li><strong>操作员操作</strong>：选电站 → 选择机组（弹窗多选 + 电站回填）→ 读取/调整参数 → 点"执行锁机"</li>
+      <li><strong>二次确认弹窗</strong>：机组明细 + 实时功率/转数</li>
+      <li>点"确认" → 按钮变"刷新" + 提示"⏳ 正在下发参数，请观察运行数据验证结果"</li>
+      <li><strong>系统执行</strong>：下发参数（Modbus 写入设备）→ 写入锁机记录</li>
+      <li>操作员按"完成" → 跳转"锁机记录" tab → 完成 ✓</li>
+    </ul>
+
+    <h2 id="flow-4">4.4 业务流程图 · 解机（系统规则触发）</h2>
+    <p><strong>流程</strong>：与锁机类似，但条件相反</p>
+    <p><strong>触发条件</strong>：账户余额 ≥ 解机阈值 <strong>且</strong> 该账户下有机组处于锁定中</p>
+    <p><strong>关键差异</strong>：</p>
+    <ul>
+      <li>操作员选择电站后，<strong>自动</strong>查询该电站下<strong>已锁定机组</strong>作为待选列表（不支持选择未锁定机组）</li>
+      <li>解机阈值/锁机阈值<strong>动态显示</strong>（即同账户下，锁机阈值和解机阈值是两个独立配置）</li>
+    </ul>
+
+    <h2 id="flow-5">4.5 业务流程图 · 手动新增锁机</h2>
+    <p><strong>流程</strong>：操作员主动发起锁机（<strong>不依赖系统规则触发</strong>）</p>
+    <p><strong>适用场景</strong>：风险已显现但系统尚未生成确认单时（如已知客户即将违约）</p>
+    <p><strong>入口</strong>：锁机确认页 → 点"+ 锁机"（new 模式）→ 进入锁机操作页</p>
+    <p><strong>关键差异</strong>：</p>
+    <ul>
+      <li>无"账户回显"（操作员自由选账户）</li>
+      <li>原因可填空</li>
+      <li>选账户 + 选电站 + 选机组 + 读取/调整参数 → 二次确认 → 下发参数</li>
+    </ul>
+
+    <h2 id="flow-6">4.6 业务流程图 · 手动新增解机</h2>
+    <p><strong>流程</strong>：操作员主动发起解机（<strong>不依赖系统规则触发</strong>）</p>
+    <p><strong>适用场景</strong>：客户已付款但系统未及时触发解机时</p>
+    <p><strong>入口</strong>：解机确认页 → 点"+ 解机"（new 模式）→ 进入解机操作页</p>
+    <p><strong>关键差异</strong>：同手动锁机，但弹窗明细 + 实时功率/转数显示恢复前的低值</p>
+
+    <h2 id="flow-7">4.7 业务流程图 · 账单生成</h2>
+    <p><strong>流程</strong>：规则配置 → 自动触发 → 审核员审核 → 推送支付</p>
+    <table>
+      <thead><tr><th>角色</th><th>步骤</th></tr></thead>
+      <tbody>
+        <tr><td>系统</td><td>调度定时器（每分钟定时查询一次）→ 查询账单生成规则（按电站 + 周期）</td></tr>
+        <tr><td>管理员</td><td>规则配置：按周/按月/自定义 + 覆盖机组</td></tr>
+        <tr><td>系统</td><td>采集覆盖机组的运行时长 + 电量 → 计算电费（电费 = kWh × 汇算）</td></tr>
+        <tr><td>系统</td><td>生成账单（<code>BILL-2026-W3-0007</code>）→ 通知审核员</td></tr>
+        <tr><td>审核员</td><td>待审核列表 → 点"审核 →"进入详情 → 审核（电量/电费/审核结论）→ 通过/拒绝（+备注）</td></tr>
+        <tr><td>系统</td><td>更新账单状态（"已审核" / "已作废"）</td></tr>
+        <tr><td>推送</td><td>通过 → 自动推送至"待支付账单列表"（<strong>无短信/站内信</strong>，系统菜单"账单审核"显示红色数字角标）</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>同一电站同一周期仅一条有效规则（防重复生成）</li>
+      <li>每分钟定时查询一次，匹配时间窗口则生成账单</li>
+      <li>覆盖机组可指定具体哪些机组参与计算（默认 = 全部）</li>
+    </ul>
+
+    <h2 id="flow-8">4.8 业务流程图 · 账单支付</h2>
+    <p><strong>流程</strong>：用电方选扣款账户 + 输入扣款密令 → <strong>系统直接扣减代币余额</strong> → 写扣款流水 + 更新账单状态</p>
+    <div class="alert alert-info">
+      <strong>重要业务逻辑</strong>（v1.0 关键决策）：
+      <ul style="margin-top:8px">
+        <li>❌ <strong>支付扣款不从 Paystack Transfer 走</strong>（Paystack 仅用于充值环节）</li>
+        <li>✅ <strong>支付扣款直接扣减本系统代币账户余额</strong></li>
+        <li>Paystack → 用电方 DVA 充值 → 本系统收 Webhook → 增代币余额</li>
+        <li>用电方 → 输入扣款密令 → 本系统扣减代币余额 → 写扣款流水</li>
+      </ul>
+    </div>
+    <table>
+      <thead><tr><th>步骤</th><th>用电方</th><th>系统</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>查看账单「待支付」列表</td><td>—</td></tr>
+        <tr><td>2</td><td>点"支付 →"进入支付确认页</td><td>—</td></tr>
+        <tr><td>3</td><td>检查账户余额（≥电费？）→ 否：余额不足请先充值</td><td>—</td></tr>
+        <tr><td>4</td><td>选择扣款账户 + 输入扣款密令</td><td>—</td></tr>
+        <tr><td>5</td><td>点"确认支付" → 提交扣款请求+密令</td><td>扣款密令校验（两次密令一致？）</td></tr>
+        <tr><td>6</td><td>—</td><td>校验通过 → 写扣款流水 → 扣减代币余额</td></tr>
+        <tr><td>7</td><td>—</td><td>成功/失败模拟（90% 成功 / 10% 失败 demo）</td></tr>
+        <tr><td>8</td><td>成功 → 跳转账单详情</td><td>—</td></tr>
+        <tr><td>8</td><td>失败 → 停留 + 错误提示</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="flow-9">4.9 业务流程图 · 规则配置</h2>
+    <div class="alert alert-info">
+      <strong>📝 说明</strong>：v1.0 规则配置包含两类——<strong>账单生成规则</strong>（自动生成账单触发器）和<strong>解锁机确认规则</strong>（自动锁机/解机阈值规则）。
+    </div>
+
+    <h3 id="flow-9-1">4.9.1 配置账单生成规则</h3>
+    <p><strong>需求</strong>：管理员配置"在何时、对哪些机组、按什么周期生成电费账单"的规则。系统按规则自动生成账单，无需人工干预。</p>
+    <p><strong>核心字段</strong>：</p>
+    <ul>
+      <li><strong>电站</strong>：规则作用电站（多选，单电站单条）</li>
+      <li><strong>周期</strong>：按周 / 按月 / 自定义（开始日+结束日）</li>
+      <li><strong>审核员</strong>：账单生成后通知的审核人员（多选主备）</li>
+      <li><strong>覆盖机组</strong>：本规则覆盖的具体机组（默认 = 全部）</li>
+      <li><strong>启用/停用</strong>：默认启用，可手动停用</li>
+    </ul>
+    <p><strong>业务流程</strong>：</p>
+    <ol>
+      <li>管理员进入 <code>page-rule-bill</code> → 点"+ 新增规则"</li>
+      <li>填写规则表单（电站 + 周期 + 审核员 + 覆盖机组）</li>
+      <li>点"保存启用" → 写规则记录（<code>RULE-2026-XXXX-XXXX</code>）</li>
+      <li>系统按规则在 <code>每分钟定时查询</code> 时检查：周期到达 → 触发账单生成</li>
+      <li>采集覆盖机组电量 → 计算电费 → 生成账单 → 通知审核员</li>
+    </ol>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>同一电站同一周期仅一条有效规则（防重复生成）</li>
+      <li>规则停用后，已生成但未审核的账单不受影响</li>
+      <li>规则删除时需校验"无关联的待审核账单"</li>
+    </ul>
+
+    <h3 id="flow-9-2">4.9.2 配置解锁机确认规则</h3>
+    <p><strong>需求</strong>：管理员配置"账户余额达到什么阈值时，自动生成锁机/解机确认单"的规则。系统按规则自动触发待确认锁机/解机确认单。</p>
+    <p><strong>核心字段</strong>：</p>
+    <ul>
+      <li><strong>账户</strong>：规则作用账户（v1.0 一个组织一个账户）</li>
+      <li><strong>锁机阈值（≤）</strong>：账户余额 ≤ 此值 → 触发锁机确认单</li>
+      <li><strong>解机阈值（≥）</strong>：账户余额 ≥ 此值且有机组锁定 → 触发解机确认单</li>
+      <li><strong>通知人</strong>：触发后通知的操作人员（多选）</li>
+      <li><strong>启用/停用</strong>：默认启用</li>
+    </ul>
+    <p><strong>业务流程</strong>：</p>
+    <ol>
+      <li>管理员进入 <code>page-rule-lock-unlock</code> → 选择"锁机规则"或"解机规则" tab → 点"+ 新增规则"</li>
+      <li>填写规则表单（账户 + 阈值 + 通知人）</li>
+      <li>点"保存启用" → 写规则记录</li>
+      <li>系统按规则在 <code>账户余额变更</code> 时实时检查：余额进入触发区间 → 生成对应确认单</li>
+      <li>通知操作员 → 操作员处理 → 二次确认 → 下发参数</li>
+    </ol>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>解机阈值 <strong>必须 ≥ 锁机阈值 × 1.2</strong>（缓冲，避免频繁触发）</li>
+      <li>解机规则仅在"该账户下有机组锁定中"时触发</li>
+      <li>每个账户同一方向（锁机/解机）仅一条有效规则</li>
+      <li>规则停用时，系统中已生成的待确认单<strong>仍按自动撤销逻辑处理</strong>（5.2 节）</li>
+    </ul>
+
+    <h1 id="state">⚙️ 5. 状态机</h1>
+
+    <h2>5.1 账单状态机（5 态 + 2 异常分支）</h2>
+    <div class="state-machine">[待审核] ──审核通过──&gt; [已审核(有效)] ──推送──&gt; [待支付] ──支付成功──&gt; [已支付]
+                              │
+                              └─作废──&gt; [已作废] ──重新生成──&gt; [待审核]</div>
+
+    <table>
+      <thead><tr><th>状态</th><th>含义</th><th>可见方</th></tr></thead>
+      <tbody>
+        <tr><td>待审核</td><td>账单已生成，等待审核员审核</td><td>审核员、发电方、管理员</td></tr>
+        <tr><td>已审核(有效)</td><td>审核通过，自动推送至待支付账单列表</td><td>审核员、发电方、管理员</td></tr>
+        <tr><td>待支付</td><td>已推送给用电方，等待支付</td><td>用电方</td></tr>
+        <tr><td>已支付</td><td>用电方已扣款支付</td><td>用电方、发电方、管理员</td></tr>
+        
+        <tr><td>作废</td><td>审核员作废（带原因，账单号作废重新生成）</td><td>审核员、发电方、管理员</td></tr>
+      </tbody>
+    </table>
+
+    <h3>状态转换动作</h3>
+    <ul>
+      <li>审核通过：<code>POST /bill/{id}/approve</code>（操作人/时间/原因三件套记录）</li>
+      <li>推送：审核通过后无需短信和站内信，需在系统菜单"账单审核"处显示待审核的<strong>红色数字角标</strong></li>
+
+      <li>作废：<code>POST /bill/{id}/reject</code>（带原因，作废当前账单号，重新生成新号）</li>
+    </ul>
+
+    <h2>5.2 锁机/解机确认单状态机（4 态 + 2 失败分支 + 1 自动撤销分支）</h2>
+    <div class="state-machine">[运行中] ──余额&lt;阈值/手动──&gt; [待确认锁机] ──操作员确认──&gt; [锁定中] ──余额≥阈值──&gt; [待确认解机] ──操作员确认──&gt; [运行中]
+                       │                                                                       │
+                       └─条件不满足(账户停用/规则停用/账户脱离触发区间)──&gt; [自动撤销]      └─条件不满足──&gt; [自动撤销]
+                                                                                                          │
+                                                                                                          └─参数下发失败──&gt; [参数下发失败(需重试)]</div>
+
+    <h3>自动撤销语义</h3>
+    <ul>
+      <li><strong>触发器</strong>：每 1 分钟由定时任务扫描"待确认"列表</li>
+      <li><strong>条件</strong>：校验每张确认单的关联账户/规则是否仍满足触发条件</li>
+      <li><strong>不满足条件的情况</strong>：账户被停用 / 规则被停用 / 账户被删除 / 账户余额已脱离触发区间</li>
+      <li><strong>动作</strong>：将该确认单状态置为 <code>AUTO_REVOKE</code> 并从"待确认"列表中移除</li>
+      <li><strong>审计日志</strong>：操作人=<code>system</code>，操作时间=<code>扫描时刻</code>，原因=<code>具体不满足项</code></li>
+      <li><strong>与"作废"的区别</strong>：作废是审核员主动行为（删除原账单号重新生成），撤销是系统自动行为（条件不满足）；<code>AUTO_REVOKE</code> 不进入历史可查列表</li>
+    </ul>
+
+    <h1 id="mod">🧩 6. 功能模块（9 大模块）</h1>
+
+    <h2>6.1 代币账户管理</h2>
+    <h3>6.1.1 账户创建</h3>
+    <ul>
+      <li><strong>入口</strong>：管理员 → 代币账户 → 点"+ 创建账户"</li>
+      <li><strong>4 步表单</strong>：本系统账户信息 → Paystack 必填 → 汇算关系 → 扣款密令</li>
+      <li><strong>系统行为</strong>：调用 Paystack <code>POST /customer</code> + <code>/dedicated_account/assign</code> → 返回 DVA 编号 → 回填</li>
+      <li><strong>错误处理</strong>：Paystack 接口失败 → 本地账户保持 PENDING 状态，后台重试 3 次</li>
+      <li><strong>关联页面</strong>：<code>page-token-create</code></li>
+    </ul>
+    <h3>6.1.2 账户余额</h3>
+    <ul>
+      <li><strong>计算方式</strong>：通过交易记录实时结余（Paystack 不返回余额，明确不变量）</li>
+      <li><strong>显示</strong>：当前余额 = 所有"+"流水 - 所有"-"流水</li>
+      <li><strong>关联页面</strong>：<code>page-token-detail</code></li>
+    </ul>
+    <h3>6.1.3 交易记录</h3>
+    <ul>
+      <li><strong>充值流水</strong>：Paystack Webhook 入账（charge.success 事件）</li>
+      <li><strong>扣款流水</strong>：账单支付自动生成</li>
+      
+      <li><strong>每笔扣款可关联电费使用明细</strong></li>
+      <li><strong>关联页面</strong>：<code>page-token-tx</code></li>
+    </ul>
+
+    <h2>6.2 电费账单</h2>
+    <h3>6.2.1 自动生成（按规则）</h3>
+    <ul>
+      <li>触发器：每日 00:00:01 定时任务</li>
+      <li>流程：扫描所有启用规则 → 匹配时间窗口 → 采集覆盖机组电量 → 计算电费 → 生成账单</li>
+      <li>防重复：同一电站同一周期仅一条有效规则</li>
+    </ul>
+    <h3>6.2.2 手动生成</h3>
+    <ul>
+      <li>入口：电费账单 → 点"+ 手动生成"</li>
+      <li>流程：选电站 → 选机组（多选）→ 选时间段 → 系统拉取发电量 → 可调整 → 自动重算电费 → 提交</li>
+    </ul>
+    <h3>6.2.3 账单审核（3 Tab：待审核/已审核/已作废）</h3>
+    <p><strong>入口</strong>：审核员/发电方/管理员 → 账单审核 → <code>page-bill-review</code></p>
+    <p><strong>页面 3 Tab 状态及操作权限</strong>：</p>
+    <ul>
+      <li><strong>待审核 Tab</strong>：显示"账单已生成、待审核员审核"的账单
+        <ul>
+          <li>可见方：审核员、发电方、管理员</li>
+          <li>可操作：点"审核 →"进入详情抽屉 → 审核（电量/电费/审核结论）→ 通过 / 作废（+ 备注）</li>
+        </ul>
+      </li>
+      <li><strong>已审核 Tab</strong>：显示"审核通过、自动推送至待支付账单列表"的账单
+        <ul>
+          <li>可见方：审核员、发电方、管理员</li>
+          <li>可操作：点"作废"（带原因）→ 账单状态置为已作废（仅待支付的用电方可以撤销支付）</li>
+        </ul>
+      </li>
+      <li><strong>已作废 Tab</strong>：显示"已作废的账单"（历史记录）
+        <ul>
+          <li>可见方：审核员、发电方、管理员</li>
+          <li>只读：仅可查看，不可操作</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>审核详情抽屉</strong>（<code>drawer-bill-review</code>）：</p>
+    <ul>
+      <li>可调整电量（强制填原因，±10% 弹窗二次确认）</li>
+      <li>汇总电费（自动按调整后电量重算）</li>
+      <li>余额不足预警（用电方账户结余 &lt; 应付电费时，黄色软提示）</li>
+      <li>审核结论：通过 / 作废（必填）</li>
+      <li>审核备注（必填）</li>
+    </ul>
+    <p><strong>审核通过后</strong>：自动推送至"待支付账单列表"（<strong>无短信和站内信</strong>，需在系统菜单"账单审核"处显示<strong>红色数字角标</strong>提示）。</p>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>同一账单仅允许一个审核员处理（悲观锁）</li>
+      <li>审核员与操作员不可同人（系统层强制，避免内控失效）</li>
+      <li>电量调整超过 ±10% 必须二次确认</li>
+    </ul>
+    <h3>6.2.4 账单支付（用电方）</h3>
+    <ul>
+      <li>待支付列表</li>
+      <li>支付确认页：核对电量 → 输入支付密码 → 扣款（直接扣减代币余额）→ 生成扣款记录</li>
+      <li>余额不足：硬阻断 + 软提示</li>
+    </ul>
+    <h3>6.2.5 账单详情（11 列明细表）</h3>
+    <p><strong>入口</strong>：账单审核/支付/记录页面 → 点"详情"按钮 → 右侧滑出 <code>drawer-bill-review</code> 抽屉</p>
+    <p><strong>页面 11 列明细表</strong>：</p>
+    <table>
+      <thead><tr><th>列序</th><th>列名</th><th>说明</th><th>是否可调整</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>机组</td><td>机组编号（如 M-001）</td><td>否（只读）</td></tr>
+        <tr><td>2</td><td>撬装箱</td><td>撬装箱编号（如 BX-A1）</td><td>否（只读）</td></tr>
+        <tr><td>3</td><td>额定功率</td><td>机组额定功率（kW）</td><td>否（只读）</td></tr>
+        <tr><td>4</td><td>云猫编号</td><td>云猫网关编号</td><td>否（只读）</td></tr>
+        <tr><td>5</td><td>系统采集运行时长</td><td>系统按云猫采集的运行时长（h）</td><td>否（只读）</td></tr>
+        <tr><td>6</td><td><strong>调整后运行时长</strong></td><td>审核员可调整的运行时长</td><td>是（审核员）</td></tr>
+        <tr><td>7</td><td>系统采集电量</td><td>系统按运行时长 × 额定功率计算的电量（kWh）</td><td>否（只读）</td></tr>
+        <tr><td>8</td><td>调整后电量</td><td>审核员可调整的电量（kWh）</td><td>是（审核员）</td></tr>
+        <tr><td>9</td><td>汇算</td><td>1 kWh = ? 代币（按代币账户设置）</td><td>否（只读）</td></tr>
+        <tr><td>10</td><td>电费</td><td>电费 = 调整后电量 × 汇算（代币）</td><td>否（只读）</td></tr>
+        <tr><td>11</td><td>操作</td><td>查看机组详情 / 调整历史</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p><strong>汇总行</strong>（明细表底部）：</p>
+    <ul>
+      <li>合计运行时长（所有明细求和）</li>
+      <li>合计电量（所有明细求和）</li>
+      <li>合计电费（所有明细求和）</li>
+    </ul>
+    <p><strong>电量调整规则</strong>：</p>
+    <ul>
+      <li>审核员在第 6/8 列点击输入框 → 弹出"调整电量"对话框</li>
+      <li>必须填写"调整原因"（必填，下拉选择 + 自由文本）</li>
+      <li>调整超过 ±10% → 二次确认弹窗（防止误操作）</li>
+      <li>调整后电费（第 10 列）<strong>自动重算</strong></li>
+      <li>调整历史保留在"操作日志"中（操作人/时间/原值/新值/原因）</li>
+    </ul>
+    <p><strong>展示规则</strong>：</p>
+    <ul>
+      <li>用电方视角（<code>drawer-bill-view</code>）：仅显示调整后电量 + 电费，无调整输入框</li>
+      <li>审核员视角（<code>drawer-bill-review</code>）：可调整 + 审核操作按钮</li>
+      <li>抽屉宽度：600px（响应式：&lt; 768px 时全屏）</li>
+    </ul>
+
+    <h2>6.3 远程锁机/解机</h2>
+    <h3>6.3.1 确认单管理（4 Tab：待确认/记录/手动新增）</h3>
+    <ul>
+      <li>数据列：确认单号 / 账户 / 触发原因 / 创建时间 / 触发来源（系统/手动）/ 操作</li>
+      <li>从确认单进入操作页：点击"处理 →" → from-confirm 模式（账户回显 + 原因只读）</li>
+      <li>手动新增：点击"+ 锁机" → new 模式（无回显）</li>
+    </ul>
+    <h3>6.3.2 锁机/解机操作页</h3>
+    <p><strong>入口</strong>：锁机/解机确认页 → 点"处理 →"或"+ 锁机/+ 解机" → 进入 <code>page-lock-action</code></p>
+    <p><strong>页面布局（左右分块）</strong>：</p>
+    <ul>
+      <li><strong>左侧（1.5fr）</strong>：选择电站 / 机组 / 操作原因
+        <ul>
+          <li>电站下拉（来自运维系统）</li>
+          <li>机组多选（弹窗 <code>modal-pick-machines</code>，电站回填）</li>
+          <li>操作原因（from-confirm 模式只读 / new 模式可填）</li>
+        </ul>
+      </li>
+      <li><strong>右侧（1fr）</strong>：参数下发表（5 项参数）+ 读取参数按钮
+        <ul>
+          <li>寄存器 7501（电压设定 / V）</li>
+          <li>寄存器 7504（频率设定 / Hz）</li>
+          <li>寄存器 7506（功率限制 / kW）</li>
+          <li>寄存器 7502（Modbus 使能 / 0-1）</li>
+          <li>寄存器 7503（启动命令 / 0-1）</li>
+          <li>点"读取参数"按钮 → 从设备获取最新值 → 回填参数表</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h4>锁机模式（手动锁机 / 系统锁机）</h4>
+    <p><strong>适用</strong>：对未锁定的机组执行锁机操作</p>
+    <p><strong>机组选择规则</strong>：</p>
+    <ul>
+      <li>选择电站后，<strong>展示该电站下所有"运行中"机组</strong>（不限制必须已锁定）</li>
+      <li>操作员可多选待锁定的机组</li>
+      <li>已锁定的机组<strong>不在可选列表中</strong>（避免重复锁机）</li>
+    </ul>
+    <p><strong>参数下发值</strong>：</p>
+    <ul>
+      <li>默认值：电压 0V / 频率 0Hz / 功率 0kW / Modbus 使能 1 / 启动命令 0（停止发电）</li>
+      <li>可手动调整（高级场景，如部分降功率）</li>
+    </ul>
+    <p><strong>二次确认弹窗</strong>（<code>modal-confirm-lock</code>）：</p>
+    <ul>
+      <li>展示待锁定的机组明细（5 列：序号/机组/撬装箱/云猫编号/实时功率与转数）</li>
+      <li>操作员点"确认" → 按钮变"刷新"+ 提示"⏳ 正在下发参数"</li>
+      <li>系统下发 → 回读运维数据 → 按钮变"完成"</li>
+      <li>点"完成" → 跳"锁机记录" tab</li>
+    </ul>
+
+    <h4>解机模式（手动解机 / 系统解机）</h4>
+    <p><strong>适用</strong>：对已锁定的机组执行解机操作（恢复发电）</p>
+    <p><strong>机组选择规则</strong>：</p>
+    <ul>
+      <li>选择电站后，<strong>自动查询</strong>该电站下<strong>已锁定机组</strong>作为待选列表</li>
+      <li>不支持选择未锁定机组（避免误操作）</li>
+      <li>若该电站下无已锁定机组 → 提示"该电站无可解机机组"</li>
+    </ul>
+    <p><strong>参数下发值</strong>：</p>
+    <ul>
+      <li>默认值：电压 220V / 频率 50Hz / 功率 额定值 / Modbus 使能 1 / 启动命令 1（恢复发电）</li>
+      <li>可手动调整（高级场景）</li>
+    </ul>
+    <p><strong>二次确认弹窗</strong>：</p>
+    <ul>
+      <li>同锁机模式，但实时功率与转数显示<strong>恢复前的低值</strong>（停止状态）</li>
+    </ul>
+
+    <h4>参数下发流程（锁机/解机通用）</h4>
+    <ol>
+      <li>点"执行锁机"或"执行解机"按钮</li>
+      <li>弹出二次确认弹窗（<code>modal-confirm-lock</code>）</li>
+      <li>点"确认" → 按钮变"刷新" + 提示</li>
+      <li>系统下发参数（Modbus 写入设备）</li>
+      <li>回读运维数据（实时功率与转数）更新到弹窗</li>
+      <li>按钮变"完成"</li>
+      <li>操作员点"完成" → 跳转"锁机记录"/"解机记录" tab</li>
+      <li>下发失败：3 次重试 → 转工单 + 日志提醒</li>
+    </ol>
+    <h3>6.3.3 参数下发流程</h3>
+    <ol>
+      <li>点击"执行锁机"或"执行解机"</li>
+      <li>弹出二次确认弹窗（5 列明细表）</li>
+      <li>点击"确认" → 按钮变"刷新" + 提示</li>
+      <li>系统下发参数（Modbus 写入设备）</li>
+      <li>回读运维数据（实时功率与转数）</li>
+      <li>按钮变"完成"</li>
+      <li>操作员点击"完成" → 跳转"锁机记录"/"解机记录" tab</li>
+    </ol>
+    <h3>6.3.4 锁机/解机记录</h3>
+    <p><strong>入口</strong>：锁机确认页 / 解机确认页 → "锁机记录" / "解机记录" tab → <code>page-lock-confirm</code> / <code>page-lock-unlock-confirm</code></p>
+    <p><strong>页面功能</strong>：展示所有已完成的锁机/解机操作记录（含手动 + 系统触发），供事后追溯与对账。</p>
+    <p><strong>列表数据列</strong>（10 列）：</p>
+    <table>
+      <thead><tr><th>列序</th><th>列名</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>确认单号</td><td>关联的 <code>LockConfirmOrder.order_number</code>（LCK-/UNL- 前缀）</td></tr>
+        <tr><td>2</td><td>账户</td><td>关联代币账户名（组织 + 账户名）</td></tr>
+        <tr><td>3</td><td>电站</td><td>操作电站名</td></tr>
+        <tr><td>4</td><td>机组列表</td><td>本次操作涉及的机组（多个用"…"截断显示）</td></tr>
+        <tr><td>5</td><td>触发原因</td><td>系统触发：账户余额 ≤ 锁机阈值；手动触发：操作员填写</td></tr>
+        <tr><td>6</td><td>触发来源</td><td>系统 / 手动</td></tr>
+        <tr><td>7</td><td>操作时间</td><td>完成"完成"按钮的时刻</td></tr>
+        <tr><td>8</td><td>操作人</td><td>操作员姓名</td></tr>
+        <tr><td>9</td><td>运维数据</td><td>实时功率 + 转数（执行后回读值）</td></tr>
+        <tr><td>10</td><td>操作</td><td>点"详情" → 打开 <code>drawer-lock-record</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong>详情抽屉</strong>（<code>drawer-lock-record</code>，600px 宽）：</p>
+    <ul>
+      <li><strong>设备信息</strong>：电站、机组列表（完整）、撬装箱、云猫编号</li>
+      <li><strong>参数下发记录</strong>：5 项参数的"下发值"vs"回读值"对比（便于验证下发是否成功）</li>
+      <li><strong>运维数据快照</strong>：实时功率、转数（执行后回读的快照）</li>
+      <li><strong>操作信息</strong>：操作人、操作时间、触发来源、触发原因</li>
+      <li><strong>关联确认单</strong>：跳转查看原始确认单详情</li>
+    </ul>
+    <p><strong>查询与筛选</strong>：</p>
+    <ul>
+      <li>按账户筛选</li>
+      <li>按电站筛选</li>
+      <li>按时间范围筛选（默认近 7 天）</li>
+      <li>按操作人筛选</li>
+      <li>按触发来源筛选（全部 / 系统 / 手动）</li>
+    </ul>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>锁机/解机记录永久保留（合规）</li>
+      <li>仅系统管理员、发电方、操作员可见</li>
+      <li>不可编辑、不可删除（仅可查询）</li>
+    </ul>
+
+    <h3>6.3.5 确认单条件重检（关键业务规则）</h3>
+    <div class="alert alert-danger">
+      <strong>⚠️ 重要</strong>：每次进入确认页面时，前端扫描以检查确认单是否有更新；<strong>后端服务是每分钟定时扫描</strong>所有 <code>待确认锁机</code> + <code>待确认解机</code> 列表，校验每张确认单的关联账户/规则是否仍满足触发条件。
+    </div>
+    <p><strong>校验条件</strong>：</p>
+    <ol>
+      <li>关联账户是否仍存在</li>
+      <li>关联账户是否仍为"启用"状态（非停用）</li>
+      <li>关联规则是否仍为"启用"状态</li>
+      <li>账户余额是否仍处于触发区间</li>
+    </ol>
+    <p><strong>扫描时机（双端）</strong>：</p>
+    <ul>
+      <li><strong>前端扫描</strong>：每次操作员进入"待确认锁机/待确认解机"列表页面时触发 → 调用 <code>GET /lock-order/pending?since=last_visit</code> → 仅返回新增/状态变更的确认单</li>
+      <li><strong>后端定时</strong>：每 1 分钟由 Spring Boot @Scheduled 任务全表扫描 → 不依赖前端访问</li>
+    </ul>
+    <p><strong>不满足时动作</strong>：</p>
+    <ol>
+      <li>该确认单状态置为 <code>AUTO_REVOKE</code></li>
+      <li>从"待确认"列表中移除（前端下次进入页面时通过 since 查询自动同步）</li>
+      <li>写入审计日志（操作人=<code>system</code>，操作时间=<code>扫描时刻</code>，原因=<code>具体不满足项</code>）</li>
+      <li><strong>不进入</strong>"历史可查"列表</li>
+    </ol>
+
+    <h2>6.4 规则配置</h2>
+    <p>本节描述三类规则配置的<strong>功能详细需求</strong>，对应 4.9 节的业务流程与 6.4.x 节的功能页面。</p>
+    <h3>6.4.1 账单生成规则</h3>
+    <p><strong>入口</strong>：管理员 → 规则配置 → <code>page-rule-bill</code> → 点"+ 新增规则"打开 <code>modal-rule-bill</code></p>
+    <p><strong>字段说明</strong>：</p>
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>电站</td><td>下拉多选</td><td>是</td><td>本规则作用电站（来自运维系统）</td></tr>
+        <tr><td>周期</td><td>下拉单选</td><td>是</td><td>按周 / 按月 / 自定义</td></tr>
+        <tr><td>周期配置</td><td>动态</td><td>条件必填</td><td>按周：周几生成（1-7）；按月：每月几日（1-31）；自定义：开始日+结束日</td></tr>
+        <tr><td>审核员</td><td>多选主备</td><td>是</td><td>账单生成后通知的审核人员（≥ 1 主 1 备）</td></tr>
+        <tr><td>覆盖机组</td><td>多选</td><td>否</td><td>本规则覆盖的具体机组（默认 = 该电站全部机组）</td></tr>
+        <tr><td>启用/停用</td><td>开关</td><td>—</td><td>默认启用；停用后定时任务跳过本规则</td></tr>
+      </tbody>
+    </table>
+    <p><strong>业务流程</strong>：</p>
+    <ol>
+      <li>管理员填写规则表单 → 点"保存启用"</li>
+      <li>写 <code>BillRule</code> 记录（<code>RULE-2026-XXXX-XXXX</code>）</li>
+      <li>系统按 <code>每分钟定时查询</code> 检查：周期到达 + 规则启用 → 触发账单生成</li>
+      <li>采集覆盖机组的运行时长 + 电量 → 计算电费（电费 = kWh × 汇算）</li>
+      <li>生成 <code>Bill</code> 记录（<code>BILL-2026-W3-0007</code>）→ 状态：<code>PENDING_REVIEW</code></li>
+      <li>通知审核员 → 审核员进入"待审核" tab 处理</li>
+    </ol>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>同一电站同一周期仅一条<strong>启用</strong>规则（防重复生成）</li>
+      <li>规则停用后，已生成但未审核的账单<strong>不受影响</strong></li>
+      <li>规则删除时校验"无关联的待审核账单"，否则提示"请先处理待审核账单"</li>
+      <li>自定义周期需<strong>不超过 31 天</strong></li>
+    </ul>
+    <p><strong>关联页面</strong>：<code>page-rule-bill</code>（列表） / <code>modal-rule-bill</code>（配置弹窗）</li>
+    <h3>6.4.2 锁机确认规则</h3>
+    <p><strong>入口</strong>：管理员 → 规则配置 → <code>page-rule-lock-unlock</code> → "锁机规则" tab → 点"+ 新增规则"打开 <code>modal-rule-lock-unlock</code></p>
+    <p><strong>字段说明</strong>：</p>
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>账户</td><td>下拉单选</td><td>是</td><td>本规则作用的代币账户（v1.0 一个组织一个账户）</td></tr>
+        <tr><td>锁机阈值（≤）</td><td>数字输入</td><td>是</td><td>单位：代币；账户余额 ≤ 此值 → 触发锁机确认单</td></tr>
+        <tr><td>通知人</td><td>多选</td><td>是</td><td>触发锁机确认单后通知的操作人员（≥ 1 人）</td></tr>
+        <tr><td>启用/停用</td><td>开关</td><td>—</td><td>默认启用</td></tr>
+      </tbody>
+    </table>
+    <p><strong>业务流程</strong>：</p>
+    <ol>
+      <li>管理员填写规则表单 → 点"保存启用"</li>
+      <li>写 <code>LockRule</code> 记录</li>
+      <li>系统按 <code>账户余额变更</code> 时<strong>实时检查</strong>：账户余额 ≤ 锁机阈值 + 规则启用 → 生成锁机确认单（<code>LCK-2026-XXXX-XXXX</code>，状态 <code>PENDING</code>）</li>
+      <li>通知操作员 → 操作员进入"待确认锁机" tab 处理</li>
+      <li>操作员点"处理 →" → 进入锁机操作页（from-confirm 模式）</li>
+      <li>二次确认 → 下发参数 → 写锁机记录</li>
+    </ol>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>每个账户同一方向（锁机）仅一条<strong>启用</strong>规则</li>
+      <li>锁机阈值<strong>必须 &lt; 解机阈值 × 0.83</strong>（即锁机阈值 ≤ 解机阈值 ÷ 1.2，确保 1.2 倍缓冲）</li>
+      <li>锁机阈值<strong>必须 &gt; 0</strong>（避免零阈值导致永远触发）</li>
+      <li>规则停用时，系统中已生成的待确认单<strong>仍按自动撤销逻辑处理</strong>（5.2 节）</li>
+    </ul>
+    <p><strong>关联页面</strong>：<code>page-rule-lock-unlock</code> / <code>modal-rule-lock-unlock</code></p>
+    <h3>6.4.3 解机确认规则</h3>
+    <p><strong>入口</strong>：管理员 → 规则配置 → <code>page-rule-lock-unlock</code> → "解机规则" tab → 点"+ 新增规则"打开 <code>modal-rule-lock-unlock</code></p>
+    <p><strong>字段说明</strong>：</p>
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>账户</td><td>下拉单选</td><td>是</td><td>本规则作用的代币账户（v1.0 一个组织一个账户）</td></tr>
+        <tr><td>解机阈值（≥）</td><td>数字输入</td><td>是</td><td>单位：代币；账户余额 ≥ 此值<strong>且</strong>有机组锁定 → 触发解机确认单</td></tr>
+        <tr><td>通知人</td><td>多选</td><td>是</td><td>触发解机确认单后通知的操作人员（≥ 1 人）</td></tr>
+        <tr><td>启用/停用</td><td>开关</td><td>—</td><td>默认启用</td></tr>
+      </tbody>
+    </table>
+    <p><strong>业务流程</strong>：</p>
+    <ol>
+      <li>管理员填写规则表单 → 点"保存启用"</li>
+      <li>写 <code>UnlockRule</code> 记录</li>
+      <li>系统按 <code>账户余额变更</code> 时<strong>实时检查</strong>：账户余额 ≥ 解机阈值 + 该账户下有机组锁定 + 规则启用 → 生成解机确认单（<code>UNL-2026-XXXX-XXXX</code>，状态 <code>PENDING</code>）</li>
+      <li>通知操作员 → 操作员进入"待确认解机" tab 处理</li>
+      <li>操作员点"处理 →" → 进入解机操作页（from-confirm 模式）</li>
+      <li>二次确认 → 下发参数 → 写解机记录</li>
+    </ol>
+    <p><strong>业务约束</strong>：</p>
+    <ul>
+      <li>每个账户同一方向（解机）仅一条<strong>启用</strong>规则</li>
+      <li>解机阈值<strong>必须 ≥ 锁机阈值 × 1.2</strong>（缓冲，避免频繁触发锁机/解机）</li>
+      <li>解机规则仅在"该账户下有机组锁定中"时触发（避免无效触发）</li>
+      <li>规则停用时，系统中已生成的待确认单<strong>仍按自动撤销逻辑处理</strong>（5.2 节）</li>
+    </ul>
+    <p><strong>关联页面</strong>：<code>page-rule-lock-unlock</code> / <code>modal-rule-lock-unlock</code></p>
+
+    <h1 id="data">🗄️ 7. 数据模型</h1>
+
+    <h2>7.1 TokenAccount（代币账户）</h2>
+    <pre><code>id:                   UUID
+organization:         string  # 用电方组织
+account_name:         string  # 账户名
+paystack_customer_id: string  # Paystack Customer ID
+paystack_dva_number:  string  # DVA 编号（Paystack 分配）
+dva_bank:             string  # DVA 开户行
+token_to_ngn_rate:    decimal # 1 代币 = ? NGN
+kwh_to_token_rate:    decimal # 1 kWh = ? 代币
+payment_pwd_hash:     string  # 扣款密令（哈希存储）
+status:               enum[ENABLED, DISABLED, PENDING]
+created_at:           timestamp
+updated_at:           timestamp</code></pre>
+
+    <h2>7.2 TokenTransaction（代币交易记录）</h2>
+    <pre><code>id:             UUID
+account_id:     UUID              # 关联 TokenAccount
+type:           enum[RECHARGE, DEDUCT]  # 充值 / 扣款
+amount:         decimal           # 代币金额（正数）
+balance_after:  decimal           # 交易后余额
+ref_id:         string            # 关联单据（账单 ID / Paystack 交易 ID）
+status:         enum[SUCCESS, FAILED, PENDING]
+description:    string
+created_at:     timestamp</code></pre>
+
+    <h2>7.3 Bill（电费账单）</h2>
+    <pre><code>id:              UUID
+bill_number:     string         # BILL-2026-W3-0007
+organization:     string         # 用电方组织
+account_id:      UUID           # 关联代币账户
+station:         string         # 电站
+period_start:    date           # 周期开始
+period_end:      date           # 周期结束
+total_kwh:       decimal        # 总电量
+total_amount:    decimal        # 总电费
+status:          enum[PENDING_REVIEW, REVIEWED, PENDING_PAYMENT, PAID, VOIDED, REJECTED]
+reviewed_by:     string         # 审核员
+reviewed_at:     timestamp
+created_at:      timestamp</code></pre>
+
+    <h2>7.4 BillDetail（账单明细）</h2>
+    <pre><code>id:                 UUID
+bill_id:            UUID
+machine_id:         string       # 机组
+machine_box:        string       # 撬装箱
+rated_power:        decimal      # 额定功率
+yunmao_id:          string       # 云猫编号
+runtime_collected:  decimal      # 系统采集运行时长
+runtime_adjusted:   decimal      # 调整后运行时长
+kwh_collected:      decimal      # 系统采集电量
+kwh_adjusted:       decimal      # 调整后电量
+rate:               decimal      # 汇算
+amount:             decimal      # 电费</code></pre>
+
+    <h2>7.5 LockConfirmOrder（锁机/解机确认单）</h2>
+    <pre><code>id:               UUID
+order_number:     string          # LCK-2026-XXXX-XXXX / UNL-2026-XXXX-XXXX
+type:             enum[LOCK, UNLOCK]
+account_id:       UUID            # 关联账户
+trigger_source:   enum[SYSTEM, MANUAL]   # 触发来源（系统规则/手动新增）
+trigger_reason:   string          # 触发原因
+status:           enum[PENDING, CONFIRMED, AUTO_REVOKE, FAILED]
+created_at:       timestamp
+confirmed_at:     timestamp
+operator:         string          # 操作人</code></pre>
+
+    <h2>7.6 LockRecord（锁机/解机记录）</h2>
+    <pre><code>id:              UUID
+order_id:        UUID            # 关联确认单
+type:            enum[LOCK, UNLOCK]
+account_id:      UUID
+machine_ids:     list[string]    # 机组列表
+trigger_reason:  string
+operator:        string          # 锁机/解机人
+operated_at:     timestamp
+ops_data:        json            # 运维数据快照（功率/转数）</code></pre>
+
+    <h2>7.7 BillRule / LockRule / UnlockRule</h2>
+    <pre><code># BillRule（账单生成规则）
+id, station, period[enum], period_config, reviewers[list],
+covered_machines[list], status[enum]
+
+# LockRule（锁机确认规则）
+id, account_id, lock_threshold, notifiers[list], status[enum]
+
+# UnlockRule（解机确认规则）
+id, account_id, unlock_threshold, notifiers[list], status[enum]</code></pre>
+
+    <h2>7.8 AuditLog（审计日志）</h2>
+    <pre><code>id:           UUID
+action_type:  string     # 动作类型
+target_type:  string     # 对象类型
+target_id:    string     # 对象 ID
+operator:     string     # 操作人（user_id 或 'system'）
+reason:       string     # 原因
+created_at:   timestamp</code></pre>
+
+    <h1 id="api">🔌 8. 接口契约</h1>
+
+    <h2>8.1 Paystack 集成</h2>
+    <h3>POST /customer</h3>
+    <ul>
+      <li>用途：创建 Paystack Customer</li>
+      <li>入参：<code>email</code>, <code>first_name</code>, <code>last_name</code>, <code>phone</code></li>
+      <li>出参：<code>customer_code</code> (cus_xxx)</li>
+    </ul>
+    <h3>POST /dedicated_account/assign</h3>
+    <ul>
+      <li>用途：为 Customer 分配 DVA</li>
+      <li>入参：<code>customer</code>, <code>preferred_bank</code>, <code>country</code></li>
+      <li>出参：<code>account_number</code>, <code>account_name</code>, <code>bank_name</code></li>
+    </ul>
+    <h3>Webhook: charge.success</h3>
+    <p>本系统处理：验证签名 → 解析 amount/customer/reference → 写 TokenTransaction (RECHARGE) → 更新账户余额 → 推送通知</p>
+
+
+
+    <h1 id="nfr">📋 9. 非功能需求</h1>
+    <table>
+      <thead><tr><th>类别</th><th>要求</th></tr></thead>
+      <tbody>
+        <tr><td>审计</td><td>所有"修改/作废/自动撤销"操作保留操作人/时间/原因三件套，不可删除</td></tr>
+        <tr><td>并发</td><td>同一账单仅允许一个审核员处理（悲观锁）</td></tr>
+        <tr><td>Webhook 容错</td><td>Paystack 回调失败最多重试 3 次，3 次后人工接管 + 告警</td></tr>
+        <tr><td>参数下发容错</td><td>锁机/解机下发失败 3 次后转工单处理</td></tr>
+        <tr><td>定时任务精度</td><td>每日账单生成、每分钟确认单条件重检，误差 ≤ 5s</td></tr>
+        <tr><td>数据保留</td><td>交易记录、账单记录永久保留（合规）</td></tr>
+        <tr><td>权限隔离</td><td>用电方仅可见本组织数据；管理员可见全部</td></tr>
+        <tr><td>职责分离</td><td>审核员与操作员不可同人（系统层强制）</td></tr>
+        <tr><td>响应时间</td><td>页面加载 ≤ 2s；操作响应 ≤ 1s</td></tr>
+        <tr><td>可用性</td><td>SLA 99.9%（年停机 ≤ 8.76h）</td></tr>
+      </tbody>
+    </table>
+
+    <h1 id="qa">✅ 10. 验收自检表（37 项）</h1>
+    <div class="alert alert-success">
+      <strong>结论：37/37 全部覆盖，无遗漏。</strong>
+    </div>
+    <table>
+      <thead><tr><th>编号</th><th>需求点</th><th>对应页面/流程</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>1.1.1</td><td>创建账户（4 步表单）</td><td>page-token-create</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.1.2</td><td>设置代币↔Paystack 汇算</td><td>创建账户第 3 步</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.1.3</td><td>设置电费↔代币汇算</td><td>创建账户第 3 步</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.1.4</td><td>Paystack DVA 分配（返回 9930000123）</td><td>创建账户回调</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.2.1</td><td>账户余额（交易记录结余）</td><td>page-token-detail</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.3.1</td><td>充值记录（Paystack Webhook）</td><td>page-token-tx</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.3.2</td><td>扣款记录（账单支付生成）</td><td>page-token-tx</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.3.3</td><td>每笔扣款可查电费使用明细</td><td>page-token-tx</td><td><span class="checklist-pass">✓</span></td></tr>
+        
+        <tr><td>1.4.1</td><td>编辑账户信息</td><td>page-token-edit-info</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>1.4.2</td><td>修改扣款密令</td><td>modal-edit-pwd</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.1.1</td><td>自动生成（按规则）</td><td>docs 4.6 流程图</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.2.1</td><td>手动生成（选机组+时间）</td><td>page-bill-manual</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.3.1</td><td>账单列表（3 Tab）</td><td>page-bill-review</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.3.2</td><td>审核员审核（可改电量）</td><td>page-bill-review</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.3.3</td><td>审核通过推送用电方</td><td>page-bill-review</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.3.4</td><td>已审核可作废</td><td>page-bill-review 已审核 Tab</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.3.5</td><td>已作废只读</td><td>page-bill-review 已作废 Tab</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.4.1</td><td>待支付列表</td><td>page-bill-pay</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.4.2</td><td>余额 ≥ 电费 校验</td><td>page-bill-pay-confirm</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.4.3</td><td>扣款密令校验</td><td>page-bill-pay-confirm</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.4.4</td><td>直接扣减代币余额（不调 Paystack Transfer）</td><td>docs 4.7 流程图</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.4.5</td><td>写扣款流水 + 更新账单状态</td><td>page-token-tx</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>2.5.1</td><td>账单详情 11 列明细</td><td>drawer-bill-review</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.1.1</td><td>系统规则触发锁机确认单</td><td>docs 4.2 流程图</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.1.2</td><td>操作员手动新增锁机</td><td>docs 4.4 流程图</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.1.3</td><td>from-confirm 模式账户回显 + 原因只读</td><td>page-lock-action</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.2.1</td><td>解机自动查已锁定机组</td><td>page-lock-action</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.2.2</td><td>读取/调整参数（5 项 + Modbus 使能寄存器）</td><td>page-lock-action</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.3.1</td><td>二次确认弹窗（5 列明细）</td><td>modal-confirm-lock</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.3.2</td><td>按钮"刷新"→"完成"流程</td><td>page-lock-action</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.3.3</td><td>完成后跳"锁机/解机记录" tab</td><td>page-lock-action</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.4.1</td><td>锁机/解机记录详情</td><td>drawer-lock-record</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>3.5.1</td><td><strong>确认单条件重检自动撤销</strong></td><td>后端定时（每分钟）+ 前端进入页面扫描</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>4.1.1</td><td>账单生成规则配置</td><td>page-rule-bill</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>4.2.1</td><td>锁机确认规则配置</td><td>page-rule-lock-unlock</td><td><span class="checklist-pass">✓</span></td></tr>
+        <tr><td>4.3.1</td><td>解机确认规则配置</td><td>page-rule-lock-unlock</td><td><span class="checklist-pass">✓</span></td></tr>
+      </tbody>
+    </table>
+
+
+
+    <h1 id="roadmap">🗓️ 11. 后续迭代路线</h1>
+    <table>
+      <thead><tr><th>版本</th><th>时间</th><th>主要内容</th></tr></thead>
+      <tbody>
+        <tr style="background:#D1FAE5"><td><strong>v1.0</strong></td><td><strong>2026-Q4</strong></td><td><strong>9 大模块 + 8 张流程图 + 完整状态机 + 跨角色权限（当前版本）</strong></td></tr>
+        <tr><td>v1.1</td><td>2027-Q1</td><td>批量支付、电量预测性账单、跨月账单对齐、自动撤销前 5 分钟缓冲</td></tr>
+        <tr><td>v1.2</td><td>2027-Q2</td><td>短信/邮件通知接入、规则定时调度可视化、审计报表导出</td></tr>
+        <tr><td>v2.0</td><td>2027-Q3</td><td>多币种汇算、锁机分级（轻锁/重锁）、移动端 H5</td></tr>
+      </tbody>
+    </table>
+
+    <h1 id="app">📎 12. 附录</h1>
+
+    <h2>12.1 原型页面清单（13 个核心页面）</h2>
+    <table>
+      <thead><tr><th>#</th><th>页面</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>page-token-list</td><td>代币账户列表</td></tr>
+        <tr><td>2</td><td>page-token-tx</td><td>账户交易记录</td></tr>
+        <tr><td>3</td><td>page-token-detail</td><td>账户详情</td></tr>
+        <tr><td>4</td><td>page-token-create</td><td>创建账户</td></tr>
+        <tr><td>5</td><td>page-bill-review</td><td>账单审核（3 Tab）</td></tr>
+        <tr><td>6</td><td>page-bill-pay</td><td>账单支付列表</td></tr>
+        <tr><td>7</td><td>page-bill-pay-confirm</td><td>支付确认页</td></tr>
+        <tr><td>8</td><td>page-bill-manual</td><td>手动生成账单</td></tr>
+        <tr><td>9</td><td>page-lock-confirm</td><td>锁机确认（4 Tab）</td></tr>
+        <tr><td>10</td><td>page-lock-unlock-confirm</td><td>解机确认（4 Tab）</td></tr>
+        <tr><td>11</td><td>page-lock-action</td><td>锁机/解机操作页</td></tr>
+        <tr><td>12</td><td>page-rule-bill</td><td>账单生成规则</td></tr>
+        <tr><td>13</td><td>page-rule-lock-unlock</td><td>锁机/解机规则</td></tr>
+      </tbody>
+    </table>
+
+    <h2>12.2 弹窗/抽屉清单（9 个）</h2>
+    <table>
+      <thead><tr><th>类型</th><th>名称</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td>Modal</td><td>modal-token-edit-info</td><td>编辑账户信息</td></tr>
+        <tr><td>Modal</td><td>modal-edit-pwd</td><td>修改扣款密令</td></tr>
+        <tr><td>Modal</td><td>modal-edit-rate</td><td>修改汇算关系</td></tr>
+        <tr><td>Modal</td><td>modal-disable / modal-enable</td><td>停用/启用账户</td></tr>
+        <tr><td>Modal</td><td>modal-pick-machines</td><td>选择机组（含电站）</td></tr>
+        <tr><td>Modal</td><td>modal-confirm-lock</td><td>二次确认弹窗（5 列明细）</td></tr>
+        <tr><td>Modal</td><td>modal-rule-bill / modal-rule-lock-unlock</td><td>规则配置</td></tr>
+        <tr><td>Drawer</td><td>drawer-bill-review / drawer-bill-view</td><td>账单详情（11 列）</td></tr>
+        <tr><td>Drawer</td><td>drawer-lock-record</td><td>锁机/解机记录详情</td></tr>
+      </tbody>
+    </table>
+
+    <h2>12.3 系统图清单（8 张流程图）</h2>
+    <table>
+      <thead><tr><th>#</th><th>流程图</th><th>文档位置</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>账户创建</td><td>docs.html 第一章</td></tr>
+        <tr><td>2</td><td>手动新增锁机</td><td>docs.html 第二章</td></tr>
+        <tr><td>3</td><td>锁机（系统规则触发）</td><td>docs.html 第三章</td></tr>
+        <tr><td>4</td><td>手动新增解机</td><td>docs.html 第四章</td></tr>
+        <tr><td>5</td><td>解机（系统规则触发）</td><td>docs.html 第五章</td></tr>
+        <tr><td>6</td><td>账单生成</td><td>docs.html 第六章</td></tr>
+        <tr><td>7</td><td>账单支付</td><td>docs.html 第七章</td></tr>
+        <tr><td>8</td><td>系统功能结构图</td><td>docs.html 第八章</td></tr>
+      </tbody>
+    </table>
+
+    <div class="signature">
+      <p>—— 电费交易结算管理系统 PRD v1.0 完 ——</p>
+      <p>本 PRD 已就绪，可提交研发任务拆解。Q4 重点项目立项建议同步启动。</p>
+    </div>
+
+  </main>
+</div>
+
+<div class="footer">
+  孚创动力控制技术（启东）有限公司 · 信息化运维业务线 · 电费交易结算管理系统 v1.0 · 2026-10-14
+</div>
+
+</body>
+</html>

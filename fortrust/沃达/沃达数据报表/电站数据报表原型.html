@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>电站电表数据统计 · 孚创动力</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #f0f2f5; color: #303133; font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { width: 100vw; height: 100vh; min-width: 1280px; min-height: 720px; overflow: hidden; display: flex; flex-direction: column; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input, select { font-family: inherit; outline: none; }
+
+  .topbar { height: 44px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); flex-shrink: 0; }
+  .topbar .breadcrumb { font-size: 13px; color: #606266; display: flex; align-items: center; gap: 8px; }
+  .topbar .breadcrumb .sep { color: #c0c4cc; }
+  .topbar .breadcrumb .current { color: #303133; font-weight: 500; }
+  .topbar .spacer { flex: 1; }
+  .topbar-meta { font-size: 12px; color: #909399; display: flex; gap: 16px; align-items: center; }
+  .live-dot { display: inline-block; width: 6px; height: 6px; background: #52c41a; border-radius: 50%; margin-right: 4px; box-shadow: 0 0 0 3px rgba(82,196,26,0.15); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(82,196,26,0.4); } 70% { box-shadow: 0 0 0 6px rgba(82,196,26,0); } 100% { box-shadow: 0 0 0 0 rgba(82,196,26,0); } }
+  .icon-btn { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: #606266; font-size: 14px; transition: all .15s; }
+  .icon-btn:hover { background: #f0f2f5; color: #1890ff; }
+  .btn { height: 28px; padding: 0 14px; border-radius: 4px; font-size: 12px; transition: all .15s; border: 1px solid #d9d9d9; background: #fff; color: #606266; display: inline-flex; align-items: center; gap: 4px; }
+  .btn:hover { border-color: #1890ff; color: #1890ff; }
+  .btn.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+  .btn.primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+  /* Tabbar（tab + 日期 + 快捷 + 数据源 + 操作按钮 全部放这一栏） */
+  .tabbar { height: 56px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; gap: 0; }
+  .tabs { display: flex; gap: 4px; align-items: center; height: 100%; }
+  .tab { padding: 0 18px; height: 100%; font-size: 14px; color: #606266; position: relative; transition: color .15s; font-weight: 500; display: flex; align-items: center; }
+  .tab:hover { color: #1890ff; }
+  .tab.active { color: #1890ff; font-weight: 600; }
+  .tab.active::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; width: 24px; height: 2px; background: #1890ff; border-radius: 1px; }
+  .tab .badge { display: inline-block; background: #f0f0f0; color: #909399; font-size: 10px; padding: 1px 5px; border-radius: 8px; margin-left: 4px; font-weight: 400; }
+  .tab.active .badge { background: #e6f7ff; color: #1890ff; }
+
+  .filter-group { display: flex; align-items: center; gap: 6px; border-left: 1px solid #f0f0f0; padding-left: 20px; height: 100%; }
+  .filter-group label { font-size: 13px; color: #606266; white-space: nowrap; }
+  .filter-group .date-input { width: 150px; height: 30px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 8px; font-size: 12px; background: #fff; }
+  .filter-group .date-input:focus { border-color: #1890ff; }
+  .filter-group .sep { color: #909399; font-size: 12px; }
+  .quick-btns { display: flex; gap: 2px; margin-left: 12px; align-items: center; height: 100%; }
+  .quick-btn { height: 26px; padding: 0 10px; border-radius: 3px; font-size: 12px; color: #606266; background: #fafafa; border: 1px solid #f0f0f0; }
+  .quick-btn:hover { color: #1890ff; border-color: #1890ff; background: #fff; }
+  .quick-btn.active { color: #1890ff; border-color: #1890ff; background: #e6f7ff; font-weight: 500; }
+  .tabbar .spacer { flex: 1; }
+
+  /* 数据源 + 操作按钮（同一栏） */
+  .ds-display { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: #fafbfc; border: 1px solid #f0f0f0; border-radius: 4px; font-size: 12px; color: #606266; height: 30px; margin-left: 16px; }
+  .ds-display .ds-label b { color: #1890ff; font-weight: 600; }
+  .ds-display .ds-settings { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 3px; color: #909399; font-size: 13px; transition: all .15s; }
+  .ds-display .ds-settings:hover { background: #e6f7ff; color: #1890ff; }
+  .tabbar-actions { display: flex; align-items: center; gap: 6px; height: 100%; margin-left: 12px; }
+
+  /* 详情页（无 header） */
+  .detail-page { flex: 1; display: flex; flex-direction: column; background: #fff; margin: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+
+  .scope-row-bar { background: linear-gradient(135deg, #fff7e6 0%, #fff 100%); border-bottom: 2px solid #ffd591; padding: 10px 16px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12px; flex-shrink: 0; }
+  .scope-row-bar .crumb { display: inline-block; padding: 2px 8px; background: #fff7e6; border: 1px solid #ffd591; border-radius: 10px; color: #d46b08; font-weight: 600; }
+  .scope-row-bar .crumb-sep { color: #d9d9d9; margin: 0 2px; }
+  .scope-row-bar .item { color: #303133; }
+  .scope-row-bar .item b { color: #d46b08; font-weight: 600; margin-left: 2px; }
+
+  /* 表格 */
+  .table-wrap { flex: 1; overflow: auto; position: relative; }
+  .table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+
+  table.data { border-collapse: separate; border-spacing: 0; width: 100%; }
+  table.data thead tr.group-header th { background: #f5f7fa; color: #303133; font-weight: 600; height: 26px; font-size: 12px; position: sticky; top: 0; z-index: 2; }
+  table.data thead tr.col-header th { background: #fafbfc; color: #606266; font-weight: 500; height: 44px; font-size: 12px; position: sticky; top: 26px; z-index: 3; padding: 4px 6px; }
+  table.data th, table.data td { border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; text-align: center; font-size: 12px; padding: 0; background: #fff; }
+  table.data thead .help { display: inline-block; width: 13px; height: 13px; line-height: 13px; text-align: center; background: #e6f7ff; color: #1890ff; border-radius: 50%; font-size: 9px; margin-left: 3px; cursor: help; vertical-align: middle; }
+  table.data thead .help:hover { background: #1890ff; color: #fff; }
+
+  table.data tbody td { height: 34px; color: #303133; }
+  table.data tbody tr:hover td { background: #f5f9ff; }
+  table.data tbody td.num { font-family: "SF Mono", Consolas, monospace; }
+
+  /* 单元格编辑态 */
+  table.data td.cell-editable { position: relative; padding: 0; }
+  table.data td.cell-editable .cell-display { display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 0 4px; position: relative; }
+  table.data td.cell-editable .cell-value { flex: 1; }
+  table.data td.cell-editable.modified .cell-value { color: #1890ff; font-weight: 600; }
+  table.data td.cell-editable .cell-actions { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); display: flex; gap: 1px; opacity: 0; transition: opacity .15s; }
+  table.data td.cell-editable:hover .cell-actions { opacity: 1; }
+  table.data td.cell-editable .cell-act { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 3px; cursor: pointer; color: #909399; font-size: 11px; transition: all .15s; }
+  table.data td.cell-editable .cell-act:hover { background: #e6f7ff; color: #1890ff; }
+  table.data td.cell-editable .cell-act.reset:hover { background: #fff7e6; color: #fa8c16; }
+  table.data td.cell-editable .cell-act.reset { display: none; }
+  table.data td.cell-editable.modified[data-resettable="true"] .cell-act.reset { display: inline-flex; }
+  /* 编辑器 */
+  table.data td.cell-editable .cell-editor { display: none; height: 100%; align-items: center; padding: 2px 4px; gap: 4px; }
+  table.data td.cell-editable.editing .cell-display { display: none; }
+  table.data td.cell-editable.editing .cell-editor { display: flex; background: #e6f7ff; }
+  table.data td.cell-editable .cell-editor input { flex: 1; height: 26px; border: 1px solid #1890ff; border-radius: 3px; padding: 0 4px; font-size: 12px; text-align: center; font-family: "SF Mono", Consolas, monospace; background: #fff; min-width: 0; }
+  .cell-btn { height: 24px; padding: 0 8px; border-radius: 3px; font-size: 11px; border: 1px solid #d9d9d9; background: #fff; color: #606266; }
+  .cell-btn.save { background: #1890ff; color: #fff; border-color: #1890ff; }
+  .cell-btn.save:hover { background: #40a9ff; }
+  .cell-btn.cancel:hover { border-color: #1890ff; color: #1890ff; }
+
+  /* 重置确认浮窗 */
+  .reset-popup { position: absolute; z-index: 100; top: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: #fff; border: 1px solid #fa8c16; border-radius: 4px; padding: 12px 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); white-space: nowrap; min-width: 280px; }
+  .reset-popup::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: #fa8c16; }
+  .reset-popup p { font-size: 12px; color: #303133; margin-bottom: 10px; line-height: 1.5; }
+  .reset-popup .popup-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .reset-popup .popup-actions .cell-btn.confirm { background: #fa8c16; color: #fff; border-color: #fa8c16; }
+  .reset-popup .popup-actions .cell-btn.confirm:hover { background: #ffa940; }
+
+  .skid-tag { display: inline-block; background: #fff7e6; color: #d46b08; font-size: 10px; padding: 1px 5px; border-radius: 6px; margin-left: 6px; font-weight: 500; border: 1px solid #ffd591; vertical-align: middle; }
+  .skid-name-cell { display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+
+  .table-footer { height: 32px; padding: 0 16px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; font-size: 12px; color: #606266; background: #fafbfc; flex-shrink: 0; }
+  .table-footer .spacer { flex: 1; }
+  .table-footer .page-btn { min-width: 24px; height: 22px; border: 1px solid #d9d9d9; border-radius: 3px; background: #fff; color: #606266; font-size: 12px; padding: 0 6px; margin-left: 2px; }
+  .table-footer .page-btn:hover { border-color: #1890ff; color: #1890ff; }
+  .table-footer .page-btn.active { background: #1890ff; border-color: #1890ff; color: #fff; }
+
+  /* 模态框 */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 6px; width: 460px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: modal-in .2s ease-out; }
+  @keyframes modal-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-header { height: 48px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; }
+  .modal-title { font-size: 15px; font-weight: 600; color: #303133; }
+  .modal-close { margin-left: auto; width: 28px; height: 28px; color: #909399; font-size: 20px; border-radius: 4px; line-height: 1; }
+  .modal-close:hover { background: #f0f2f5; color: #1890ff; }
+  .modal-body { padding: 20px; }
+  .modal-desc { font-size: 12px; color: #909399; margin-bottom: 16px; line-height: 1.6; }
+  .radio-list { display: flex; flex-direction: column; gap: 8px; }
+  .radio-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid #e8e8e8; border-radius: 4px; cursor: pointer; transition: all .15s; }
+  .radio-item:hover { border-color: #91d5ff; background: #f0f7ff; }
+  .radio-item input { margin-top: 3px; cursor: pointer; }
+  .radio-item.checked { border-color: #1890ff; background: #e6f7ff; }
+  .radio-name { font-size: 13px; color: #303133; font-weight: 500; }
+  .radio-desc { font-size: 11px; color: #909399; margin-top: 2px; }
+  .modal-footer { padding: 12px 16px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="breadcrumb">
+    <span>⚡</span>
+    <span>IoT 监控平台</span>
+    <span class="sep">/</span>
+    <span>发电管理</span>
+    <span class="sep">/</span>
+    <span class="current" id="bcTitle">电站日发电明细</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="topbar-meta">
+    <span><span class="live-dot"></span>实时数据已连接</span>
+    <span>最后同步：<span id="syncTime">14:28:42</span></span>
+  </div>
+  <button class="icon-btn" title="刷新" onclick="refreshData()">↻</button>
+  <button class="icon-btn" title="打印" onclick="window.print()">⎙</button>
+</div>
+
+<div class="tabbar">
+  <div class="tabs">
+    <button class="tab active" data-tab="daily" onclick="switchTab('daily')">日报 <span class="badge">按日</span></button>
+    <button class="tab" data-tab="monthly" onclick="switchTab('monthly')">月报 <span class="badge">按月</span></button>
+  </div>
+  <div class="filter-group">
+    <label>起：</label>
+    <input type="date" class="date-input" id="startDateInput" onchange="onDateRangeChange()">
+    <span class="sep">至</span>
+    <label>止：</label>
+    <input type="date" class="date-input" id="endDateInput" onchange="onDateRangeChange()">
+  </div>
+  <div class="quick-btns" id="quickBtns"></div>
+  <div class="spacer"></div>
+  <div class="ds-display">
+    <span class="ds-label">电量数据来源：<b id="dsText">电表</b></span>
+    <button class="ds-settings" onclick="openDataSourceModal()" title="设置电量数据来源">⚙</button>
+  </div>
+  <div class="tabbar-actions">
+    <button class="btn" onclick="resetAll()">↺ 重置</button>
+    <button class="btn primary" onclick="doQuery()">🔍 查询</button>
+    <button class="btn" onclick="exportData()">⤓ 导出</button>
+  </div>
+</div>
+
+<div class="detail-page">
+  <div class="scope-row-bar">
+    <span class="item">📊 范围：<span id="scopeCrumbs"></span></span>
+    <span class="item">· <b id="scopeDateLabel"></b></span>
+    <span class="item"><span id="scopeAccumLabel">电表累计</span> <b id="scopeAccum">0 kWh</b></span>
+    <span class="item">沃达确认 <b id="scopeVoda">0 kWh</b></span>
+    <span class="item">油田确认 <b id="scopeYou">0 kWh</b></span>
+  </div>
+
+  <div class="table-wrap" id="tableWrap">
+    <table class="data" id="dataTable">
+      <colgroup id="colgroup"></colgroup>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="table-footer">
+    <span class="stat" id="pageInfo"></span>
+    <div class="spacer"></div>
+    <div id="pagination"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⚙ 设置电量数据来源</span>
+      <button class="modal-close" onclick="closeDataSourceModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc">选择电量数据来源。切换后，页面中所有相关文字（含表头、提示、汇总条等）会自动同步替换。</div>
+      <div class="radio-list">
+        <label class="radio-item" onclick="selectDataSource('电表')">
+          <input type="radio" name="ds" value="电表" checked>
+          <div>
+            <div class="radio-name">电表</div>
+            <div class="radio-desc">电表直接采集的读数数据</div>
+          </div>
+        </label>
+        <label class="radio-item" onclick="selectDataSource('控制器')">
+          <input type="radio" name="ds" value="控制器">
+          <div>
+            <div class="radio-name">控制器</div>
+            <div class="radio-desc">由控制器计算汇总的电量数据</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeDataSourceModal()">取消</button>
+      <button class="btn primary" onclick="saveDataSource()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ Mock 数据 ============
+const teamsConfig = {
+  '50123': { org: '沃达动力', grp: '乌审旗项目组', skids: [
+    { id: 'SK-VD000001', station: 'VD000001', power: 50123, machines: 1, baseGen: 2800 },
+    { id: 'SK-VD000002', station: 'VD000002', power: 50123, machines: 1, baseGen: 2780 },
+    { id: 'SK-VD000003', station: 'VD000003', power: 50123, machines: 1, baseGen: 2700 }
+  ]},
+  '50124': { org: '沃达动力', grp: '乌审旗项目组', skids: [
+    { id: 'SK-VD000004', station: 'VD000004', power: 60000, machines: 2, baseGen: 3200 },
+    { id: 'SK-VD000005', station: 'VD000005', power: 60000, machines: 2, baseGen: 3150 }
+  ]},
+  '701236': { org: '沃达动力', grp: '庆阳项目组', skids: [
+    { id: 'SK-VD000006', station: 'VD000006', power: 70123, machines: 1, baseGen: 3900 },
+    { id: 'SK-VD000007', station: 'VD000007', power: 70123, machines: 1, baseGen: 3850 },
+    { id: 'SK-VD000008', station: 'VD000008', power: 70123, machines: 1, baseGen: 3950 }
+  ]},
+  '701237': { org: '沃达动力', grp: '庆阳项目组', skids: [
+    { id: 'SK-VD000009', station: 'VD000009', power: 80000, machines: 2, baseGen: 4500 },
+    { id: 'SK-VD000010', station: 'VD000010', power: 80000, machines: 2, baseGen: 4550 }
+  ]},
+  '90001': { org: 'XXX公司', grp: '西部项目组', skids: [
+    { id: 'SK-XXX00001', station: 'XXX00001', power: 100000, machines: 2, baseGen: 4900 },
+    { id: 'SK-XXX00002', station: 'XXX00002', power: 100000, machines: 2, baseGen: 4800 }
+  ]},
+  '90002': { org: 'XXX公司', grp: '北部项目组', skids: [
+    { id: 'SK-XXX00003-A', station: 'XXX00003', power: 60000, machines: 2, baseGen: 2800 },
+    { id: 'SK-XXX00003-B', station: 'XXX00003', power: 60000, machines: 2, baseGen: 2750 }
+  ]},
+  '90003': { org: 'XXX公司', grp: '北部项目组', skids: [
+    { id: 'SK-XXX00004', station: 'XXX00004', power: 80000, machines: 2, baseGen: 3700 }
+  ]}
+};
+
+function seededRandom(seed) {
+  let s = seed;
+  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+}
+function hashSeed(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h) + 1;
+}
+function generateSkidDaily(skid, days = 60) {
+  const rand = seededRandom(hashSeed(skid.id));
+  const data = [];
+  const start = new Date('2026-07-01');
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const startVal = 1200 + i * 8.5 + (hashSeed(skid.id) % 200);
+    const accum = skid.baseGen * (0.93 + rand() * 0.14);
+    const endVal = startVal + accum;
+    const voda = accum * (0.95 + rand() * 0.04);
+    const hasYou = rand() < 0.14;
+    const you = hasYou ? voda * (0.92 + rand() * 0.05) : null;
+    data.push({ date: d.toISOString().slice(0, 10), start: +startVal.toFixed(2), end: +endVal.toFixed(2), accum: +accum.toFixed(2), voda: +voda.toFixed(2), you: you !== null ? +you.toFixed(2) : null });
+  }
+  return data;
+}
+function generateSkidMonthly(skid, months = 12) {
+  const rand = seededRandom(hashSeed(skid.id + '_M'));
+  const data = [];
+  const start = new Date('2025-09-01');
+  for (let i = 0; i < months; i++) {
+    const d = new Date(start);
+    d.setMonth(start.getMonth() + i);
+    const startVal = 1100 + i * 12.5;
+    const accum = skid.baseGen * 28 * (0.95 + rand() * 0.1);
+    const endVal = startVal + accum;
+    const voda = accum * (0.96 + rand() * 0.03);
+    const hasYou = rand() < 0.6;
+    const you = hasYou ? voda * (0.93 + rand() * 0.04) : null;
+    data.push({ month: d.toISOString().slice(0, 7), start: +startVal.toFixed(2), end: +endVal.toFixed(2), accum: +accum.toFixed(2), voda: +voda.toFixed(2), you: you !== null ? +you.toFixed(2) : null });
+  }
+  return data;
+}
+
+const teamsData = {};
+Object.keys(teamsConfig).forEach(t => {
+  teamsData[t] = { config: teamsConfig[t], daily: {}, monthly: {} };
+  teamsConfig[t].skids.forEach(s => {
+    teamsData[t].daily[s.id] = generateSkidDaily(s, 60);
+    teamsData[t].monthly[s.id] = generateSkidMonthly(s, 12);
+  });
+});
+
+// 编辑态：每行每单元格的修改标记
+const rowEdits = {};        // { rk: { modified, lastEditor, lastEditTime } } 仅当 modified=true 才有完整字段
+// 原始值（用于重置）
+const originalValues = {};  // { 'rk|field': originalValue }
+
+// ============ 状态 ============
+const state = {
+  tab: 'daily',
+  team: '50123',
+  startDate: '2026-08-26',
+  endDate: '2026-08-26',
+  quickMode: 'today',
+  dataSource: '电表',
+  page: 1,
+  pageSize: 20
+};
+const quickConfig = {
+  daily:   [{ key: 'today', label: '今日' }, { key: 'yesterday', label: '昨日' }, { key: 'custom', label: '自定义' }],
+  monthly: [{ key: 'thisMonth', label: '本月' }, { key: 'lastMonth', label: '上月' }, { key: 'custom', label: '自定义' }]
+};
+
+// ============ 工具 ============
+function ds(text) {
+  if (!text) return '';
+  return String(text).replace(/电表/g, state.dataSource);
+}
+function randomTag(skidId, key) {
+  return (hashSeed(skidId + '|' + key) % 3) === 0;
+}
+function nowStr() {
+  const d = new Date();
+  return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function dataLatestTime() { return '08-26 12:00'; }  // 数据最新时间（演示用）
+function getEdit(rk, field) { return rowEdits[rk] && rowEdits[rk][field]; }
+function setEdit(rk, field, val, editor) {
+  if (!rowEdits[rk]) rowEdits[rk] = {};
+  rowEdits[rk][field] = val;
+  rowEdits[rk].lastEditor = editor || '张工';
+  rowEdits[rk].lastEditTime = nowStr();
+}
+function clearEdit(rk, field) {
+  if (!rowEdits[rk]) return;
+  delete rowEdits[rk][field];
+  // 如果该行所有编辑都清空了，删除整行
+  const remaining = Object.keys(rowEdits[rk]).filter(k => k !== 'lastEditor' && k !== 'lastEditTime');
+  if (remaining.length === 0) delete rowEdits[rk];
+  else { delete rowEdits[rk].lastEditor; delete rowEdits[rk].lastEditTime; }
+}
+function rowHasEdit(rk) { return rowEdits[rk] && Object.keys(rowEdits[rk]).some(k => k !== 'lastEditor' && k !== 'lastEditTime'); }
+function getRowAudit(rk) {
+  if (rowHasEdit(rk)) {
+    return { editor: rowEdits[rk].lastEditor || '张工', time: rowEdits[rk].lastEditTime || nowStr(), modified: true };
+  }
+  return { editor: '', time: dataLatestTime(), modified: false };
+}
+
+// ============ 渲染：快捷按钮 ============
+function renderQuickBtns() {
+  const wrap = document.getElementById('quickBtns');
+  const cfg = quickConfig[state.tab];
+  wrap.innerHTML = cfg.map(q => {
+    const active = (state.quickMode === q.key) ? 'active' : '';
+    return `<button class="quick-btn ${active}" data-key="${q.key}">${q.label}</button>`;
+  }).join('');
+  wrap.querySelectorAll('.quick-btn').forEach(b => b.addEventListener('click', () => setQuick(b.dataset.key)));
+}
+
+// ============ 渲染：汇总条 ============
+function renderSummary() {
+  const c = teamsConfig[state.team];
+  const dataKey = state.tab === 'daily' ? 'daily' : 'monthly';
+  let totalAccum = 0, totalVoda = 0, totalYou = 0;
+  c.skids.forEach(s => {
+    const list = teamsData[state.team][dataKey][s.id] || [];
+    list.forEach(d => {
+      const key = dataKey === 'daily' ? d.date : d.month;
+      if (key < state.startDate || key > state.endDate) return;
+      totalAccum += d.accum; totalVoda += d.voda; totalYou += (d.you || 0);
+    });
+  });
+  const crumbs = [c.org, c.grp, '电站 ' + state.team].map((p, i, arr) =>
+    `<span class="crumb">${p}</span>${i < arr.length - 1 ? '<span class="crumb-sep">›</span>' : ''}`).join(' ');
+  document.getElementById('scopeCrumbs').innerHTML = crumbs;
+  document.getElementById('scopeDateLabel').textContent = state.startDate + ' ~ ' + state.endDate;
+  document.getElementById('scopeAccumLabel').textContent = ds('电表累计');
+  document.getElementById('scopeAccum').textContent = totalAccum.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' kWh';
+  document.getElementById('scopeVoda').textContent = totalVoda.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' kWh';
+  document.getElementById('scopeYou').textContent = totalYou.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' kWh';
+  document.getElementById('dsText').textContent = state.dataSource;
+}
+
+// ============ 渲染：表格 ============
+function renderTable() {
+  const c = teamsConfig[state.team];
+  const dataKey = state.tab === 'daily' ? 'daily' : 'monthly';
+  const isDaily = state.tab === 'daily';
+
+  const allRows = [];
+  c.skids.forEach(s => {
+    const list = teamsData[state.team][dataKey][s.id] || [];
+    list.forEach(d => {
+      const key = dataKey === 'daily' ? d.date : d.month;
+      if (key < state.startDate || key > state.endDate) return;
+      allRows.push({ skid: s, key, start: d.start, end: d.end, accum: d.accum, voda: d.voda, you: d.you });
+    });
+  });
+  allRows.sort((a, b) => {
+    if (a.skid.id !== b.skid.id) return a.skid.id < b.skid.id ? -1 : 1;
+    return a.key < b.key ? 1 : -1;
+  });
+
+  // 列宽（10 + 2 audit = 12 列）
+  const colgroupHtml = `
+    <col style="width:60px"><col style="width:180px"><col style="width:100px"><col style="width:80px">
+    <col style="width:120px"><col style="width:140px"><col style="width:140px"><col style="width:120px">
+    <col style="width:140px"><col style="width:140px"><col style="width:90px"><col style="width:120px">`;
+  document.getElementById('colgroup').innerHTML = colgroupHtml;
+
+  // 问号文案（机组名称/额定功率 不加问号）
+  const dayOrMonth = isDaily ? '日' : '月';
+  const tipStart = isDaily ? `查询统计${dayOrMonth} 0 点的${ds('电表读数')}，支持修改` : `查询统计${dayOrMonth}初 0 点的${ds('电表读数')}，支持修改`;
+  const tipEnd = isDaily ? '统计日为历史日期，则表示当日24点的最后数据，若为当前日期，则为采集的最后数据' : '统计月为历史月份，则表示当月最后一天24点的最后数据，若为当前月份，则为采集的最后数据';
+  const tipAccum = isDaily ? '自动计算：统计日最新 - 统计日开始' : '自动计算：本月末 - 本月初';
+  const tipVoda = isDaily ? '手动填写，沃达方最终确认的日发电量' : '手动填写，沃达方最终确认的月发电量';
+  const tipYou  = isDaily ? '手动填写，油田方最终确认的日发电量' : '手动填写，油田方最终确认的月发电量';
+  const tipDate = isDaily ? '数据所属日期' : '数据所属月份';
+  const tipBoxCount = '撬装箱内包含的机组数';
+  const tipEditor = '人工编辑：鼠标移入点击 ✎ 编辑；保存后变蓝；可点击 ↺ 重置';
+  const tipEditorOnly = '人工编辑：鼠标移入点击 ✎ 编辑；保存后变蓝';
+  const tipAuditEditor = '最后人工修改人';
+  const tipAuditTime = '数据最新采集时间；人工编辑后显示最后修改时间';
+
+  const h = tip => `<span class="help" title="${tip}">?</span>`;
+
+  const theadHtml = `
+    <tr class="group-header">
+      <th colspan="4">基础信息</th>
+      <th colspan="1">${isDaily ? '日期' : '月份'}</th>
+      <th colspan="3">${ds('电表数据')}</th>
+      <th colspan="2">确认数据</th>
+      <th colspan="2">审计</th>
+    </tr>
+    <tr class="col-header">
+      <th>序号</th>
+      <th>机组名称</th>
+      <th>额定功率 (kW)</th>
+      <th>箱内机组数量${h(tipBoxCount)}</th>
+      <th>${isDaily ? '统计日期' : '统计月份'}${h(tipDate)}</th>
+      <th>${isDaily ? '统计日开始电能' : '统计月开始电能'}${h(tipStart)}</th>
+      <th>${isDaily ? '统计日结束电能' : '统计月结束电能'}${h(tipEnd)}</th>
+      <th>${isDaily ? '统计日累计' : '统计月累计'}${h(tipAccum)}</th>
+      <th>沃达确认${h(tipVoda)}</th>
+      <th>油田确认${h(tipYou)}</th>
+      <th>更新人${h(tipAuditEditor)}</th>
+      <th>更新时间${h(tipAuditTime)}</th>
+    </tr>
+  `;
+  document.getElementById('thead').innerHTML = theadHtml;
+
+  // 分页
+  const totalRows = allRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+  if (state.page > totalPages) state.page = totalPages;
+  const startIdx = (state.page - 1) * state.pageSize;
+  const pageRows = allRows.slice(startIdx, startIdx + state.pageSize);
+
+  // 表体
+  let tbodyHtml = '';
+  pageRows.forEach((r, i) => {
+    const idx = startIdx + i + 1;
+    const showTag = randomTag(r.skid.id, r.key);
+    const youVal = r.you === null ? '' : r.you.toFixed(2);
+    const rk = r.skid.id + '__' + r.key;
+    const audit = getRowAudit(rk);
+
+    // 渲染可编辑单元格
+    const editCell = (field, value, opts = {}) => {
+      const isModified = !!getEdit(rk, field);
+      const valStr = (value === null || value === undefined) ? '' : (typeof value === 'number' ? value.toFixed(2) : value);
+      const resettable = opts.resettable ? 'true' : 'false';
+      return `<td class="cell-editable ${isModified ? 'modified' : ''}" data-rk="${rk}" data-field="${field}" data-resettable="${resettable}" data-original="${opts.original !== undefined ? opts.original : ''}">
+        <div class="cell-display">
+          <span class="cell-value">${valStr || '—'}</span>
+          <span class="cell-actions">
+            <span class="cell-act reset" title="重置为原值" onclick="showResetPopup(this, event)">↺</span>
+            <span class="cell-act edit" title="编辑" onclick="startEdit(this)">✎</span>
+          </span>
+        </div>
+        <div class="cell-editor">
+          <input type="text" value="${valStr}" onkeydown="if(event.key==='Enter')saveEdit(this);if(event.key==='Escape')cancelEdit(this)">
+          <button class="cell-btn save" onclick="saveEdit(this)">保存</button>
+          <button class="cell-btn cancel" onclick="cancelEdit(this)">取消</button>
+        </div>
+      </td>`;
+    };
+
+    tbodyHtml += `<tr>
+      <td>${idx}</td>
+      <td><div class="skid-name-cell">${r.skid.id}${showTag ? '<span class="skid-tag">撬装箱</span>' : ''}</div></td>
+      <td>${r.skid.power}</td>
+      <td>${r.skid.machines}</td>
+      <td>${r.key}</td>
+      ${editCell('start', r.start, { resettable: true, original: r.start })}
+      ${editCell('end', r.end, { resettable: true, original: r.end })}
+      <td class="num">${r.accum.toFixed(2)}</td>
+      ${editCell('voda', r.voda, { resettable: false })}
+      <td class="cell-editable" data-rk="${rk}" data-field="you" data-resettable="false">
+        <div class="cell-display">
+          <span class="cell-value">${youVal || '—'}</span>
+          <span class="cell-actions">
+            <span class="cell-act edit" title="编辑" onclick="startEdit(this)">✎</span>
+          </span>
+        </div>
+        <div class="cell-editor">
+          <input type="text" value="${youVal}" placeholder="—" onkeydown="if(event.key==='Enter')saveEdit(this);if(event.key==='Escape')cancelEdit(this)">
+          <button class="cell-btn save" onclick="saveEdit(this)">保存</button>
+          <button class="cell-btn cancel" onclick="cancelEdit(this)">取消</button>
+        </div>
+      </td>
+      <td>${audit.editor || '—'}</td>
+      <td>${audit.time}</td>
+    </tr>`;
+  });
+  if (pageRows.length === 0) {
+    tbodyHtml = `<tr><td colspan="12" style="padding:40px;color:#c0c4cc">当前周期内暂无数据</td></tr>`;
+  }
+  document.getElementById('tbody').innerHTML = tbodyHtml;
+
+  // 关闭可能存在的重置弹窗
+  document.querySelectorAll('.reset-popup').forEach(p => p.remove());
+
+  document.getElementById('pageInfo').textContent = totalRows === 0
+    ? '暂无数据'
+    : `第 ${startIdx + 1}-${Math.min(startIdx + state.pageSize, totalRows)} 条 / 共 ${totalRows} 条`;
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const wrap = document.getElementById('pagination');
+  if (totalPages <= 1) { wrap.innerHTML = ''; return; }
+  let html = '';
+  html += `<button class="page-btn" onclick="goPage(1)" ${state.page===1?'disabled':''}>«</button>`;
+  html += `<button class="page-btn" onclick="goPage(${state.page-1})" ${state.page===1?'disabled':''}>‹</button>`;
+  const startP = Math.max(1, state.page - 2);
+  const endP = Math.min(totalPages, startP + 4);
+  for (let p = startP; p <= endP; p++) html += `<button class="page-btn ${p===state.page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  html += `<button class="page-btn" onclick="goPage(${state.page+1})" ${state.page===totalPages?'disabled':''}>›</button>`;
+  html += `<button class="page-btn" onclick="goPage(${totalPages})" ${state.page===totalPages?'disabled':''}>»</button>`;
+  wrap.innerHTML = html;
+}
+function goPage(p) {
+  if (p < 1) return;
+  const totalRows = computeTotalRows();
+  const totalPages = Math.max(1, Math.ceil(totalRows / state.pageSize));
+  if (p > totalPages) return;
+  state.page = p;
+  renderTable();
+}
+function computeTotalRows() {
+  const c = teamsConfig[state.team];
+  const dataKey = state.tab === 'daily' ? 'daily' : 'monthly';
+  let n = 0;
+  c.skids.forEach(s => {
+    n += (teamsData[state.team][dataKey][s.id] || []).filter(d => {
+      const key = dataKey === 'daily' ? d.date : d.month;
+      return key >= state.startDate && key <= state.endDate;
+    }).length;
+  });
+  return n;
+}
+
+// ============ 单元格编辑 ============
+function startEdit(span) {
+  const td = span.closest('td');
+  td.classList.add('editing');
+  const input = td.querySelector('.cell-editor input');
+  input.focus(); input.select();
+}
+function cancelEdit(btn) {
+  const td = btn.closest('td');
+  td.classList.remove('editing');
+}
+function saveEdit(btn) {
+  const td = btn.closest('td');
+  const rk = td.dataset.rk;
+  const field = td.dataset.field;
+  const input = td.querySelector('.cell-editor input');
+  const newVal = input.value.trim();
+  const newNum = parseFloat(newVal);
+
+  // 更新数据
+  const c = teamsConfig[state.team];
+  const dataKey = state.tab === 'daily' ? 'daily' : 'monthly';
+  const [skidId, key] = rk.split('__');
+  const skid = c.skids.find(x => x.id === skidId);
+  const dataItem = teamsData[state.team][dataKey][skidId].find(d => (dataKey === 'daily' ? d.date : d.month) === key);
+  if (!dataItem) { td.classList.remove('editing'); return; }
+
+  // 校验
+  if (newVal === '' && field === 'you') {
+    dataItem.you = null;
+  } else if (isNaN(newNum)) {
+    alert('请输入有效的数字');
+    return;
+  } else {
+    dataItem[field] = newNum;
+  }
+  // 首次编辑时记录原始值（用于"重置"）— 保存 dataItem 当前值（编辑前）
+  const origKey = rk + '|' + field;
+  if (originalValues[origKey] === undefined) {
+    originalValues[origKey] = dataItem[field];
+  }
+  // 标记编辑
+  setEdit(rk, field, dataItem[field]);
+  // 关闭编辑态并刷新整表
+  td.classList.remove('editing');
+  renderAll();
+}
+
+function showResetPopup(span, ev) {
+  ev.stopPropagation();
+  // 关闭其他已打开的弹窗
+  document.querySelectorAll('.reset-popup').forEach(p => p.remove());
+  const td = span.closest('td');
+  const rk = td.dataset.rk;
+  const field = td.dataset.field;
+  const popup = document.createElement('div');
+  popup.className = 'reset-popup';
+  popup.innerHTML = `
+    <p>确认将数据重置为人工修改之前的数据吗？</p>
+    <div class="popup-actions">
+      <button class="cell-btn confirm" onclick="confirmReset('${rk}','${field}')">确认重置</button>
+      <button class="cell-btn cancel" onclick="cancelReset()">取消</button>
+    </div>
+  `;
+  td.style.position = 'relative';
+  td.appendChild(popup);
+  // 点击其他位置关闭
+  setTimeout(() => {
+    document.addEventListener('click', closeResetOnOutside, { once: true });
+  }, 0);
+}
+function closeResetOnOutside(e) {
+  const popup = document.querySelector('.reset-popup');
+  if (popup && !popup.contains(e.target)) popup.remove();
+}
+function cancelReset() {
+  document.querySelectorAll('.reset-popup').forEach(p => p.remove());
+}
+function confirmReset(rk, field) {
+  const c = teamsConfig[state.team];
+  const dataKey = state.tab === 'daily' ? 'daily' : 'monthly';
+  const [skidId, key] = rk.split('__');
+  const dataItem = teamsData[state.team][dataKey][skidId].find(d => (dataKey === 'daily' ? d.date : d.month) === key);
+  // 还原原始值
+  const origKey = rk + '|' + field;
+  if (originalValues[origKey] !== undefined) {
+    dataItem[field] = originalValues[origKey];
+  }
+  clearEdit(rk, field);
+  cancelReset();
+  renderAll();
+}
+
+// ============ 事件 ============
+function switchTab(tab) {
+  state.tab = tab;
+  state.quickMode = quickConfig[tab][0].key;
+  state.page = 1;
+  // 重新计算默认日期
+  const today = new Date('2026-08-26');
+  if (tab === 'daily') {
+    state.startDate = today.toISOString().slice(0, 10);
+    state.endDate = state.startDate;
+  } else {
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    state.startDate = firstDay.toISOString().slice(0, 7);
+    state.endDate = today.toISOString().slice(0, 7);
+  }
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('bcTitle').textContent = '电站' + (tab === 'daily' ? '日' : '月') + '发电明细';
+  const sIn = document.getElementById('startDateInput');
+  const eIn = document.getElementById('endDateInput');
+  sIn.type = eIn.type = (tab === 'daily' ? 'date' : 'month');
+  sIn.value = state.startDate; eIn.value = state.endDate;
+  // 清空编辑态
+  Object.keys(rowEdits).forEach(k => delete rowEdits[k]);
+  Object.keys(originalValues).forEach(k => delete originalValues[k]);
+  renderQuickBtns();
+  renderAll();
+}
+function onDateRangeChange() {
+  state.startDate = document.getElementById('startDateInput').value;
+  state.endDate = document.getElementById('endDateInput').value;
+  state.quickMode = 'custom';
+  state.page = 1;
+  document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.quick-btn').forEach(b => { if (b.dataset.key === 'custom') b.classList.add('active'); });
+  renderAll();
+}
+function setQuick(mode) {
+  state.quickMode = mode;
+  renderQuickBtns();
+  const today = new Date('2026-08-26');
+  const sIn = document.getElementById('startDateInput');
+  const eIn = document.getElementById('endDateInput');
+  if (state.tab === 'daily') {
+    if (mode === 'today') {
+      state.startDate = today.toISOString().slice(0, 10);
+      state.endDate = state.startDate;
+    } else if (mode === 'yesterday') {
+      const y = new Date(today); y.setDate(today.getDate() - 1);
+      state.startDate = y.toISOString().slice(0, 10);
+      state.endDate = state.startDate;
+    } else if (mode === 'custom') {
+      state.page = 1; renderAll(); return;
+    }
+  } else {
+    if (mode === 'thisMonth') {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      state.startDate = first.toISOString().slice(0, 7);
+      state.endDate = today.toISOString().slice(0, 7);
+    } else if (mode === 'lastMonth') {
+      const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const last = new Date(today.getFullYear(), today.getMonth(), 0);
+      state.startDate = first.toISOString().slice(0, 7);
+      state.endDate = last.toISOString().slice(0, 7);
+    } else if (mode === 'custom') {
+      state.page = 1; renderAll(); return;
+    }
+  }
+  sIn.value = state.startDate; eIn.value = state.endDate;
+  state.page = 1;
+  renderAll();
+}
+function doQuery() { state.page = 1; renderAll(); }
+function resetAll() {
+  state.team = '50123';
+  state.quickMode = state.tab === 'daily' ? 'today' : 'thisMonth';
+  if (state.tab === 'daily') {
+    state.startDate = '2026-08-26'; state.endDate = '2026-08-26';
+  } else {
+    state.startDate = '2026-08'; state.endDate = '2026-08';
+  }
+  state.page = 1;
+  Object.keys(rowEdits).forEach(k => delete rowEdits[k]);
+  Object.keys(originalValues).forEach(k => delete originalValues[k]);
+  const sIn = document.getElementById('startDateInput');
+  const eIn = document.getElementById('endDateInput');
+  sIn.type = eIn.type = (state.tab === 'daily' ? 'date' : 'month');
+  sIn.value = state.startDate; eIn.value = state.endDate;
+  renderQuickBtns();
+  renderAll();
+}
+function refreshData() {
+  const meta = document.querySelector('.topbar-meta');
+  const old = meta.innerHTML;
+  meta.innerHTML = `<span style="color:#52c41a">✓ 数据已刷新 · ${new Date().toLocaleTimeString('zh-CN')}</span>`;
+  renderAll();
+  setTimeout(() => { meta.innerHTML = old; }, 1800);
+}
+function exportData() {
+  alert(`导出电站 ${state.team} ${state.tab === 'daily' ? '日报' : '月报'} 数据（演示）\n周期：${state.startDate} ~ ${state.endDate}\n数据来源：${state.dataSource}\n实际场景调用后端 /api/report/well-export`);
+}
+
+// ============ 数据源模态框 ============
+function openDataSourceModal() {
+  document.getElementById('dsModal').classList.add('show');
+  document.querySelectorAll('input[name="ds"]').forEach(r => {
+    r.checked = (r.value === state.dataSource);
+    r.parentElement.classList.toggle('checked', r.checked);
+  });
+}
+function closeDataSourceModal() { document.getElementById('dsModal').classList.remove('show'); }
+function selectDataSource(value) {
+  document.querySelectorAll('input[name="ds"]').forEach(r => {
+    r.checked = (r.value === value);
+    r.parentElement.classList.toggle('checked', r.checked);
+  });
+}
+function saveDataSource() {
+  const selected = document.querySelector('input[name="ds"]:checked');
+  if (selected) { state.dataSource = selected.value; renderAll(); }
+  closeDataSourceModal();
+}
+document.getElementById('dsModal').addEventListener('click', e => {
+  if (e.target.id === 'dsModal') closeDataSourceModal();
+});
+
+function renderAll() {
+  renderSummary();
+  renderTable();
+}
+
+// ============ 初始化 ============
+// 初始化时为可重置字段（start/end）保存原始值快照
+(function initOriginals() {
+  // 在第一次渲染前：原始值就是数据本身，无需额外保存
+  // 仅当用户编辑时才记录 original（见 saveEdit）
+  // 但为防止编辑后又重置再编辑导致的"原始值丢失"，我们在 saveEdit 时再保存
+  // （如果 originalValues 已有，就不再覆盖）
+})();
+renderQuickBtns();
+// 初始默认：日报 → 今日
+(function initDate() {
+  const today = new Date('2026-08-26');
+  if (state.tab === 'daily') {
+    state.startDate = today.toISOString().slice(0, 10);
+    state.endDate = state.startDate;
+  } else {
+    const first = new Date(today.getFullYear(), today.getMonth(), 1);
+    state.startDate = first.toISOString().slice(0, 7);
+    state.endDate = today.toISOString().slice(0, 7);
+  }
+  const sIn = document.getElementById('startDateInput');
+  const eIn = document.getElementById('endDateInput');
+  sIn.type = eIn.type = (state.tab === 'daily' ? 'date' : 'month');
+  sIn.value = state.startDate; eIn.value = state.endDate;
+})();
+renderAll();
+</script>
+
+</body>
+</html>

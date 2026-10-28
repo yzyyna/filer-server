@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8fafc">
+<title>Fortrust 静态资源中心</title>
+<meta name="description" content="Fortrust 产品原型、H5 页面、设计稿、需求文档与附件统一入口">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><circle cx='12' cy='12' r='10'/></svg>">
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --green: #059669;
+  --green-light: #ecfdf5;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --danger: #ef4444;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  color:var(--text-main);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  line-height:1.5;
+}
+.container{
+  width:min(1160px,calc(100% - 36px));
+  margin:0 auto;
+}
+
+/* App Header & Layout */
+.hero{
+  padding:44px 0 20px;
+}
+.header-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--primary);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background:var(--primary-light);
+  padding:4px 12px;
+  border-radius:20px;
+}
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--primary);
+}
+.logout-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  background:none;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:4px 10px;
+  font-size:12px;
+  color:var(--text-muted);
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.logout-btn:hover{
+  border-color:var(--danger);
+  color:var(--danger);
+  background:#fef2f2;
+}
+h1{
+  font-size:34px;
+  font-weight:800;
+  line-height:1.2;
+  margin:14px 0 8px;
+  color:var(--text-main);
+  letter-spacing:-.02em;
+}
+.sub{
+  margin:0;
+  color:var(--text-muted);
+  font-size:14px;
+}
+.toolbar{
+  margin:24px 0 20px;
+  display:flex;
+  gap:12px;
+}
+.search-box{
+  flex:1;
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.search{
+  width:100%;
+  padding:12px 40px 12px 16px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:#fff;
+  outline:0;
+  font-size:14px;
+  color:var(--text-main);
+  transition:all .15s ease;
+}
+.search:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(37,99,235,.15);
+}
+.search-clear{
+  position:absolute;
+  right:12px;
+  background:none;
+  border:none;
+  color:#94a3b8;
+  font-size:14px;
+  cursor:pointer;
+  display:none;
+  padding:4px;
+  border-radius:50%;
+}
+.search-clear:hover{
+  color:#475569;
+}
+.count{
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text-muted);
+  font-size:13px;
+  font-weight:500;
+  white-space:nowrap;
+}
+.btn-tool{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:0 16px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text-muted);
+  font-size:13px;
+  font-weight:500;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all .15s ease;
+}
+.btn-tool:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+#backTop{
+  position:fixed;
+  right:24px;
+  bottom:28px;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:#fff;
+  color:#475569;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.1);
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(12px);
+  transition:all .2s ease;
+  z-index:900;
+}
+#backTop.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
+#backTop:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.main-content{
+  flex:1;
+  padding-bottom:60px;
+}
+.tree{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.card{
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  transition:border-color .15s, box-shadow .15s;
+}
+.card:hover{
+  border-color:var(--border-hover);
+  box-shadow:0 4px 12px rgba(0,0,0,.03);
+}
+.folder-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px;
+  background:#f8fafc;
+  border-bottom:1px solid #f1f5f9;
+  gap:12px;
+  cursor:pointer;
+  user-select:none;
+}
+.card.collapsed .folder-header{
+  border-bottom-color:transparent;
+}
+.chevron{
+  font-size:11px;
+  color:#94a3b8;
+  transition:transform .18s ease;
+  flex-shrink:0;
+}
+.card.collapsed .chevron{
+  transform:rotate(-90deg);
+}
+.card.collapsed .file-list,
+.card.collapsed .children-section{
+  display:none;
+}
+.folder-title-area{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  flex:1;
+}
+.folder-icon{
+  font-size:18px;
+  line-height:1;
+}
+.folder-name{
+  font-size:15px;
+  font-weight:700;
+  color:var(--text-main);
+  overflow-wrap:anywhere;
+}
+.badge{
+  font-size:11px;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:12px;
+  background:#e2e8f0;
+  color:#475569;
+  white-space:nowrap;
+}
+.file-list{
+  padding:6px 0;
+  display:flex;
+  flex-direction:column;
+}
+.file-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 18px;
+  gap:12px;
+  transition:background-color .12s;
+  color:inherit;
+  border-bottom:1px solid #f8fafc;
+}
+.file-item:last-child{
+  border-bottom:none;
+}
+.file-item:hover{
+  background:#f8fafc;
+}
+.file-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  flex:1;
+}
+.file-icon{
+  font-size:16px;
+}
+.file-name{
+  font-size:14px;
+  font-weight:600;
+  color:#334155;
+  overflow-wrap:anywhere;
+}
+.file-meta-group{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+}
+.file-tag{
+  font-size:11px;
+  color:#64748b;
+  background:#f1f5f9;
+  padding:2px 6px;
+  border-radius:4px;
+  white-space:nowrap;
+}
+.file-size{
+  font-size:11px;
+  color:#94a3b8;
+  white-space:nowrap;
+}
+.action-group{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+.btn-copy{
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:#fff;
+  color:#64748b;
+  font-size:12px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .15s ease;
+  white-space:nowrap;
+}
+.btn-copy:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.btn-action{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:6px 14px;
+  border-radius:6px;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+  white-space:nowrap;
+  transition:all .15s ease;
+  cursor:pointer;
+  border:none;
+}
+/* 打开（HTML，新标签页） */
+.btn-open{
+  background:var(--primary-light);
+  color:var(--primary);
+}
+.btn-open:hover{
+  background:var(--primary);
+  color:#fff;
+}
+/* 弹窗预览 (PDF, 图片, 视频等) */
+.btn-preview{
+  background:var(--green-light);
+  color:var(--green);
+}
+.btn-preview:hover{
+  background:var(--green);
+  color:#fff;
+}
+/* 下载（Office、压缩包等，浏览器无法直接预览） */
+.btn-download{
+  background:var(--amber-light);
+  color:var(--amber);
+}
+.btn-download:hover{
+  background:var(--amber);
+  color:#fff;
+}
+.children-section{
+  padding:12px 18px 16px;
+  background:#fbfcfe;
+  border-top:1px dashed var(--border);
+}
+.empty,.loading{
+  padding:36px;
+  text-align:center;
+  color:#94a3b8;
+  background:#fff;
+  border:1px dashed #cbd5e1;
+  border-radius:12px;
+  font-size:14px;
+}
+
+/* Modal Preview Component */
+.modal-overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(15, 23, 42, 0.7);
+  backdrop-filter:blur(6px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:20px;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.modal-overlay.active{
+  display:flex;
+  opacity:1;
+}
+.modal-box{
+  background:#ffffff;
+  border-radius:14px;
+  width:min(1080px, 94vw);
+  height:min(860px, 88vh);
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  overflow:hidden;
+  animation:modalScale .2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:width .2s ease, height .2s ease, border-radius .2s ease;
+}
+/* 弹窗全屏模式 */
+.modal-overlay.fullscreen{
+  padding:0;
+}
+.modal-overlay.fullscreen .modal-box{
+  width:100vw;
+  height:100vh;
+  max-width:none;
+  max-height:none;
+  border-radius:0;
+}
+@keyframes modalScale {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  background:#f8fafc;
+  gap:12px;
+}
+.modal-title-area{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.modal-title{
+  font-size:15px;
+  font-weight:700;
+  color:#0f172a;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.modal-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+.modal-btn{
+  padding:6px 12px;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:600;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  border:1px solid var(--border);
+  background:#ffffff;
+  color:#475569;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.modal-btn:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.modal-close{
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  border:none;
+  background:none;
+  color:#64748b;
+  font-size:18px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.modal-close:hover{
+  background:#e2e8f0;
+  color:#0f172a;
+}
+.modal-fullscreen{
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:6px;
+  border:none;
+  background:none;
+  color:#64748b;
+  font-size:15px;
+  cursor:pointer;
+  transition:background .15s;
+}
+.modal-fullscreen:hover{
+  background:#e2e8f0;
+  color:#0f172a;
+}
+.modal-body{
+  flex:1;
+  background:#f1f5f9;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.modal-body iframe{
+  width:100%;
+  height:100%;
+  border:none;
+}
+.modal-body img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  padding:16px;
+}
+.modal-body video{
+  max-width:100%;
+  max-height:100%;
+  border-radius:8px;
+  outline:none;
+}
+.modal-body pre{
+  width:100%;
+  height:100%;
+  overflow:auto;
+  margin:0;
+  padding:20px;
+  background:#0f172a;
+  color:#f8fafc;
+  font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+  font-size:13px;
+  line-height:1.6;
+  white-space:pre-wrap;
+  word-break:break-all;
+}
+/* Document rich preview container (Word / Excel / Markdown) */
+.doc-preview{
+  width:100%;
+  height:100%;
+  overflow:auto;
+  background:#ffffff;
+  padding:28px 32px;
+}
+.doc-preview-word{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",serif;
+  color:#1f2937;
+  font-size:15px;
+  line-height:1.8;
+}
+.doc-preview-word h1,.doc-preview-word h2,.doc-preview-word h3{color:#0f172a;margin:1.2em 0 .5em;}
+.doc-preview-word table,.doc-preview-xlsx table{
+  border-collapse:collapse;
+  margin:12px 0;
+  width:auto;
+}
+.doc-preview-word td,.doc-preview-word th,
+.doc-preview-xlsx td,.doc-preview-xlsx th{
+  border:1px solid #cbd5e1;
+  padding:6px 12px;
+  font-size:13px;
+  min-width:64px;
+  white-space:nowrap;
+}
+.doc-preview-word img{max-width:100%;}
+.doc-preview-xlsx table{max-width:100%;}
+.doc-preview-xlsx td.title-cell{font-weight:700;background:#f1f5f9;}
+/* Excel sheet tabs */
+.xlsx-tab{
+  padding:6px 14px;
+  border:1px solid #e2e8f0;
+  border-radius:6px;
+  background:#ffffff;
+  color:#475569;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all .15s ease;
+}
+.xlsx-tab:hover{border-color:#93c5fd;color:#2563eb;}
+.xlsx-tab.active{background:#2563eb;border-color:#2563eb;color:#ffffff;}
+.xlsx-pane{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;display:none;}
+.xlsx-pane.active{display:block;}
+/* Markdown preview */
+.doc-preview-md{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:#1f2937;
+  font-size:15px;
+  line-height:1.75;
+  max-width:860px;
+  margin:0 auto;
+}
+.doc-preview-md h1,.doc-preview-md h2,.doc-preview-md h3,.doc-preview-md h4{color:#0f172a;margin:1.4em 0 .5em;line-height:1.3;}
+.doc-preview-md h1{font-size:26px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;}
+.doc-preview-md h2{font-size:21px;border-bottom:1px solid #eef2f7;padding-bottom:6px;}
+.doc-preview-md h3{font-size:17px;}
+.doc-preview-md p{margin:.7em 0;}
+.doc-preview-md a{color:#2563eb;}
+.doc-preview-md code{
+  background:#f1f5f9;
+  border:1px solid #e2e8f0;
+  padding:1px 6px;
+  border-radius:4px;
+  font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;
+  font-size:13px;
+  color:#dc2626;
+}
+.doc-preview-md pre{
+  background:#0f172a;
+  color:#f8fafc;
+  padding:14px 16px;
+  border-radius:8px;
+  overflow:auto;
+  margin:.8em 0;
+}
+.doc-preview-md pre code{background:none;border:none;color:inherit;padding:0;}
+.doc-preview-md blockquote{
+  margin:.8em 0;
+  padding:8px 16px;
+  border-left:4px solid #93c5fd;
+  background:#eff6ff;
+  color:#334155;
+  border-radius:0 6px 6px 0;
+}
+.doc-preview-md ul,.doc-preview-md ol{padding-left:1.6em;margin:.5em 0;}
+.doc-preview-md li{margin:.25em 0;}
+.doc-preview-md table{border-collapse:collapse;margin:.9em 0;}
+.doc-preview-md th,.doc-preview-md td{border:1px solid #cbd5e1;padding:6px 12px;font-size:13px;}
+.doc-preview-md th{background:#f1f5f9;font-weight:700;}
+.doc-preview-md img{max-width:100%;}
+.doc-preview-md hr{border:none;border-top:1px solid #e2e8f0;margin:1.5em 0;}
+/* Preview loading / error states */
+.preview-status{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  height:100%;
+  color:#64748b;
+  font-size:14px;
+}
+.preview-status .spinner{
+  width:28px;
+  height:28px;
+  border:3px solid #e2e8f0;
+  border-top-color:#2563eb;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast Notification */
+.toast{
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%) translateY(100px);
+  background:#1e293b;
+  color:#fff;
+  padding:10px 20px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:500;
+  box-shadow:0 10px 25px rgba(0,0,0,.2);
+  transition:transform .2s cubic-bezier(0.16, 1, 0.3, 1), opacity .2s;
+  opacity:0;
+  z-index:10000;
+  pointer-events:none;
+}
+.toast.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
+footer{
+  border-top:1px solid var(--border);
+  padding:20px 0;
+  color:#94a3b8;
+  font-size:12px;
+  text-align:center;
+  background:#fff;
+}
+@media(max-width:650px){
+  .hero{padding-top:28px}
+  h1{font-size:26px}
+  .toolbar{flex-direction:column}
+  .count{height:38px;justify-content:center}
+  .btn-tool{height:38px;justify-content:center}
+  .folder-header{padding:12px 14px}
+  .file-item{padding:10px 14px;flex-wrap:wrap}
+  .action-group{width:100%;justify-content:flex-end;margin-top:6px}
+  .file-meta-group{display:none}
+  .modal-box{width:98vw;height:92vh}
+  #backTop{right:14px;bottom:18px;width:38px;height:38px}
+}
+</style>
+</head>
+<body>
+
+<!-- Main App Content -->
+<div id="appRoot" style="display:flex; flex-direction:column; min-height:100vh;">
+  <header class="hero">
+    <div class="container">
+      <div class="header-top">
+        <div class="brand"><span class="dot"></span>FORTRUST</div>
+        <a class="logout-btn" href="/fortrust/logout" title="清除登录状态" style="text-decoration:none;">🔒 锁定退出</a>
+      </div>
+      <h1>静态资源中心</h1>
+      <p class="sub">产品原型、H5 页面、设计稿、需求文档与附件统一入口 · 由 Cloudflare Pages 自动构建发布</p>
+      <div class="toolbar">
+        <div class="search-box">
+          <input id="search" class="search" placeholder="搜索目录名称或页面文件… (快捷键 /)" autocomplete="off">
+          <button id="searchClear" class="search-clear" title="清空搜索">✕</button>
+        </div>
+        <button id="toggleAll" class="btn-tool" title="收起或展开全部目录">全部收起</button>
+        <div id="count" class="count">加载中…</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      <div id="tree" class="tree"><div class="loading">正在读取项目目录…</div></div>
+    </div>
+  </main>
+
+  <!-- Modal Preview -->
+  <div id="previewModal" class="modal-overlay" onclick="closePreviewOnBackdrop(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <span id="modalIcon" style="font-size: 20px;">📄</span>
+          <span id="modalTitle" class="modal-title">预览文件</span>
+          <span id="modalTag" class="file-tag" style="margin-left: 4px;">PDF</span>
+        </div>
+        <div class="modal-actions">
+          <a id="modalNewTab" class="modal-btn" href="#" target="_blank" rel="noopener noreferrer">打开 ↗</a>
+          <a id="modalDownload" class="modal-btn" href="#" download>下载 ⤓</a>
+          <button id="modalFullscreen" class="modal-fullscreen" onclick="toggleFullscreen()" title="全屏预览 (F)">⛶</button>
+          <button class="modal-close" onclick="closePreview()" title="关闭 (Esc)">✕</button>
+        </div>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <span>Fortrust Static Resource Center · Cloudflare Pages</span>
+      <span id="buildTimeText" style="margin-left: 8px; opacity: 0.8;"></span>
+    </div>
+  </footer>
+</div>
+
+<div id="toast" class="toast">已复制链接</div>
+<button id="backTop" title="返回顶部">↑</button>
+
+<script>
+// ==========================================
+// 说明：访问鉴权已由 Cloudflare Pages Workers（_worker.js）在服务端强制执行，
+// 直链访问同样受保护；此页面仅负责目录渲染与预览交互。
+// ==========================================
+const treeEl = document.getElementById('tree');
+const searchEl = document.getElementById('search');
+const clearBtn = document.getElementById('searchClear');
+const countEl = document.getElementById('count');
+const toastEl = document.getElementById('toast');
+const buildTimeEl = document.getElementById('buildTimeText');
+const toggleAllBtn = document.getElementById('toggleAll');
+const backTopBtn = document.getElementById('backTop');
+
+// Modal Elements
+const modalOverlay = document.getElementById('previewModal');
+const modalIcon = document.getElementById('modalIcon');
+const modalTitle = document.getElementById('modalTitle');
+const modalTag = document.getElementById('modalTag');
+const modalNewTab = document.getElementById('modalNewTab');
+const modalDownload = document.getElementById('modalDownload');
+const modalBody = document.getElementById('modalBody');
+const modalFullscreenBtn = document.getElementById('modalFullscreen');
+
+let data = [];
+let loaded = false;
+
+// 折叠状态集合（按目录路径记录，持久化到 localStorage，刷新后保留）
+const COLLAPSE_KEY = 'fortrust_collapsed_v1';
+let collapsedSet = new Set();
+try {
+  collapsedSet = new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]'));
+} catch(e) {}
+
+function persistCollapsed() {
+  try {
+    localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...collapsedSet]));
+  } catch(e) {}
+}
+
+// 渲染期间的文件注册表：按钮通过 data-fid 引用，避免内联 onclick 注入问题
+let FILE_MAP = {};
+
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 2000);
+}
+
+async function copyUrlFrom(url, kind) {
+  // 只解码 pathname（让中文目录名可读），query 部分保留编码，
+  // 否则文件名含 & 或 # 时会被浏览器误判为参数分隔/fragment，导致链接失效
+  const qi = url.indexOf('?');
+  const pathPart = qi === -1 ? url : url.slice(0, qi);
+  const queryPart = qi === -1 ? '' : url.slice(qi);
+  const readablePath = decodeURI(pathPart) + queryPart;
+  const fullUrl = window.location.origin + readablePath;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(fullUrl);
+    } else {
+      const input = document.createElement('input');
+      input.value = fullUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+    showToast(kind === 'download' ? '已复制下载链接' : '已复制预览链接');
+  } catch (e) {
+    showToast('复制失败，请手动复制');
+  }
+}
+
+function esc(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// 消毒 marked/mammoth 输出：剔除危险标签、on* 事件与 javascript: 协议，防内容注入 XSS
+function sanitizeHtml(dirty) {
+  const blockTags = ['script', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'form', 'base', 'svg', 'math'];
+  let out = String(dirty || '');
+  for (const tag of blockTags) {
+    const pair = new RegExp('<\\s*' + tag + '\\b[^>]*>[\\s\\S]*?<\\s*/\\s*' + tag + '\\s*>', 'gi');
+    const single = new RegExp('<\\s*/?\\s*' + tag + '\\b[^>]*>', 'gi');
+    out = out.replace(pair, '').replace(single, '');
+  }
+  const onAttr = /\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+  const badProto = /(href|src|xlink:href|data)\s*=\s*(?:["']?\s*(?:javascript|vbscript|data:text\/html)[^"'>]*)/gi;
+  return out.replace(onAttr, '').replace(badProto, '$1="#"');
+}
+
+async function openPreview(f) {
+  const extName = (f.ext || '').replace(/^\./, '').toUpperCase() || 'FILE';
+  modalIcon.textContent = f.icon || '📄';
+  modalTitle.textContent = f.title || f.fileName;
+  modalTag.textContent = extName + (f.size ? ` · ${f.size}` : '');
+  // md/docx/xlsx/txt 浏览器原生打不开会触发下载，改经 /_view 查看器渲染；
+  // pdf/图片/音视频/网页浏览器可直接预览，保持直链
+  modalNewTab.href = previewLink(f);
+  modalDownload.href = f.url;
+  modalDownload.setAttribute('download', f.fileName);
+  exitFullscreen(); // 每次新开预览从窗口模式开始，按钮图标复位
+
+  modalBody.innerHTML = '<div class="preview-status"><div class="spinner"></div><div>正在加载预览…</div></div>';
+  modalOverlay.classList.add('active');
+
+  const cat = f.category;
+  if (cat === 'image') {
+    modalBody.innerHTML = `<img src="${esc(f.url)}" alt="${esc(f.title)}">`;
+  } else if (cat === 'pdf') {
+    modalBody.innerHTML = `<iframe src="${esc(f.url)}#toolbar=1" type="application/pdf"></iframe>`;
+  } else if (cat === 'video') {
+    modalBody.innerHTML = `<video src="${esc(f.url)}" controls autoplay playsinline></video>`;
+  } else if (cat === 'audio') {
+    modalBody.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;width:100%;"><audio src="${esc(f.url)}" controls autoplay style="width:min(480px,80%);"></audio></div>`;
+  } else if (cat === 'md') {
+    // Markdown：marked.js 渲染为富文本
+    try {
+      const res = await fetch(f.url);
+      const txt = await res.text();
+      await ensureScript('marked', 'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js');
+      const html = sanitizeHtml(marked.parse(txt, { breaks: true, gfm: true }));
+      modalBody.innerHTML = `<div class="doc-preview doc-preview-md">${html}</div>`;
+    } catch(err) {
+      console.error(err);
+      modalBody.innerHTML = previewErrorHtml(f);
+    }
+  } else if (cat === 'docx') {
+    // Word (.docx)：mammoth.js 转换为 HTML
+    try {
+      await ensureScript('mammoth', 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js');
+      const res = await fetch(f.url);
+      const arrayBuffer = await res.arrayBuffer();
+      const result = await window.mammoth.convertToHtml({ arrayBuffer });
+      const wordHtml = sanitizeHtml(result.value) || '<p style="color:#94a3b8;">此 Word 文档为空</p>';
+      modalBody.innerHTML = `<div class="doc-preview doc-preview-word">${wordHtml}</div>`;
+    } catch(err) {
+      console.error(err);
+      modalBody.innerHTML = previewErrorHtml(f);
+    }
+  } else if (cat === 'xlsx') {
+    // Excel (.xlsx/.xls)：SheetJS 解析为 HTML 表格（多 Sheet 切换）
+    try {
+      await ensureScript('XLSX', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      const res = await fetch(f.url);
+      const arrayBuffer = await res.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      modalBody.innerHTML = renderXlsxSheets(wb);
+    } catch(err) {
+      console.error(err);
+      modalBody.innerHTML = previewErrorHtml(f);
+    }
+  } else if (cat === 'text') {
+    try {
+      const res = await fetch(f.url);
+      const txt = await res.text();
+      modalBody.innerHTML = `<pre>${esc(txt)}</pre>`;
+    } catch(err) {
+      modalBody.innerHTML = previewErrorHtml(f);
+    }
+  } else {
+    modalBody.innerHTML = previewErrorHtml(f);
+  }
+}
+
+// 按需加载外部解析库（只加载一次）
+const loadedScripts = {};
+function ensureScript(globalName, src) {
+  if (window[globalName]) return Promise.resolve();
+  if (loadedScripts[src]) return loadedScripts[src];
+  loadedScripts[src] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => window[globalName] ? resolve() : reject(new Error(globalName + ' 加载失败'));
+    s.onerror = () => reject(new Error('解析库 CDN 加载失败: ' + src));
+    document.head.appendChild(s);
+  });
+  return loadedScripts[src];
+}
+
+function previewErrorHtml(f) {
+  return `<div class="preview-status"><div style="font-size:32px;">😵</div><div>该文件类型暂不支持在线预览</div><a class="btn-action btn-open" href="${previewLink(f)}" target="_blank" rel="noopener noreferrer">打开 ↗</a></div>`;
+}
+
+// Excel 多 Sheet 渲染与切换
+function renderXlsxSheets(wb) {
+  const sheets = wb.SheetNames.map((name, i) => {
+    const ws = wb.Sheets[name];
+    const html = sanitizeHtml(XLSX.utils.sheet_to_html(ws, { header: '', footer: '' }));
+    return { name, html, i };
+  });
+  const tabs = sheets.map((s, i) =>
+    `<button class="xlsx-tab ${i === 0 ? 'active' : ''}" data-i="${i}" onclick="switchXlsxSheet(this)">${esc(s.name)}</button>`
+  ).join('');
+  const panes = sheets.map((s, i) =>
+    `<div class="xlsx-pane ${i === 0 ? 'active' : ''}" data-i="${i}"><div class="doc-preview doc-preview-xlsx">${s.html}</div></div>`
+  ).join('');
+  return `
+    <div style="display:flex;flex-direction:column;width:100%;height:100%;">
+      ${sheets.length > 1 ? `<div style="display:flex;gap:6px;padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;overflow-x:auto;flex-shrink:0;">${tabs}</div>` : ''}
+      <div style="flex:1;overflow:hidden;position:relative;">${panes}</div>
+    </div>`;
+}
+
+function switchXlsxSheet(btn) {
+  const i = btn.dataset.i;
+  const container = btn.parentElement.nextElementSibling;
+  container.querySelectorAll('.xlsx-pane').forEach(p => p.classList.toggle('active', p.dataset.i === i));
+  btn.parentElement.querySelectorAll('.xlsx-tab').forEach(t => t.classList.toggle('active', t === btn));
+}
+
+function closePreview() {
+  modalOverlay.classList.remove('active');
+  exitFullscreen();
+  modalBody.innerHTML = '';
+}
+
+/* 弹窗全屏切换 */
+function toggleFullscreen() {
+  modalOverlay.classList.toggle('fullscreen');
+  updateFullscreenBtn();
+}
+
+function exitFullscreen() {
+  modalOverlay.classList.remove('fullscreen');
+  updateFullscreenBtn();
+}
+
+function isFullscreen() {
+  return modalOverlay.classList.contains('fullscreen');
+}
+
+function updateFullscreenBtn() {
+  const fs = isFullscreen();
+  modalFullscreenBtn.textContent = fs ? '⧉' : '⛶';
+  modalFullscreenBtn.title = fs ? '还原窗口 (F)' : '全屏预览 (F)';
+}
+
+function closePreviewOnBackdrop(e) {
+  if (e.target === modalOverlay) {
+    closePreview();
+  }
+}
+
+function filterTree(nodes, q){
+  const res = [];
+  for(const node of nodes){
+    const matchSelf = node.name.toLowerCase().includes(q);
+    const matchedFiles = (node.files || []).filter(f => 
+      f.title.toLowerCase().includes(q) || 
+      f.fileName.toLowerCase().includes(q) ||
+      (f.ext && f.ext.toLowerCase().includes(q))
+    );
+    const matchedChildren = filterTree(node.children || [], q);
+
+    if(matchSelf){
+      res.push(node);
+    } else if(matchedFiles.length > 0 || matchedChildren.length > 0){
+      res.push({
+        ...node,
+        files: matchedFiles.length > 0 ? matchedFiles : node.files,
+        children: matchedChildren
+      });
+    }
+  }
+  return res;
+}
+
+function getStats(nodes){
+  let folders = 0;
+  let files = 0;
+  function traverse(list){
+    for(const n of list){
+      folders++;
+      files += (n.files || []).length;
+      if(n.children && n.children.length) traverse(n.children);
+    }
+  }
+  traverse(nodes);
+  return { folders, files };
+}
+
+// 浏览器原生无法渲染、需经 /_view 查看器打开的类别
+const NEED_VIEWER_CATS = ['md', 'docx', 'xlsx', 'text'];
+
+// 预览打开/复制链接：md/docx/xlsx/txt 经查看器，其余走原直链
+function previewLink(f) {
+  return NEED_VIEWER_CATS.includes(f.category) ? '/_view?u=' + encodeURIComponent(f.url) : f.url;
+}
+
+function renderActionButton(f, fid) {
+  if (f.actionType === 'new_tab') {
+    return `<a class="btn-action btn-open" href="${esc(previewLink(f))}" target="_blank" rel="noopener noreferrer">打开 ↗</a>`;
+  }
+  if (f.actionType === 'preview') {
+    return `<button class="btn-action btn-preview" data-action="preview" data-fid="${fid}">预览</button>`;
+  }
+  return `<a class="btn-action btn-download" href="${esc(f.url)}" download="${esc(f.fileName)}">下载 ⤓</a>`;
+}
+
+function renderNode(node){
+  const files = node.files || [];
+  const children = node.children || [];
+
+  let filesHtml = '';
+  if(files.length > 0){
+    filesHtml = `<div class="file-list">
+      ${files.map(f => {
+        const extText = (f.ext || '').replace(/^\./, '').toUpperCase() || 'FILE';
+        const fid = 'f' + Object.keys(FILE_MAP).length;
+        FILE_MAP[fid] = f;
+        // 可预览（含 html）→ 复制预览链接；仅可下载 → 复制下载链接
+        const isPreview = f.actionType === 'new_tab' || f.actionType === 'preview';
+        const copyLabel = isPreview ? '复制预览链接' : '复制下载链接';
+        const copyTarget = isPreview ? previewLink(f) : f.url;
+        return `
+        <div class="file-item">
+          <div class="file-info">
+            <span class="file-icon">${f.icon || '📄'}</span>
+            <span class="file-name">${esc(f.title)}</span>
+            <div class="file-meta-group">
+              <span class="file-tag">${esc(extText)}</span>
+              ${f.size ? `<span class="file-size">${esc(f.size)}</span>` : ''}
+            </div>
+          </div>
+          <div class="action-group">
+            <button class="btn-copy" data-action="copy" data-kind="${isPreview ? 'preview' : 'download'}" data-url="${esc(copyTarget)}">${copyLabel}</button>
+            ${renderActionButton(f, fid)}
+          </div>
+        </div>
+      `;}).join('')}
+    </div>`;
+  }
+
+  let childrenHtml = '';
+  if(children.length > 0){
+    childrenHtml = `<div class="children-section">
+      <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px;">子目录：</div>
+      <div class="tree" style="gap:10px;">
+        ${children.map(renderNode).join('')}
+      </div>
+    </div>`;
+  }
+
+  const isCollapsed = collapsedSet.has(node.path);
+  return `<div class="card ${isCollapsed ? 'collapsed' : ''}">
+    <div class="folder-header" data-action="toggle" data-path="${esc(node.path)}" title="点击展开 / 收起">
+      <div class="folder-title-area">
+        <span class="chevron">▼</span>
+        <span class="folder-icon">📁</span>
+        <span class="folder-name">${esc(node.name)}</span>
+      </div>
+      <span class="badge">${files.length} 个资源</span>
+    </div>
+    ${filesHtml}
+    ${childrenHtml}
+  </div>`;
+}
+
+function render(nodes){
+  FILE_MAP = {};
+  if(!nodes || !nodes.length){
+    treeEl.innerHTML = '<div class="empty">没有找到匹配的项目或文件</div>';
+    countEl.textContent = '0 个资源';
+    return;
+  }
+  const stats = getStats(nodes);
+  treeEl.innerHTML = nodes.map(renderNode).join('');
+  countEl.textContent = `${stats.folders} 个项目 · ${stats.files} 个文件`;
+  updateToggleAllLabel();
+}
+
+/* 目录折叠 / 展开 */
+function toggleCard(headerEl) {
+  const card = headerEl.closest('.card');
+  const path = headerEl.dataset.path;
+  const nowCollapsed = !card.classList.contains('collapsed');
+  card.classList.toggle('collapsed', nowCollapsed);
+  if (nowCollapsed) {
+    collapsedSet.add(path);
+  } else {
+    collapsedSet.delete(path);
+  }
+  persistCollapsed();
+  updateToggleAllLabel();
+}
+
+// 递归收集全部目录路径（含嵌套子目录）
+function collectAllPaths(nodes, acc = []) {
+  for (const n of nodes) {
+    acc.push(n.path);
+    collectAllPaths(n.children || [], acc);
+  }
+  return acc;
+}
+
+function updateToggleAllLabel() {
+  if (!loaded || !data.length) return;
+  const paths = collectAllPaths(data);
+  const allCollapsed = paths.length > 0 && paths.every(p => collapsedSet.has(p));
+  toggleAllBtn.textContent = allCollapsed ? '全部展开' : '全部收起';
+}
+
+async function load(){
+  try{
+    const res = await fetch('./directory.json?ts=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('directory.json HTTP ' + res.status);
+    const raw = await res.json();
+    data = Array.isArray(raw) ? raw : (raw.data || []);
+    if(raw.buildTime) {
+      const d = new Date(raw.buildTime);
+      buildTimeEl.textContent = `· 构建于 ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+    }
+    render(data);
+    loaded = true;
+  }catch(e){
+    treeEl.innerHTML = '<div class="empty">目录读取失败，请确认 Cloudflare 构建已生成 directory.json。</div>';
+    countEl.textContent = '读取失败';
+    console.error(e);
+  }
+}
+
+searchEl.addEventListener('input', () => {
+  if (!loaded) return; // 数据未加载完成前忽略输入，避免「没有找到匹配」闪现
+  const q = searchEl.value.trim().toLowerCase();
+  clearBtn.style.display = q ? 'block' : 'none';
+  render(q ? filterTree(data, q) : data);
+});
+
+clearBtn.addEventListener('click', () => {
+  searchEl.value = '';
+  clearBtn.style.display = 'none';
+  render(data);
+  searchEl.focus();
+});
+
+// 事件委托：折叠目录 / 复制链接 / 弹窗预览（避免内联 onclick 与文件名引号冲突）
+treeEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'toggle') {
+    toggleCard(btn);
+  } else if (btn.dataset.action === 'copy') {
+    e.preventDefault();
+    copyUrlFrom(btn.dataset.url, btn.dataset.kind);
+  } else if (btn.dataset.action === 'preview') {
+    const f = FILE_MAP[btn.dataset.fid];
+    if (f) openPreview(f);
+  }
+});
+
+// 全部收起 / 展开（递归所有层级，含嵌套子目录）
+toggleAllBtn.addEventListener('click', () => {
+  const paths = collectAllPaths(data);
+  const allCollapsed = paths.length > 0 && paths.every(p => collapsedSet.has(p));
+  document.querySelectorAll('#tree .card').forEach(card => {
+    card.classList.toggle('collapsed', !allCollapsed);
+  });
+  if (allCollapsed) {
+    collapsedSet.clear();
+  } else {
+    paths.forEach(p => collapsedSet.add(p));
+  }
+  persistCollapsed();
+  updateToggleAllLabel();
+});
+
+// 返回顶部
+window.addEventListener('scroll', () => {
+  backTopBtn.classList.toggle('show', window.scrollY > 400);
+}, { passive: true });
+backTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.addEventListener('keydown', (e) => {
+  const modalOpen = modalOverlay.classList.contains('active');
+  if(e.key === 'Escape') {
+    // 全屏时先退全屏，再按一次才关闭弹窗
+    if(modalOpen && isFullscreen()) {
+      exitFullscreen();
+    } else if(modalOpen) {
+      closePreview();
+    } else if(document.activeElement === searchEl) {
+      searchEl.value = '';
+      clearBtn.style.display = 'none';
+      render(data);
+      searchEl.blur();
+    }
+  } else if((e.key === 'f' || e.key === 'F') && modalOpen && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    e.preventDefault();
+    toggleFullscreen();
+  } else if(e.key === '/' && document.activeElement !== searchEl && !modalOpen) {
+    e.preventDefault();
+    searchEl.focus();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
