@@ -235,7 +235,7 @@ function isFortrestAuthed(req) {
 
 // 防开放重定向：仅允许站内资源中心相关路径
 function safeFortrestNext(raw) {
-  if (typeof raw === 'string' && (raw.startsWith('/fortrust') || raw.startsWith('/view')) && !raw.startsWith('//')) {
+  if (typeof raw === 'string' && (raw.startsWith('/fortrust') || raw.startsWith('/view') || raw.startsWith('/_view')) && !raw.startsWith('//')) {
     return raw;
   }
   return '/fortrust/';
@@ -521,7 +521,7 @@ render();
   return html;
 }
 
-app.get('/view', (req, res) => {
+app.get(['/view', '/_view'], (req, res) => {
   if (!isFortrestAuthed(req)) {
     // 登录后回跳到原查看地址
     return res.redirect('/fortrust/login?next=' + encodeURIComponent(req.originalUrl));

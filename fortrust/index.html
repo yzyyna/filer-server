@@ -899,7 +899,7 @@ async function openPreview(f) {
   modalIcon.textContent = f.icon || '📄';
   modalTitle.textContent = f.title || f.fileName;
   modalTag.textContent = extName + (f.size ? ` · ${f.size}` : '');
-  // md/docx/xlsx/txt 浏览器原生打不开会触发下载，改经 /_view 查看器渲染；
+  // md/docx/xlsx/txt 浏览器原生打不开会触发下载，改经 /view 查看器渲染；
   // pdf/图片/音视频/网页浏览器可直接预览，保持直链
   modalNewTab.href = previewLink(f);
   modalDownload.href = f.url;
@@ -1085,12 +1085,12 @@ function getStats(nodes){
   return { folders, files };
 }
 
-// 浏览器原生无法渲染、需经 /_view 查看器打开的类别
+// 浏览器原生无法渲染、需经 /view 查看器打开的类别
 const NEED_VIEWER_CATS = ['md', 'docx', 'xlsx', 'text'];
 
 // 预览打开/复制链接：md/docx/xlsx/txt 经查看器，其余走原直链
 function previewLink(f) {
-  return NEED_VIEWER_CATS.includes(f.category) ? '/_view?u=' + encodeURIComponent(f.url) : f.url;
+  return NEED_VIEWER_CATS.includes(f.category) ? '/view?u=' + encodeURIComponent(f.url) : f.url;
 }
 
 function renderActionButton(f, fid) {

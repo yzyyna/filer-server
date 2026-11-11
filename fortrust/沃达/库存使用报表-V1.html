@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>资产库存使用表 · 产品需求文档（PRD） + 交互原型</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    background:#f0f2f5; color:#303133; font-size:14px; line-height:1.75;
+    -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; overflow:hidden;
+  }
+  a { color:#1890ff; text-decoration:none; }
+
+  /* ===== 文档头 ===== */
+  .doc-head {
+    background:#fff; border-bottom:1px solid #e4e7ed; padding:16px 24px 14px; flex-shrink:0;
+    display:flex; align-items:flex-start; gap:32px; box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .dh-left { flex:1; min-width:0; }
+  .dh-kicker { font-size:12px; color:#909399; letter-spacing:.5px; margin-bottom:4px; }
+  .dh-left h1 { font-size:22px; font-weight:600; color:#1f2d3d; line-height:1.3; }
+  .dh-sub { font-size:13px; color:#606266; margin-top:5px; }
+  .dh-right { display:flex; gap:26px; flex-shrink:0; padding-top:4px; }
+  .mt { display:flex; flex-direction:column; gap:2px; }
+  .mt-k { font-size:11px; color:#909399; }
+  .mt-v { font-size:13px; color:#303133; font-weight:500; }
+
+  /* ===== 页签 ===== */
+  .tabbar { height:48px; background:#fff; border-bottom:1px solid #e4e7ed; display:flex; align-items:center; padding:0 24px; gap:4px; flex-shrink:0; }
+  .tab { height:48px; padding:0 20px; font-size:14px; color:#606266; font-weight:500; position:relative; cursor:pointer; display:flex; align-items:center; }
+  .tab:hover { color:#1890ff; }
+  .tab.active { color:#1890ff; font-weight:600; }
+  .tab.active::after { content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:0; width:24px; height:2px; background:#1890ff; border-radius:1px; }
+  .tab .badge { display:inline-block; background:#f0f0f0; color:#909399; font-size:10px; padding:1px 6px; border-radius:8px; margin-left:6px; font-weight:400; }
+  .tab.active .badge { background:#e6f7ff; color:#1890ff; }
+  .tabbar .spacer { flex:1; }
+  .tabbar .hint { font-size:12px; color:#909399; }
+  .tabbar .hint a { color:#1890ff; }
+
+  /* ===== 主体 ===== */
+  .body { flex:1; display:flex; min-height:0; }
+  .toc { width:246px; flex-shrink:0; background:#fff; border-right:1px solid #e4e7ed; overflow-y:auto; padding:16px 8px 40px; }
+  .toc::-webkit-scrollbar { width:6px; }
+  .toc::-webkit-scrollbar-thumb { background:#dcdfe6; border-radius:3px; }
+  .toc-title { font-size:11px; color:#c0c4cc; letter-spacing:1px; padding:0 12px 8px; }
+  .toc a { display:block; padding:5px 12px; font-size:12.5px; color:#606266; border-left:2px solid transparent; line-height:1.5; }
+  .toc a:hover { color:#1890ff; background:#f5f7fa; }
+  .toc a.toc-2 { font-weight:500; color:#303133; margin-top:2px; }
+  .toc a.toc-3 { padding-left:26px; color:#909399; font-size:12px; }
+  .body.proto-mode .toc { display:none; }
+
+  .main { flex:1; min-width:0; display:flex; }
+  .view { display:none; width:100%; min-width:0; }
+  .view.active { display:flex; }
+
+  /* ===== PRD 正文 ===== */
+  .doc { flex:1; overflow-y:auto; padding:26px 40px 80px; }
+  .doc::-webkit-scrollbar { width:9px; }
+  .doc::-webkit-scrollbar-thumb { background:#c1c1c1; border-radius:5px; }
+  .doc-inner { max-width:1000px; margin:0 auto; background:#fff; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,.06); padding:34px 46px 50px; }
+  .doc-inner h2 { font-size:19px; font-weight:600; color:#1f2d3d; margin:38px 0 16px; padding-left:12px; border-left:4px solid #1890ff; line-height:1.4; scroll-margin-top:16px; }
+  .doc-inner h2:first-child { margin-top:0; }
+  .doc-inner h3 { font-size:16px; font-weight:600; color:#303133; margin:26px 0 12px; scroll-margin-top:16px; }
+  .doc-inner h4 { font-size:14.5px; font-weight:600; color:#303133; margin:18px 0 8px; }
+  .doc-inner p { margin:10px 0; color:#414855; }
+  .doc-inner ul, .doc-inner ol { margin:10px 0 10px 22px; color:#414855; }
+  .doc-inner li { margin:5px 0; }
+  .doc-inner li strong { color:#1890ff; }
+  .doc-inner hr { border:none; border-top:1px solid #ebeef5; margin:28px 0; }
+  .doc-inner blockquote { margin:12px 0; padding:10px 16px; background:#f7f9fc; border-left:3px solid #c0c4cc; color:#606266; border-radius:0 4px 4px 0; }
+  .doc-inner code { font-family:"SF Mono",Consolas,monospace; font-size:12.5px; background:#f2f3f5; color:#d4380d; padding:1px 5px; border-radius:3px; }
+  .doc-inner pre.code { background:#282c34; color:#abb2bf; padding:14px 16px; border-radius:6px; overflow-x:auto; font-size:12.5px; line-height:1.6; margin:14px 0; }
+  .doc-inner pre.code code { background:none; color:inherit; padding:0; font-size:12.5px; }
+  .tbl-wrap { overflow-x:auto; margin:14px 0 18px; border:1px solid #ebeef5; border-radius:5px; }
+  .doc-inner table { width:100%; border-collapse:collapse; font-size:13px; }
+  .doc-inner thead th { background:#f5f7fa; color:#303133; font-weight:600; padding:9px 12px; border-bottom:2px solid #e4e7ed; white-space:nowrap; }
+  .doc-inner tbody td { padding:9px 12px; border-bottom:1px solid #ebeef5; color:#414855; vertical-align:top; }
+  .doc-inner tbody tr:last-child td { border-bottom:none; }
+  .doc-inner tbody tr:hover td { background:#f8fafc; }
+  .doc-inner strong { color:#303133; }
+  .mermaid { text-align:center; margin:18px 0 22px; padding:14px 10px; background:#fafbfc; border:1px solid #ebeef5; border-radius:6px; overflow-x:auto; }
+  .mermaid:not([data-processed]) { text-align:left; font-family:"SF Mono",Consolas,monospace; font-size:12.5px; color:#606266; white-space:pre; }
+  .ck { display:inline-block; width:13px; height:13px; border:1.5px solid #c0c4cc; border-radius:3px; margin-right:7px; vertical-align:-1px; }
+  .ck-on { background:#1890ff; border-color:#1890ff; }
+
+  /* ===== 原型视图 ===== */
+  .proto-wrap { flex:1; display:flex; flex-direction:column; min-width:0; background:#f0f2f5; }
+  .proto-bar { height:38px; background:#fff; border-bottom:1px solid #e4e7ed; display:flex; align-items:center; padding:0 16px; gap:12px; flex-shrink:0; font-size:12px; color:#909399; }
+  .proto-bar .dot { width:7px; height:7px; border-radius:50%; background:#52c41a; box-shadow:0 0 0 3px rgba(82,196,26,.15); }
+  .proto-bar .spacer { flex:1; }
+  .proto-bar a { color:#1890ff; }
+  #protoFrame { flex:1; width:100%; border:0; background:#f0f2f5; }
+
+  @media print {
+    body { overflow:visible; }
+    .tabbar, .toc, .proto-bar { display:none !important; }
+    .body, .main, .doc { display:block; overflow:visible; padding:0; }
+    .doc-inner { box-shadow:none; max-width:none; padding:0; }
+    .view { display:block !important; }
+    #view-proto { display:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+  <div class="dh-left">
+    <div class="dh-kicker">孚创信息科技（成都）有限公司</div>
+    <h1>资产库存使用表</h1>
+    <div class="dh-sub">产品需求文档（PRD） + 交互原型</div>
+  </div>
+  <div class="dh-right">
+    <div class="mt"><span class="mt-k">文档版本</span><span class="mt-v">v0.3</span></div><div class="mt"><span class="mt-k">创建日期</span><span class="mt-v">2026-11-09</span></div><div class="mt"><span class="mt-k">作者</span><span class="mt-v">赖国阳（业务经理 / 产品经理）</span></div><div class="mt"><span class="mt-k">状态</span><span class="mt-v">草案 · 待评审</span></div><div class="mt"><span class="mt-k">目标读者</span><span class="mt-v">研发团队 / 测试 / 业务方</span></div>
+  </div>
+</header>
+
+<nav class="tabbar">
+  <div class="tab active" data-view="doc">PRD 文档<span class="badge">10 章</span></div>
+  <div class="tab" data-view="proto">交互原型<span class="badge">v4 可交互</span></div>
+  <div class="spacer"></div>
+  <div class="hint">文档与原型同源，改动请同步 Markdown 与原型页</div>
+</nav>
+
+<div class="body">
+  <aside class="toc">
+    <div class="toc-title">目 录</div>
+    <a class="toc-2" href="#s1">功能说明</a><a class="toc-2" href="#s2">页面结构</a><a class="toc-2" href="#s3">筛选条件</a><a class="toc-2" href="#s4">统计栏</a><a class="toc-2" href="#s5">明细表</a><a class="toc-3" href="#s5-1">1 列定义</a><a class="toc-3" href="#s5-2">2 记录识别规则（取数口径）</a><a class="toc-2" href="#s6">操作</a><a class="toc-2" href="#s7">边界与待确认</a><a class="toc-3" href="#s7-1">1 边界</a><a class="toc-3" href="#s7-2">2 待确认</a><a class="toc-3" href="#s7-3">自检</a><a class="toc-3" href="#s7-4">附录 · 改动说明</a>
+  </aside>
+
+  <main class="main">
+    <section class="view active" id="view-doc">
+      <div class="doc"><div class="doc-inner">
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">字段</th>
+<th style="text-align:left">值</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">文档版本</td>
+<td style="text-align:left">v0.3（草案）</td>
+</tr>
+<tr>
+<td style="text-align:left">创建日期</td>
+<td style="text-align:left">2026-11-09</td>
+</tr>
+<tr>
+<td style="text-align:left">作者</td>
+<td style="text-align:left">赖国阳</td>
+</tr>
+<tr>
+<td style="text-align:left">状态</td>
+<td style="text-align:left">草案 · 待评审</td>
+</tr>
+<tr>
+<td style="text-align:left">关联原型</td>
+<td style="text-align:left"><code>inventory-consumable-report.html</code></td>
+</tr>
+</tbody></table></div>
+<p><strong>功能路径</strong>：数据查询 → 报表查询 → 资产库存使用表</p>
+<hr>
+<h2 id="s1" class="anchor">1. 功能说明</h2>
+<p>资产库存使用表是「数据查询 - 报表查询」下的库存台账查询页，用于按条件查询电站现场物资（消耗品 / 备件）的出入库记录，查看库存与消耗的数量、金额，并导出结果。</p>
+<p>本页只做<strong>查询、统计、导出</strong>；台账的录入与修改在其他环节完成，本页数据只读。</p>
+<h2 id="s2" class="anchor">2. 页面结构</h2>
+<p>自上而下五块：</p>
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">区域</th>
+<th style="text-align:left">内容</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">页面标题</td>
+<td style="text-align:left">资产库存使用表</td>
+</tr>
+<tr>
+<td style="text-align:left">筛选条件区</td>
+<td style="text-align:left">6 个筛选条件 + 重置 / 查询 / 导出 按钮</td>
+</tr>
+<tr>
+<td style="text-align:left">统计栏</td>
+<td style="text-align:left">在库数量 / 出库数量 / 总数量 / 总价格</td>
+</tr>
+<tr>
+<td style="text-align:left">明细表</td>
+<td style="text-align:left">11 列；序号按物资条目合并跨行</td>
+</tr>
+<tr>
+<td style="text-align:left">分页</td>
+<td style="text-align:left">按物资条目分页，每页 5 / 10 / 20 条目可选</td>
+</tr>
+</tbody></table></div>
+<h2 id="s3" class="anchor">3. 筛选条件</h2>
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">条件</th>
+<th style="text-align:left">控件</th>
+<th style="text-align:left">默认值</th>
+<th style="text-align:left">说明</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">仓库</td>
+<td style="text-align:left">下拉</td>
+<td style="text-align:left">全部</td>
+<td style="text-align:left">选项取自台账实际值</td>
+</tr>
+<tr>
+<td style="text-align:left">名称</td>
+<td style="text-align:left">下拉</td>
+<td style="text-align:left">全部</td>
+<td style="text-align:left">同上</td>
+</tr>
+<tr>
+<td style="text-align:left">类别</td>
+<td style="text-align:left">下拉</td>
+<td style="text-align:left">全部</td>
+<td style="text-align:left">同上</td>
+</tr>
+<tr>
+<td style="text-align:left">库存状态</td>
+<td style="text-align:left">下拉</td>
+<td style="text-align:left">全部</td>
+<td style="text-align:left">只有「在库」「已出库」两种</td>
+</tr>
+<tr>
+<td style="text-align:left">所属电站</td>
+<td style="text-align:left">下拉</td>
+<td style="text-align:left">全部</td>
+<td style="text-align:left">同上</td>
+</tr>
+<tr>
+<td style="text-align:left">出入库时间</td>
+<td style="text-align:left">起止区间（精确到分钟）</td>
+<td style="text-align:left">当月 1 日 00:00 ~ 当天 23:59</td>
+<td style="text-align:left">在库 = 最新入库时间，已出库 = 最新出库时间</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>点击「查询」或按回车生效。</li>
+<li>开始时间晚于结束时间时不执行查询，提示「开始时间不能晚于结束时间」。</li>
+<li>「重置」把全部条件恢复默认，页码回到第 1 页。</li>
+</ul>
+<h2 id="s4" class="anchor">4. 统计栏</h2>
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">指标</th>
+<th style="text-align:left">口径</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">在库数量</td>
+<td style="text-align:left">筛选结果中状态为「在库」的数量之和</td>
+</tr>
+<tr>
+<td style="text-align:left">出库数量</td>
+<td style="text-align:left">筛选结果中状态为「已出库」的数量之和</td>
+</tr>
+<tr>
+<td style="text-align:left">总数量</td>
+<td style="text-align:left">在库数量 + 出库数量</td>
+</tr>
+<tr>
+<td style="text-align:left">总价格</td>
+<td style="text-align:left">筛选结果中 <code>数量 × 单价(元)</code> 之和，保留 2 位小数</td>
+</tr>
+</tbody></table></div>
+<p>四项随筛选结果实时重算，<strong>按记录累加，不按名称去重</strong>。</p>
+<h2 id="s5" class="anchor">5. 明细表</h2>
+<h3 id="s5-1" class="anchor">5.1 列定义</h3>
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">列</th>
+<th style="text-align:left">说明</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">序号</td>
+<td style="text-align:left">按物资条目合并，跨该条目的全部状态行</td>
+</tr>
+<tr>
+<td style="text-align:left">类别</td>
+<td style="text-align:left">资产 / 备件 / 油品 / 耗材</td>
+</tr>
+<tr>
+<td style="text-align:left">名称</td>
+<td style="text-align:left">物资名称</td>
+</tr>
+<tr>
+<td style="text-align:left">所属电站</td>
+<td style="text-align:left">电站编号，如 50123-1#</td>
+</tr>
+<tr>
+<td style="text-align:left">规格型号</td>
+<td style="text-align:left">规格描述</td>
+</tr>
+<tr>
+<td style="text-align:left">编号</td>
+<td style="text-align:left">物资编号</td>
+</tr>
+<tr>
+<td style="text-align:left">库存状态</td>
+<td style="text-align:left">只有「在库」「已出库」两种</td>
+</tr>
+<tr>
+<td style="text-align:left">数量</td>
+<td style="text-align:left">一律整数，不出现小数位</td>
+</tr>
+<tr>
+<td style="text-align:left">单位</td>
+<td style="text-align:left">吨 / 桶 / 只 / 条 等</td>
+</tr>
+<tr>
+<td style="text-align:left">单价(元)</td>
+<td style="text-align:left">保留 2 位小数</td>
+</tr>
+<tr>
+<td style="text-align:left">出入库时间</td>
+<td style="text-align:left"><code>YYYY-MM-DD HH:mm</code></td>
+</tr>
+</tbody></table></div>
+<p>表头「出入库时间」带问号图标，鼠标移入显示浮层：<strong>「在库的表示最新入库时间，已出库的表示最新出库时间」</strong>。</p>
+<blockquote>实现约束：必须用自定义浮层（JS 定位 + div）。浏览器原生 <code>title</code> 气泡悬停延迟过长，评审时看不到，等同于没写。</blockquote>
+<h3 id="s5-2" class="anchor">5.2 记录识别规则（取数口径）</h3>
+<ul>
+<li><strong>识别字段</strong>：类别、所属电站、库存状态、单价(元)。</li>
+<li>识别字段中<strong>任一项不同</strong>，即为一条独立记录，即使名称相同也不合并。</li>
+<li><strong>条目级 key</strong>：<code>类别 | 名称 | 所属电站 | 规格型号 | 编号 | 单价(元)</code>。</li>
+<li>同一条目下的「在库」「已出库」分行展示，<strong>序号按条目合并</strong>（同一物资共用一个序号）。</li>
+<li>该规则只在后台取数层生效，页面上不做任何标注。</li>
+</ul>
+<h2 id="s6" class="anchor">6. 操作</h2>
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">按钮</th>
+<th style="text-align:left">行为</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">查询</td>
+<td style="text-align:left">按当前条件重算统计与列表，页码回到第 1 页</td>
+</tr>
+<tr>
+<td style="text-align:left">重置</td>
+<td style="text-align:left">下拉全部恢复「全部」，时间恢复默认区间，页码回到第 1 页</td>
+</tr>
+<tr>
+<td style="text-align:left">导出</td>
+<td style="text-align:left">导出<strong>当前筛选结果全量</strong>（非当前页）；CSV 格式、UTF-8 BOM 编码（Excel 直接打开不乱码）；文件名 <code>资产库存使用表_YYYYMMDD.csv</code>；含 11 列表头</td>
+</tr>
+</tbody></table></div>
+<h2 id="s7" class="anchor">7. 边界与待确认</h2>
+<h3 id="s7-1" class="anchor">7.1 边界</h3>
+<ul>
+<li>筛选无结果：显示空态提示、隐藏表格、分页显示「共 0 个条目」。</li>
+<li>表格固定表头、横向可滚动；打印时隐藏筛选区与操作按钮，保留完整表头。</li>
+</ul>
+<h3 id="s7-2" class="anchor">7.2 待确认</h3>
+<ul>
+<li>总数量 / 总价格跨单位（吨 / 桶 / 只 / 条）合计是否有意义，是否改为按单位拆分或按金额合计。</li>
+<li>序号按物资条目合并（同一物资的在库 / 已出库共用一个序号）是否符合对账口径。</li>
+<li>出入库单据由哪个系统登记，是否要求与本页同系统闭环。</li>
+<li>是否需要按「客户 - 电站」做数据权限隔离。</li>
+<li>单价是否随时间变动，台账是否需留存价格生效区间。</li>
+<li>出入库流水保留多久。</li>
+</ul>
+<hr>
+<h3 id="s7-3" class="anchor">自检</h3>
+<ul>
+<li><span class="ck ck-on"></span> 功能说明讲清了页面做什么、在哪、边界在哪</li>
+<li><span class="ck ck-on"></span> 字段与口径写到可直接开发的粒度（筛选、统计、11 列、识别规则）</li>
+<li><span class="ck ck-on"></span> 待确认项已列出</li>
+<li><span class="ck ck-on"></span> 无业务线 / 商业化叙述</li>
+</ul>
+<hr>
+<h3 id="s7-4" class="anchor">附录 · 改动说明</h3>
+<div class="tbl-wrap"><table><thead><tr>
+<th style="text-align:left">版本</th>
+<th style="text-align:left">日期</th>
+<th style="text-align:left">拟稿人</th>
+<th style="text-align:left">关键改动</th>
+</tr></thead><tbody>
+<tr>
+<td style="text-align:left">v0.1</td>
+<td style="text-align:left">2026-11-09</td>
+<td style="text-align:left">赖国阳</td>
+<td style="text-align:left">首版：含业务线定位与商业化价值叙述</td>
+</tr>
+<tr>
+<td style="text-align:left">v0.2</td>
+<td style="text-align:left">2026-11-09</td>
+<td style="text-align:left">赖国阳</td>
+<td style="text-align:left">精简型：剔除业务化叙述，改为需求 / 功能 / 开发说明结构</td>
+</tr>
+<tr>
+<td style="text-align:left">v0.3</td>
+<td style="text-align:left">2026-11-09</td>
+<td style="text-align:left">赖国阳</td>
+<td style="text-align:left"><strong>简化型</strong>：压缩为单页功能说明——补功能路径「数据查询 - 报表查询 - 资产库存使用表」，删除用户故事、状态机、非功能需求、验收标准、跨页规范等章节，只保留功能说明、筛选、统计、明细表、操作、边界待确认</td>
+</tr>
+</tbody></table></div>
+      </div></div>
+    </section>
+
+    <section class="view" id="view-proto">
+      <div class="proto-wrap">
+        <div class="proto-bar">
+          <span class="dot"></span><span>资产库存使用表 v4（可交互：筛选 / 查询 / 重置 / 导出 / 分页 / 问号浮层）</span>
+          <span class="spacer"></span>
+          <a href="inventory-consumable-report.html" target="_blank">在新标签单独打开原型 →</a>
+        </div>
+        <iframe id="protoFrame" title="资产库存使用表 交互原型" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;zh-CN&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;title&gt;资产库存使用表 · 孚创动力&lt;/title&gt;
+&lt;style&gt;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;Segoe UI&quot;, sans-serif;
+    background: #f0f2f5; color: #303133; font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column; overflow: hidden;
+    min-width: 1280px; min-height: 720px;
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  select, input { font-family: inherit; outline: none; color: #303133; }
+
+  /* ===== 顶栏 / 面包屑 ===== */
+  .topbar {
+    height: 44px; background: #fff; border-bottom: 1px solid #e8e8e8;
+    display: flex; align-items: center; padding: 0 20px; flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  }
+  .topbar .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #606266; }
+  .topbar .breadcrumb .sep { color: #c0c4cc; }
+  .topbar .breadcrumb .current { color: #303133; font-weight: 500; }
+  .topbar .spacer { flex: 1; }
+  .topbar-meta { font-size: 12px; color: #909399; display: flex; align-items: center; gap: 14px; }
+  .topbar-meta .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #52c41a; box-shadow: 0 0 0 3px rgba(82,196,26,.15); margin-right: 5px; }
+
+  .page { flex: 1; display: flex; flex-direction: column; padding: 0 16px; overflow: hidden; }
+
+  /* ===== 页面标题（最上面） ===== */
+  .page-header {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 16px 2px 14px; flex-shrink: 0;
+  }
+  .page-title { font-size: 17px; font-weight: 600; color: #303133; letter-spacing: .3px; }
+
+  /* ===== 筛选区（灰色，含重置/查询/导出） ===== */
+  .filter-card {
+    background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 4px;
+    padding: 14px 16px 12px; flex-shrink: 0; margin-bottom: 10px;
+  }
+  .filter-row { display: flex; align-items: center; gap: 14px; }
+  .filter-row + .filter-row { margin-top: 12px; }
+  .fld { display: flex; align-items: center; gap: 8px; flex: 1 1 0; min-width: 0; }
+  .fld &gt; label { font-size: 13px; color: #606266; white-space: nowrap; width: 72px; text-align: right; flex: 0 0 72px; }
+  .ctl {
+    height: 30px; border: 1px solid #d9d9d9; border-radius: 4px; background: #fff;
+    font-size: 12px; padding: 0 8px; width: 100%; transition: all .15s;
+  }
+  select.ctl { cursor: pointer; appearance: none; padding-right: 24px;
+    background-image: url(&quot;data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23c0c4cc' d='M884 256h-75c-5.1 0-9.9 2.5-12.9 6.6L512 654.2 227.9 262.6c-3-4.1-7.8-6.6-12.9-6.6h-75c-6.5 0-10.3 7.4-6.5 12.7l352.6 486.1c12.8 17.6 39 17.6 51.7 0l352.6-486.1c3.9-5.3.1-12.7-6.4-12.7z'/%3E%3C/svg%3E&quot;);
+    background-repeat: no-repeat; background-position: right 7px center; background-size: 11px;
+  }
+  .ctl:hover { border-color: #bfbfbf; }
+  .ctl:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.12); }
+  input.ctl[type=&quot;date&quot;], input.ctl[type=&quot;datetime-local&quot;] { cursor: pointer; }
+
+  /* 出入库时间：起止范围（精确到分钟） */
+  .fld.range { flex: 0 0 auto; }
+  .range-box { display: flex; align-items: center; gap: 8px; }
+  .range-box input { width: 205px; }
+  .range-box .tilde { color: #909399; font-size: 12px; }
+
+  /* 操作按钮：属于筛选区 */
+  .filter-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .btn {
+    height: 30px; padding: 0 16px; border-radius: 4px; font-size: 12px;
+    border: 1px solid #d9d9d9; background: #fff; color: #606266;
+    display: inline-flex; align-items: center; gap: 4px; transition: all .15s;
+  }
+  .btn:hover { border-color: #1890ff; color: #1890ff; }
+  .btn.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
+  .btn.primary:hover { background: #40a9ff; border-color: #40a9ff; }
+
+  /* ===== 表格卡片 ===== */
+  .table-card {
+    flex: 1; display: flex; flex-direction: column; background: #fff;
+    border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden; min-height: 0;
+  }
+
+  /* ===== 统计栏 ===== */
+  .stat-bar {
+    padding: 10px 16px; background: #fafbfc; border-bottom: 1px solid #f0f0f0;
+    font-size: 12px; color: #606266; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; flex-shrink: 0;
+  }
+  .stat-bar .sep { color: #e0e0e0; }
+  .stat-bar .m { white-space: nowrap; }
+  .stat-bar .m b { color: #1890ff; font-weight: 600; font-family: &quot;SF Mono&quot;, Consolas, monospace; margin-left: 3px; }
+  .stat-bar .m.money b { color: #fa8c16; }
+
+  /* ===== 表格 ===== */
+  .table-wrap { flex: 1; overflow: auto; min-height: 0; }
+  .table-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+  table.grid {
+    width: 100%; min-width: 1180px; table-layout: fixed;
+    border-collapse: separate; border-spacing: 0; font-size: 12px;
+  }
+  table.grid th, table.grid td {
+    border-right: 1px solid #d0d0d0; border-bottom: 1px solid #d0d0d0;
+    text-align: center; padding: 0 8px; height: 34px; background: #fff;
+    color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  table.grid thead th {
+    background: #f0f0f0; font-weight: 600; color: #303133; height: 38px;
+    position: sticky; top: 0; z-index: 3; border-bottom: 2px solid #bfbfbf;
+  }
+  table.grid tbody td.idx { font-weight: 600; color: #303133; font-family: &quot;SF Mono&quot;, Consolas, monospace; }
+  table.grid tbody td.num { font-family: &quot;SF Mono&quot;, Consolas, monospace; }
+  table.grid tbody td.money { font-family: &quot;SF Mono&quot;, Consolas, monospace; color: #303133; }
+  table.grid tbody tr:hover td { background: #eef6ff; }
+  .help {
+    display: inline-block; width: 13px; height: 13px; line-height: 13px; text-align: center;
+    background: #e6f7ff; color: #1890ff; border-radius: 50%; font-size: 9px;
+    margin-left: 4px; cursor: help; vertical-align: middle; font-weight: 700;
+  }
+  .help:hover { background: #1890ff; color: #fff; }
+
+  /* 解释浮层 */
+  .tip {
+    position: fixed; z-index: 2000; display: none; max-width: 320px;
+    background: #fff; border: 1px solid #e8e8e8; border-radius: 4px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.16); padding: 9px 11px;
+    font-size: 12px; line-height: 1.7; color: #606266; white-space: normal;
+  }
+  .tip::before {
+    content: ''; position: absolute; top: -5px; left: 50%; margin-left: -5px;
+    width: 8px; height: 8px; background: #fff; border-left: 1px solid #e8e8e8; border-top: 1px solid #e8e8e8;
+    transform: rotate(45deg);
+  }
+
+  /* 空态 */
+  .empty { padding: 70px 0; text-align: center; color: #909399; }
+  .empty .icon { font-size: 40px; line-height: 1; margin-bottom: 12px; opacity: .5; }
+  .empty .txt { font-size: 13px; }
+  .empty .sub { font-size: 12px; color: #c0c4cc; margin-top: 6px; }
+
+  /* 分页 */
+  .table-footer {
+    height: 36px; padding: 0 16px; border-top: 1px solid #f0f0f0; background: #fafbfc;
+    display: flex; align-items: center; font-size: 12px; color: #606266; flex-shrink: 0; gap: 10px;
+  }
+  .table-footer .spacer { flex: 1; }
+  .page-btn { min-width: 24px; height: 22px; border: 1px solid #d9d9d9; border-radius: 3px; background: #fff; color: #606266; font-size: 12px; padding: 0 6px; margin-left: 2px; }
+  .page-btn:hover:not(:disabled) { border-color: #1890ff; color: #1890ff; }
+  .page-btn.active { background: #1890ff; border-color: #1890ff; color: #fff; }
+  .page-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .sel { height: 24px; border: 1px solid #d9d9d9; border-radius: 3px; font-size: 12px; padding: 0 4px; cursor: pointer; }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; top: 72px; transform: translateX(-50%) translateY(-16px);
+    background: rgba(0,0,0,.78); color: #fff; font-size: 13px; padding: 9px 18px; border-radius: 4px;
+    opacity: 0; pointer-events: none; transition: all .22s; z-index: 9999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media print {
+    body { overflow: visible; background: #fff; }
+    .topbar, .filter-card, .table-footer { display: none !important; }
+    .page { padding: 0; overflow: visible; }
+    .table-card { box-shadow: none; }
+    .table-wrap { overflow: visible; }
+  }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div class=&quot;topbar&quot;&gt;
+  &lt;div class=&quot;breadcrumb&quot;&gt;
+    &lt;span&gt;数据查询&lt;/span&gt;&lt;span class=&quot;sep&quot;&gt;/&lt;/span&gt;
+    &lt;span&gt;报表查询&lt;/span&gt;&lt;span class=&quot;sep&quot;&gt;/&lt;/span&gt;
+    &lt;span class=&quot;current&quot;&gt;资产库存使用表&lt;/span&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;spacer&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;topbar-meta&quot;&gt;
+    &lt;span&gt;&lt;span class=&quot;dot&quot;&gt;&lt;/span&gt;数据更新至 2026-08-26 12:00&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;page&quot;&gt;
+
+  &lt;!-- 页面标题：最上面 --&gt;
+  &lt;div class=&quot;page-header&quot;&gt;
+    &lt;h1 class=&quot;page-title&quot;&gt;资产库存使用表&lt;/h1&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 筛选条件区：重置 / 查询 / 导出 也在这一区 --&gt;
+  &lt;div class=&quot;filter-card&quot;&gt;
+    &lt;div class=&quot;filter-row&quot;&gt;
+      &lt;div class=&quot;fld&quot;&gt;
+        &lt;label&gt;仓库&lt;/label&gt;
+        &lt;select class=&quot;ctl&quot; id=&quot;fWh&quot;&gt;&lt;/select&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;fld&quot;&gt;
+        &lt;label&gt;名称&lt;/label&gt;
+        &lt;select class=&quot;ctl&quot; id=&quot;fName&quot;&gt;&lt;/select&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;fld&quot;&gt;
+        &lt;label&gt;类别&lt;/label&gt;
+        &lt;select class=&quot;ctl&quot; id=&quot;fCat&quot;&gt;&lt;/select&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;fld&quot;&gt;
+        &lt;label&gt;库存状态&lt;/label&gt;
+        &lt;select class=&quot;ctl&quot; id=&quot;fStatus&quot;&gt;&lt;/select&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;fld&quot;&gt;
+        &lt;label&gt;所属电站&lt;/label&gt;
+        &lt;select class=&quot;ctl&quot; id=&quot;fStation&quot;&gt;&lt;/select&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;filter-row&quot;&gt;
+      &lt;div class=&quot;fld range&quot;&gt;
+        &lt;label&gt;出入库时间&lt;/label&gt;
+        &lt;div class=&quot;range-box&quot;&gt;
+          &lt;input class=&quot;ctl&quot; type=&quot;datetime-local&quot; id=&quot;fStart&quot; value=&quot;2026-08-01T00:00&quot; step=&quot;60&quot;&gt;
+          &lt;span class=&quot;tilde&quot;&gt;~&lt;/span&gt;
+          &lt;input class=&quot;ctl&quot; type=&quot;datetime-local&quot; id=&quot;fEnd&quot; value=&quot;2026-08-26T23:59&quot; step=&quot;60&quot;&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;filter-actions&quot;&gt;
+        &lt;button class=&quot;btn&quot; onclick=&quot;resetFilter()&quot;&gt;重置&lt;/button&gt;
+        &lt;button class=&quot;btn primary&quot; onclick=&quot;doQuery()&quot;&gt;查询&lt;/button&gt;
+        &lt;button class=&quot;btn&quot; onclick=&quot;exportCsv()&quot;&gt;导出&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- 表格 --&gt;
+  &lt;div class=&quot;table-card&quot;&gt;
+    &lt;div class=&quot;stat-bar&quot; id=&quot;statBar&quot;&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;table-wrap&quot; id=&quot;tableWrap&quot;&gt;
+      &lt;table class=&quot;grid&quot; id=&quot;grid&quot;&gt;
+        &lt;colgroup&gt;
+          &lt;col style=&quot;width:4.5%&quot;&gt;&lt;col style=&quot;width:7.5%&quot;&gt;&lt;col style=&quot;width:12.5%&quot;&gt;&lt;col style=&quot;width:10.5%&quot;&gt;
+          &lt;col style=&quot;width:12.5%&quot;&gt;&lt;col style=&quot;width:11%&quot;&gt;&lt;col style=&quot;width:8.5%&quot;&gt;&lt;col style=&quot;width:8.5%&quot;&gt;
+          &lt;col style=&quot;width:6%&quot;&gt;&lt;col style=&quot;width:9%&quot;&gt;&lt;col style=&quot;width:9.5%&quot;&gt;
+        &lt;/colgroup&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;序号&lt;/th&gt;
+            &lt;th&gt;类别&lt;/th&gt;
+            &lt;th&gt;名称&lt;/th&gt;
+            &lt;th&gt;所属电站&lt;/th&gt;
+            &lt;th&gt;规格型号&lt;/th&gt;
+            &lt;th&gt;编号&lt;/th&gt;
+            &lt;th&gt;库存状态&lt;/th&gt;
+            &lt;th&gt;数量&lt;/th&gt;
+            &lt;th&gt;单位&lt;/th&gt;
+            &lt;th&gt;单价(元)&lt;/th&gt;
+            &lt;th&gt;出入库时间&lt;span class=&quot;help&quot; data-tip=&quot;在库的表示最新入库时间，已出库的表示最新出库时间&quot; onmouseenter=&quot;showTip(this)&quot; onmouseleave=&quot;hideTip()&quot;&gt;?&lt;/span&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody id=&quot;tbody&quot;&gt;&lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;div class=&quot;empty&quot; id=&quot;emptyBox&quot; style=&quot;display:none&quot;&gt;
+        &lt;div class=&quot;icon&quot;&gt;📦&lt;/div&gt;
+        &lt;div class=&quot;txt&quot;&gt;暂无符合条件的库存消耗品记录&lt;/div&gt;
+        &lt;div class=&quot;sub&quot;&gt;请调整筛选条件后重新查询&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;table-footer&quot;&gt;
+      &lt;span id=&quot;pageInfo&quot;&gt;&lt;/span&gt;
+      &lt;span&gt;每页&lt;/span&gt;
+      &lt;select class=&quot;sel&quot; id=&quot;pageSize&quot;&gt;
+        &lt;option value=&quot;5&quot;&gt;5&lt;/option&gt;
+        &lt;option value=&quot;10&quot;&gt;10&lt;/option&gt;
+        &lt;option value=&quot;20&quot;&gt;20&lt;/option&gt;
+      &lt;/select&gt;
+      &lt;span&gt;个条目&lt;/span&gt;
+      &lt;div class=&quot;spacer&quot;&gt;&lt;/div&gt;
+      &lt;div id=&quot;pager&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;tip&quot; id=&quot;tip&quot;&gt;&lt;/div&gt;
+&lt;div class=&quot;toast&quot; id=&quot;toast&quot;&gt;&lt;/div&gt;
+
+&lt;script&gt;
+/* =====================================================================
+ * 数据源（Mock）
+ * 系统记录识别规则（仅作后台取数口径，页面不做任何标注）：
+ *   类别 / 所属电站 / 库存状态 / 单价(元) 中只要有一项不同，即为一条独立记录
+ *   即使名称相同也不合并
+ *   → 条目级 key：类别|名称|所属电站|规格型号|编号|单价
+ *     状态行级 key：条目 key + 库存状态
+ *   同一条目下的不同库存状态分行展示，序号按物资条目归并
+ *   库存状态只有两种：在库 / 已出库
+ *   出入库时间：在库 = 最新入库时间，已出库 = 最新出库时间
+ * ===================================================================== */
+const ITEMS = [
+  { wh:'成都中心库', cat:'资产', name:'柴油', station:'50123-1#', path:'沃达动力 / 乌审旗项目组 / 50123-1#',
+    spec:'0#轻柴油', code:'VL-2024-001', price:7.50,
+    lines:[
+      { status:'在库',   qty:128, unit:'吨', date:'2026-08-24', time:'09:20' },
+      { status:'已出库', qty:36,  unit:'吨', date:'2026-08-25', time:'16:45' }
+    ]},
+  /* 同名「柴油」，但所属电站 / 编号 / 单价不同 → 独立序号、独立记录 */
+  { wh:'乌审旗前置库', cat:'资产', name:'柴油', station:'50124-2#', path:'沃达动力 / 乌审旗项目组 / 50124-2#',
+    spec:'0#轻柴油', code:'VL-2024-002', price:8.20,
+    lines:[
+      { status:'在库',   qty:86, unit:'吨', date:'2026-08-23', time:'10:05' },
+      { status:'已出库', qty:21, unit:'吨', date:'2026-08-26', time:'08:30' }
+    ]},
+  { wh:'庆阳前置库', cat:'资产', name:'机油', station:'701236-1#', path:'沃达动力 / 庆阳项目组 / 701236-1#',
+    spec:'15W-40 / 20L', code:'JY-2025-013', price:285.00,
+    lines:[
+      { status:'在库',   qty:46, unit:'桶', date:'2026-08-20', time:'14:10' },
+      { status:'已出库', qty:28, unit:'桶', date:'2026-08-25', time:'17:20' }
+    ]},
+  { wh:'成都中心库', cat:'资产', name:'防冻液', station:'90001-1#', path:'XXX公司 / 西部项目组 / 90001-1#',
+    spec:'-35℃ / 20L', code:'FD-2025-004', price:96.00,
+    lines:[
+      { status:'在库',   qty:62, unit:'桶', date:'2026-08-18', time:'11:35' },
+      { status:'已出库', qty:14, unit:'桶', date:'2026-08-24', time:'15:40' }
+    ]},
+  { wh:'庆阳前置库', cat:'备件', name:'空气滤清器', station:'701237-1#', path:'沃达动力 / 庆阳项目组 / 701237-1#',
+    spec:'适配 3500kW 机组', code:'GL-2025-006', price:320.00,
+    lines:[
+      { status:'在库',   qty:24, unit:'只', date:'2026-08-15', time:'09:50' },
+      { status:'已出库', qty:6,  unit:'只', date:'2026-08-22', time:'13:15' }
+    ]},
+  { wh:'北部前置库', cat:'备件', name:'启动电池', station:'90002-1#', path:'XXX公司 / 北部项目组 / 90002-1#',
+    spec:'12V / 100AH', code:'DC-2024-009', price:480.00,
+    lines:[
+      { status:'在库',   qty:18, unit:'只', date:'2026-08-12', time:'16:20' }
+    ]},
+  { wh:'北部前置库', cat:'油品', name:'发电机润滑油', station:'90003-1#', path:'XXX公司 / 北部项目组 / 90003-1#',
+    spec:'15W-40 / 20L', code:'JY-2025-022', price:168.00,
+    lines:[
+      { status:'在库',   qty:35, unit:'桶', date:'2026-08-19', time:'10:30' },
+      { status:'已出库', qty:5,  unit:'桶', date:'2026-08-25', time:'09:05' }
+    ]},
+  { wh:'西部前置库', cat:'耗材', name:'三角皮带', station:'90001-2#', path:'XXX公司 / 西部项目组 / 90001-2#',
+    spec:'B型 / 1200mm', code:'ZD-2026-003', price:45.00,
+    lines:[
+      { status:'在库',   qty:12, unit:'条', date:'2026-08-10', time:'08:45' },
+      { status:'已出库', qty:30, unit:'条', date:'2026-08-26', time:'11:55' }
+    ]}
+];
+
+const DEFAULT_START = '2026-08-01T00:00';
+const DEFAULT_END   = '2026-08-26T23:59';
+
+const state = {
+  q: { wh:'全部', name:'全部', cat:'全部', status:'全部', station:'全部', start:DEFAULT_START, end:DEFAULT_END },
+  page: 1,
+  pageSize: 5
+};
+
+/* ---------- 工具 ---------- */
+const $ = id =&gt; document.getElementById(id);
+function uniq(arr){ return Array.from(new Set(arr)); }
+function esc(s){ return String(s == null ? '' : s).replace(/&amp;/g,'&amp;amp;').replace(/&lt;/g,'&amp;lt;').replace(/&gt;/g,'&amp;gt;').replace(/&quot;/g,'&amp;quot;'); }
+function num(v){ return (Math.round(v * 100) / 100).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function int(v){ return Math.round(v).toLocaleString('zh-CN'); }
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm = setTimeout(() =&gt; t.classList.remove('show'), 2000);
+}
+
+/* ---------- 解释浮层 ---------- */
+function showTip(el){
+  const tip = $('tip');
+  tip.innerHTML = esc(el.getAttribute('data-tip'));
+  tip.style.display = 'block';
+  const r = el.getBoundingClientRect();
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = r.left + r.width / 2 - tw / 2;
+  let top  = r.bottom + 10;
+  if(top + th &gt; window.innerHeight - 8) top = r.top - th - 10;
+  if(left &lt; 8) left = 8;
+  if(left + tw &gt; window.innerWidth - 8) left = window.innerWidth - tw - 8;
+  tip.style.left = left + 'px';
+  tip.style.top  = top + 'px';
+}
+function hideTip(){ $('tip').style.display = 'none'; }
+
+/* ---------- 下拉选项 ---------- */
+function fillSelect(id, values, withAll){
+  const el = $(id);
+  const opts = [];
+  if (withAll !== false) opts.push('&lt;option value=&quot;全部&quot;&gt;全部&lt;/option&gt;');
+  values.forEach(v =&gt; opts.push('&lt;option value=&quot;' + esc(v) + '&quot;&gt;' + esc(v) + '&lt;/option&gt;'));
+  el.innerHTML = opts.join('');
+}
+function initOptions(){
+  fillSelect('fWh',    uniq(ITEMS.map(i =&gt; i.wh)));
+  fillSelect('fName',  uniq(ITEMS.map(i =&gt; i.name)));
+  fillSelect('fCat',   uniq(ITEMS.map(i =&gt; i.cat)));
+  fillSelect('fStatus',['在库','已出库']);
+  fillSelect('fStation', uniq(ITEMS.map(i =&gt; i.station)));
+}
+
+/* ---------- 筛选 ---------- */
+function readFilters(){
+  return {
+    wh:      $('fWh').value,
+    name:    $('fName').value,
+    cat:     $('fCat').value,
+    status:  $('fStatus').value,
+    station: $('fStation').value,
+    start:   $('fStart').value.replace('T', ' '),
+    end:     $('fEnd').value.replace('T', ' ')
+  };
+}
+function matchItem(it, q){
+  if (q.wh      !== '全部' &amp;&amp; it.wh      !== q.wh)      return false;
+  if (q.name    !== '全部' &amp;&amp; it.name    !== q.name)    return false;
+  if (q.cat     !== '全部' &amp;&amp; it.cat     !== q.cat)     return false;
+  if (q.station !== '全部' &amp;&amp; it.station !== q.station) return false;
+  return true;
+}
+function matchLine(ln, q){
+  if (q.status !== '全部' &amp;&amp; ln.status !== q.status) return false;
+  const ts = ln.date + ' ' + ln.time;          // 精确到分钟
+  if (q.start &amp;&amp; ts &lt; q.start) return false;
+  if (q.end   &amp;&amp; ts &gt; q.end)   return false;
+  return true;
+}
+/* 返回过滤后的条目数组，条目内保留命中的状态行 */
+function computeFiltered(){
+  const q = state.q;
+  const out = [];
+  ITEMS.forEach(it =&gt; {
+    if (!matchItem(it, q)) return;
+    const lines = it.lines.filter(ln =&gt; matchLine(ln, q));
+    if (!lines.length) return;
+    out.push({ it: it, lines: lines });
+  });
+  return out;
+}
+
+/* ---------- 渲染 ---------- */
+function render(){
+  const list = computeFiltered();
+  const totalItems = list.length;
+  const totalRows  = list.reduce((s, g) =&gt; s + g.lines.length, 0);
+
+  // 统计：在库数量 / 出库数量 / 总数量 / 总价格
+  let inQty = 0, outQty = 0, totalAmount = 0;
+  list.forEach(g =&gt; {
+    g.lines.forEach(ln =&gt; {
+      if (ln.status === '在库') inQty += ln.qty;
+      else outQty += ln.qty;
+      totalAmount += ln.qty * g.it.price;
+    });
+  });
+  $('statBar').innerHTML =
+      '&lt;span class=&quot;m&quot;&gt;在库数量&lt;b&gt;' + int(inQty) + '&lt;/b&gt;&lt;/span&gt;' +
+    '&lt;span class=&quot;sep&quot;&gt;|&lt;/span&gt;' +
+    '&lt;span class=&quot;m&quot;&gt;出库数量&lt;b&gt;' + int(outQty) + '&lt;/b&gt;&lt;/span&gt;' +
+    '&lt;span class=&quot;sep&quot;&gt;|&lt;/span&gt;' +
+    '&lt;span class=&quot;m&quot;&gt;总数量&lt;b&gt;' + int(inQty + outQty) + '&lt;/b&gt;&lt;/span&gt;' +
+    '&lt;span class=&quot;sep&quot;&gt;|&lt;/span&gt;' +
+    '&lt;span class=&quot;m money&quot;&gt;总价格&lt;b&gt;' + num(totalAmount) + '&lt;/b&gt;元&lt;/span&gt;';
+
+  // 分页
+  const pages = Math.max(1, Math.ceil(totalItems / state.pageSize));
+  if (state.page &gt; pages) state.page = pages;
+  const startIdx = (state.page - 1) * state.pageSize;
+  const pageItems = list.slice(startIdx, startIdx + state.pageSize);
+
+  // 表体
+  const tb = $('tbody');
+  if (!totalItems) {
+    tb.innerHTML = '';
+    $('emptyBox').style.display = 'block';
+    $('grid').style.display = 'none';
+  } else {
+    $('emptyBox').style.display = 'none';
+    $('grid').style.display = 'table';
+    let html = '';
+    pageItems.forEach((g, gi) =&gt; {
+      const it = g.it;
+      const rs = g.lines.length;
+      g.lines.forEach((ln, i) =&gt; {
+        html += '&lt;tr&gt;';
+        // 序号：仅首行输出，带 rowspan 跨本条目所有状态行
+        if (i === 0) html += '&lt;td class=&quot;idx&quot; rowspan=&quot;' + rs + '&quot;&gt;' + (startIdx + gi + 1) + '&lt;/td&gt;';
+        html += '&lt;td title=&quot;类别：' + esc(it.cat) + '&quot;&gt;' + esc(it.cat) + '&lt;/td&gt;';
+        html += '&lt;td title=&quot;' + esc(it.name) + '&quot;&gt;' + esc(it.name) + '&lt;/td&gt;';
+        html += '&lt;td title=&quot;' + esc(it.path) + '&quot;&gt;' + esc(it.station) + '&lt;/td&gt;';
+        html += '&lt;td title=&quot;' + esc(it.spec) + '&quot;&gt;' + esc(it.spec) + '&lt;/td&gt;';
+        html += '&lt;td title=&quot;' + esc(it.code) + '&quot;&gt;' + esc(it.code) + '&lt;/td&gt;';
+        html += '&lt;td&gt;' + esc(ln.status) + '&lt;/td&gt;';
+        html += '&lt;td class=&quot;num&quot;&gt;' + int(ln.qty) + '&lt;/td&gt;';
+        html += '&lt;td&gt;' + esc(ln.unit) + '&lt;/td&gt;';
+        html += '&lt;td class=&quot;money&quot;&gt;' + num(it.price) + '&lt;/td&gt;';
+        html += '&lt;td class=&quot;num&quot;&gt;' + esc(ln.date) + ' ' + esc(ln.time) + '&lt;/td&gt;';
+        html += '&lt;/tr&gt;';
+      });
+    });
+    tb.innerHTML = html;
+  }
+
+  // 页脚
+  $('pageInfo').textContent = totalItems
+    ? '第 ' + (startIdx + 1) + ' - ' + Math.min(startIdx + pageItems.length, totalItems) + ' 个条目 / 共 ' + totalItems + ' 个条目'
+    : '共 0 个条目';
+  renderPager(pages);
+}
+
+function renderPager(pages){
+  let h = '';
+  h += '&lt;button class=&quot;page-btn&quot; ' + (state.page === 1 ? 'disabled' : '') + ' onclick=&quot;goPage(1)&quot;&gt;«&lt;/button&gt;';
+  h += '&lt;button class=&quot;page-btn&quot; ' + (state.page === 1 ? 'disabled' : '') + ' onclick=&quot;goPage(' + (state.page - 1) + ')&quot;&gt;‹&lt;/button&gt;';
+  for (let p = 1; p &lt;= pages; p++) {
+    h += '&lt;button class=&quot;page-btn' + (p === state.page ? ' active' : '') + '&quot; onclick=&quot;goPage(' + p + ')&quot;&gt;' + p + '&lt;/button&gt;';
+  }
+  h += '&lt;button class=&quot;page-btn&quot; ' + (state.page === pages ? 'disabled' : '') + ' onclick=&quot;goPage(' + (state.page + 1) + ')&quot;&gt;›&lt;/button&gt;';
+  h += '&lt;button class=&quot;page-btn&quot; ' + (state.page === pages ? 'disabled' : '') + ' onclick=&quot;goPage(' + pages + ')&quot;&gt;»&lt;/button&gt;';
+  $('pager').innerHTML = h;
+}
+function goPage(p){ state.page = p; render(); }
+
+/* ---------- 操作 ---------- */
+function doQuery(){
+  const f = readFilters();
+  if (f.start &amp;&amp; f.end &amp;&amp; f.start &gt; f.end) { toast('开始时间不能晚于结束时间'); return; }
+  state.q = f; state.page = 1; render();
+  toast('查询完成，共 ' + computeFiltered().length + ' 个条目');
+}
+function resetFilter(){
+  initOptions();
+  $('fStart').value = DEFAULT_START;
+  $('fEnd').value   = DEFAULT_END;
+  state.q = readFilters(); state.page = 1; render();
+  toast('已重置筛选条件');
+}
+function exportCsv(){
+  const list = computeFiltered();
+  if (!list.length) { toast('当前无可导出的数据'); return; }
+  const head = ['序号','类别','名称','所属电站','规格型号','编号','库存状态','数量','单位','单价(元)','出入库时间'];
+  const rows = [head.join(',')];
+  let idx = 0;
+  list.forEach(g =&gt; {
+    idx++;
+    const it = g.it;
+    g.lines.forEach(ln =&gt; {
+      rows.push([idx, it.cat, it.name, it.station, it.spec, it.code, ln.status, ln.qty, ln.unit, it.price, ln.date + ' ' + ln.time].join(','));
+    });
+  });
+  const csv = '\uFEFF' + rows.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '资产库存使用表_' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() =&gt; URL.revokeObjectURL(a.href), 2000);
+  toast('已导出 ' + rows.length - 1 + ' 条记录');
+}
+
+/* ---------- 初始化 ---------- */
+initOptions();
+$('fStart').value = DEFAULT_START;
+$('fEnd').value   = DEFAULT_END;
+state.q = readFilters();
+$('pageSize').value = String(state.pageSize);
+$('pageSize').addEventListener('change', e =&gt; { state.pageSize = parseInt(e.target.value, 10) || 5; state.page = 1; render(); });
+document.addEventListener('keydown', e =&gt; { if (e.key === 'Enter') doQuery(); });
+render();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+  // 页签切换
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+      document.querySelectorAll('.view').forEach(function(x){ x.classList.remove('active'); });
+      t.classList.add('active');
+      document.getElementById('view-' + t.getAttribute('data-view')).classList.add('active');
+      document.querySelector('.body').classList.toggle('proto-mode', t.getAttribute('data-view') === 'proto');
+    });
+  });
+  // 目录高亮
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var heads = tocLinks.map(function(a){ return document.getElementById(a.getAttribute('href').substring(1)); });
+  var doc = document.querySelector('.doc');
+  if(doc){
+    doc.addEventListener('scroll', function(){
+      var top = doc.scrollTop + 80, cur = -1;
+      heads.forEach(function(h, i){ if(h && h.offsetTop <= top){ cur = i; } });
+      tocLinks.forEach(function(a, i){ a.style.borderLeftColor = (i === cur) ? '#1890ff' : 'transparent'; a.style.color = (i === cur) ? '#1890ff' : ''; });
+    });
+  }
+  // Mermaid
+  if(window.mermaid){
+    mermaid.initialize({ startOnLoad:true, theme:'default', securityLevel:'loose', flowchart:{ useMaxWidth:true } });
+  } else {
+    document.querySelectorAll('.mermaid').forEach(function(el){
+      var pre = document.createElement('pre'); pre.className = 'code';
+      var c = document.createElement('code'); c.textContent = el.textContent;
+      pre.appendChild(c); el.parentNode.replaceChild(pre, el);
+    });
+  }
+</script>
+</body>
+</html>
