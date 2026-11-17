@@ -3,7 +3,7 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', 'fortrust');
 const OUTPUT = path.join(ROOT, 'directory.json');
-const IGNORE_DIRS = new Set(['.git', '.github', 'node_modules', '.DS_Store']);
+const IGNORE_DIRS = new Set(['.git', '.github', 'node_modules', '.DS_Store', 'vendor']);
 // 根目录自身的导航首页与生成产物不进入索引
 const ROOT_IGNORE_FILES = new Set(['index.html', 'directory.json', '.DS_Store', 'README.md', 'Thumbs.db', 'package.json']);
 // 子目录允许 index.html 进入文件列表（作为「首页」条目）
@@ -25,7 +25,6 @@ const ALLOWED_EXTS = new Set([
 
 function getFileType(ext) {
   ext = (ext || '').toLowerCase();
-  const label = ext.replace(/^\./, '').toUpperCase() || 'FILE';
   if (['.html', '.htm'].includes(ext)) {
     return { category: 'html', icon: '📄', actionType: 'new_tab' };
   }

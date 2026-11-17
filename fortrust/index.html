@@ -753,7 +753,7 @@ footer{
         <a class="logout-btn" href="/fortrust/logout" title="清除登录状态" style="text-decoration:none;">🔒 锁定退出</a>
       </div>
       <h1>静态资源中心</h1>
-      <p class="sub">产品原型、H5 页面、设计稿、需求文档与附件统一入口 · 由 Cloudflare Pages 自动构建发布</p>
+      <p class="sub">产品原型、H5 页面、设计稿、需求文档与附件统一入口 · 由 filer-server 服务端实时扫描渲染</p>
       <div class="toolbar">
         <div class="search-box">
           <input id="search" class="search" placeholder="搜索目录名称或页面文件… (快捷键 /)" autocomplete="off">
@@ -793,7 +793,7 @@ footer{
 
   <footer>
     <div class="container">
-      <span>Fortrust Static Resource Center · Cloudflare Pages</span>
+      <span>Fortrust Static Resource Center · filer-server</span>
       <span id="buildTimeText" style="margin-left: 8px; opacity: 0.8;"></span>
     </div>
   </footer>
@@ -804,7 +804,7 @@ footer{
 
 <script>
 // ==========================================
-// 说明：访问鉴权已由 Cloudflare Pages Workers（_worker.js）在服务端强制执行，
+// 说明：访问鉴权由 filer-server 服务端（server.js 的 fortrestGate 中间件）统一强制执行，
 // 直链访问同样受保护；此页面仅负责目录渲染与预览交互。
 // ==========================================
 const treeEl = document.getElementById('tree');
@@ -922,53 +922,57 @@ async function openPreview(f) {
     // Markdown：marked.js 渲染为富文本
     try {
       const res = await fetch(f.url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const txt = await res.text();
-      await ensureScript('marked', 'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js');
+      await ensureScript('marked', '/fortrust/vendor/marked.min.js');
       const html = sanitizeHtml(marked.parse(txt, { breaks: true, gfm: true }));
       modalBody.innerHTML = `<div class="doc-preview doc-preview-md">${html}</div>`;
     } catch(err) {
       console.error(err);
-      modalBody.innerHTML = previewErrorHtml(f);
+      modalBody.innerHTML = previewErrorHtml(f, err);
     }
   } else if (cat === 'docx') {
     // Word (.docx)：mammoth.js 转换为 HTML
     try {
-      await ensureScript('mammoth', 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js');
+      await ensureScript('mammoth', '/fortrust/vendor/mammoth.browser.min.js');
       const res = await fetch(f.url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const arrayBuffer = await res.arrayBuffer();
       const result = await window.mammoth.convertToHtml({ arrayBuffer });
       const wordHtml = sanitizeHtml(result.value) || '<p style="color:#94a3b8;">此 Word 文档为空</p>';
       modalBody.innerHTML = `<div class="doc-preview doc-preview-word">${wordHtml}</div>`;
     } catch(err) {
       console.error(err);
-      modalBody.innerHTML = previewErrorHtml(f);
+      modalBody.innerHTML = previewErrorHtml(f, err);
     }
   } else if (cat === 'xlsx') {
     // Excel (.xlsx/.xls)：SheetJS 解析为 HTML 表格（多 Sheet 切换）
     try {
-      await ensureScript('XLSX', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      await ensureScript('XLSX', '/fortrust/vendor/xlsx.full.min.js');
       const res = await fetch(f.url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const arrayBuffer = await res.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array' });
       modalBody.innerHTML = renderXlsxSheets(wb);
     } catch(err) {
       console.error(err);
-      modalBody.innerHTML = previewErrorHtml(f);
+      modalBody.innerHTML = previewErrorHtml(f, err);
     }
   } else if (cat === 'text') {
     try {
       const res = await fetch(f.url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       const txt = await res.text();
       modalBody.innerHTML = `<pre>${esc(txt)}</pre>`;
     } catch(err) {
-      modalBody.innerHTML = previewErrorHtml(f);
+      modalBody.innerHTML = previewErrorHtml(f, err);
     }
   } else {
     modalBody.innerHTML = previewErrorHtml(f);
   }
 }
 
-// 按需加载外部解析库（只加载一次）
+// 按需加载本地解析库（只加载一次）
 const loadedScripts = {};
 function ensureScript(globalName, src) {
   if (window[globalName]) return Promise.resolve();
@@ -976,15 +980,18 @@ function ensureScript(globalName, src) {
   loadedScripts[src] = new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = src;
-    s.onload = () => window[globalName] ? resolve() : reject(new Error(globalName + ' 加载失败'));
-    s.onerror = () => reject(new Error('解析库 CDN 加载失败: ' + src));
+    s.onload = () => window[globalName] ? resolve() : reject(new Error(globalName + ' 解析库初始化失败'));
+    s.onerror = () => reject(new Error('解析库加载失败: ' + src));
     document.head.appendChild(s);
   });
   return loadedScripts[src];
 }
 
-function previewErrorHtml(f) {
-  return `<div class="preview-status"><div style="font-size:32px;">😵</div><div>该文件类型暂不支持在线预览</div><a class="btn-action btn-open" href="${previewLink(f)}" target="_blank" rel="noopener noreferrer">打开 ↗</a></div>`;
+function previewErrorHtml(f, err) {
+  // 区分「解析库加载失败」与「类型不支持」，避免误导
+  const libFail = err && /加载失败|初始化失败/.test(String(err && err.message || err));
+  const tip = libFail ? '预览组件加载失败，请刷新重试或下载后查看' : '该文件类型暂不支持在线预览';
+  return `<div class="preview-status"><div style="font-size:32px;">😵</div><div>${esc(tip)}</div><a class="btn-action btn-open" href="${previewLink(f)}" target="_blank" rel="noopener noreferrer">打开 ↗</a></div>`;
 }
 
 // Excel 多 Sheet 渲染与切换
@@ -1219,7 +1226,7 @@ async function load(){
     render(data);
     loaded = true;
   }catch(e){
-    treeEl.innerHTML = '<div class="empty">目录读取失败，请确认 Cloudflare 构建已生成 directory.json。</div>';
+    treeEl.innerHTML = '<div class="empty">目录读取失败，请刷新重试。</div>';
     countEl.textContent = '读取失败';
     console.error(e);
   }

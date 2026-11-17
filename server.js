@@ -442,6 +442,7 @@ main{flex:1;overflow:auto;padding:28px 32px;background:#fff}
 <script>
 const TARGET = ${safeTarget};
 const name = decodeURIComponent(TARGET.split('/').pop() || '');
+if (name) document.title = name + ' · 预览';
 document.getElementById('docTitle').textContent = name;
 const dl = document.getElementById('dlBtn');
 dl.href = TARGET;
@@ -478,18 +479,20 @@ function loadScript(src, check) {
 
 async function render() {
   try {
+    const resp = await fetch(TARGET);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     if (ext === '.md' || ext === '.markdown') {
-      const txt = await (await fetch(TARGET)).text();
-      await loadScript('https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js', () => window.marked);
+      const txt = await resp.text();
+      await loadScript('/fortrust/vendor/marked.min.js', () => window.marked);
       main.innerHTML = '<div class="md">' + sanitizeHtml(marked.parse(txt, { breaks: true, gfm: true })) + '</div>';
     } else if (ext === '.docx') {
-      const buf = await (await fetch(TARGET)).arrayBuffer();
-      await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js', () => window.mammoth);
+      const buf = await resp.arrayBuffer();
+      await loadScript('/fortrust/vendor/mammoth.browser.min.js', () => window.mammoth);
       const r = await window.mammoth.convertToHtml({ arrayBuffer: buf });
       main.innerHTML = '<div class="word">' + sanitizeHtml(r.value) + '</div>';
     } else if (ext === '.xlsx' || ext === '.xls') {
-      const buf = await (await fetch(TARGET)).arrayBuffer();
-      await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', () => window.XLSX);
+      const buf = await resp.arrayBuffer();
+      await loadScript('/fortrust/vendor/xlsx.full.min.js', () => window.XLSX);
       const wb = window.XLSX.read(buf, { type: 'array' });
       const tabs = wb.SheetNames.map((n, i) =>
         '<button class="' + (i === 0 ? 'active' : '') + '" data-i="' + i + '">' + esc(n) + '</button>').join('');
@@ -505,7 +508,7 @@ async function render() {
         main.querySelectorAll('.sheet-tab button').forEach(x => x.classList.toggle('active', x === b));
       }));
     } else {
-      const txt = await (await fetch(TARGET)).text();
+      const txt = await resp.text();
       main.innerHTML = '<pre style="background:#0f172a;color:#f8fafc;padding:20px;border-radius:8px;' +
         'overflow:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all">' + esc(txt) + '</pre>';
     }

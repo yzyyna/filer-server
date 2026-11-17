@@ -1,5 +1,5 @@
 {
-  "buildTime": "2026-11-11T01:33:51.232Z",
+  "buildTime": "2026-11-17T03:32:35.719Z",
   "data": [
     {
       "name": "三一",
@@ -133,6 +133,48 @@
         }
       ],
       "children": [
+        {
+          "name": "燃气发电服务报表",
+          "path": "/fortrust/%E6%B2%83%E8%BE%BE/%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%9C%8D%E5%8A%A1%E6%8A%A5%E8%A1%A8/",
+          "url": "/fortrust/%E6%B2%83%E8%BE%BE/%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%9C%8D%E5%8A%A1%E6%8A%A5%E8%A1%A8/%E6%B2%83%E8%BE%BE%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%8A%A5%E8%A1%A8%E9%9C%80%E6%B1%82.html",
+          "hasIndex": false,
+          "files": [
+            {
+              "fileName": "沃达燃气发电报表需求.html",
+              "title": "沃达燃气发电报表需求",
+              "ext": ".html",
+              "category": "html",
+              "icon": "📄",
+              "actionType": "new_tab",
+              "url": "/fortrust/%E6%B2%83%E8%BE%BE/%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%9C%8D%E5%8A%A1%E6%8A%A5%E8%A1%A8/%E6%B2%83%E8%BE%BE%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%8A%A5%E8%A1%A8%E9%9C%80%E6%B1%82.html",
+              "size": "6.3 MB",
+              "isIndex": false
+            },
+            {
+              "fileName": "沃达燃气发电报表需求原表.xlsx",
+              "title": "沃达燃气发电报表需求原表",
+              "ext": ".xlsx",
+              "category": "xlsx",
+              "icon": "📊",
+              "actionType": "preview",
+              "url": "/fortrust/%E6%B2%83%E8%BE%BE/%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%9C%8D%E5%8A%A1%E6%8A%A5%E8%A1%A8/%E6%B2%83%E8%BE%BE%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%8A%A5%E8%A1%A8%E9%9C%80%E6%B1%82%E5%8E%9F%E8%A1%A8.xlsx",
+              "size": "153.4 KB",
+              "isIndex": false
+            },
+            {
+              "fileName": "VODA_POWER_REPORT.md",
+              "title": "VODA_POWER_REPORT",
+              "ext": ".md",
+              "category": "md",
+              "icon": "📃",
+              "actionType": "preview",
+              "url": "/fortrust/%E6%B2%83%E8%BE%BE/%E7%87%83%E6%B0%94%E5%8F%91%E7%94%B5%E6%9C%8D%E5%8A%A1%E6%8A%A5%E8%A1%A8/VODA_POWER_REPORT.md",
+              "size": "22.3 KB",
+              "isIndex": false
+            }
+          ],
+          "children": []
+        },
         {
           "name": "沃达数据报表",
           "path": "/fortrust/%E6%B2%83%E8%BE%BE/%E6%B2%83%E8%BE%BE%E6%95%B0%E6%8D%AE%E6%8A%A5%E8%A1%A8/",
